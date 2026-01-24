@@ -74,14 +74,14 @@ Ein interaktiver Wizard zur Bewertung und Empfehlung souveräner Cloud-Architekt
 
 ### Lokale Nutzung
 1. Repository klonen oder ZIP entpacken
-2. `Sovereign_Architecture_Advisor.html` im Browser öffnen für den Wizard
+2. `index.html` im Browser öffnen für den Wizard
 3. Optional: `evaluation-criteria.html` öffnen für die Bewertungskriterien-Dokumentation
 4. Fertig!
 
 ### Dateistruktur
 ```
 SAA/
-├── Sovereign_Architecture_Advisor.html   # Haupt-HTML (Wizard)
+├── index.html                            # Haupt-HTML (Wizard)
 ├── evaluation-criteria.html              # Bewertungskriterien-Seite
 ├── saa-app.js                            # Hauptapplikationslogik
 ├── saa-analysis.js                       # Analyse- und Scoring-Logik
