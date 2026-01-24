@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign Architecture Advisor - BTC AG</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Base Styles from SCC -->
+    <link rel="stylesheet" href="../SCC/styles.css">
+    <!-- SAA-specific Styles -->
+    <link rel="stylesheet" href="saa-styles.css">
+</head>
+<body>
+    <!-- Main Content (kein Password-Overlay für SAA) -->
+    <div class="protected-content unlocked">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <nav class="header-nav">
+                    <a href="#" class="logo">
+                        <img src="btc-logo.png" alt="BTC AG Logo" class="logo-img">
+                    </a>
+                    <div class="header-actions">
+                        <button id="showInfoBtn" class="btn btn-icon" title="Hinweis einblenden" style="display: none;" onclick="showInfoBanner()">
+                            <i class="fa-solid fa-info-circle"></i>
+                        </button>
+                        <button id="settingsBtn" class="btn btn-icon" title="Einstellungen & Algorithmus">
+                            <i class="fa-solid fa-sliders"></i>
+                        </button>
+                        <div class="theme-toggle" onclick="toggleTheme()" role="button" aria-label="Toggle dark mode"></div>
+                        <a href="../SCC/Sovereign_Cloud_Compass_v3.html" class="btn btn-secondary">
+                            Cloud Compass
+                        </a>
+                        <a href="https://outlook.office.com/book/BTCAGManagedCloudServices@btcag.onmicrosoft.com/s/U1HPjhE9b0qdW-uTHThOSw2?ismsaljsauthenabled" target="_blank" class="btn btn-primary">
+                            Beratung
+                        </a>
+                    </div>
+                </nav>
+                <h1 class="header-title">Sovereign Architecture Advisor</h1>
+                <p class="header-subtitle">Analysieren Sie Ihre Anwendungsarchitektur und finden Sie die optimale Cloud-Lösung</p>
+            </div>
+        </header>
+
+        <!-- Main -->
+        <main class="main">
+            <div class="container">
+                <!-- Info Banner -->
+                <div class="info-banner" id="infoBanner">
+                    <button class="info-banner-close" onclick="closeInfoBanner()" title="Ausblenden">&times;</button>
+                    <div class="info-banner-title">So funktioniert's</div>
+                    <div class="info-banner-text">
+                        Wählen Sie Ihre Anwendung oder Architektur-Komponenten aus. Der Advisor analysiert Cloud-Anbieter (IaaS/PaaS) und empfiehlt die beste Lösung basierend auf Verfügbarkeit, Kosten und Souveränität. Single-Stage Architekturen werden berücksichtigt – für Multi-Stage fügen Sie Apps im Portfolio-Modus mehrfach hinzu.
+                    </div>
+                </div>
+
+                <!-- Wizard Container -->
+                <div class="wizard-container">
+                    <!-- Wizard Steps -->
+                    <div class="wizard-steps">
+                        <div class="wizard-step active" data-step="0">
+                            <div class="step-number">1</div>
+                            <div class="step-label">Modus</div>
+                        </div>
+                        <div class="wizard-step" data-step="1">
+                            <div class="step-number">2</div>
+                            <div class="step-label">Anwendung</div>
+                        </div>
+                        <div class="wizard-step" data-step="2">
+                            <div class="step-number">3</div>
+                            <div class="step-label">Komponenten</div>
+                        </div>
+                        <div class="wizard-step" data-step="3">
+                            <div class="step-number">4</div>
+                            <div class="step-label">Analyse</div>
+                        </div>
+                    </div>
+
+                    <!-- Step 0: Application Input (Combined Mode Selection) -->
+                    <div class="step-content active" id="step0">
+                        <div class="app-input-section">
+                            <h2 class="card-title">Anwendung auswählen</h2>
+
+                            <!-- Mode Toggle -->
+                            <div class="mode-toggle-container">
+                                <button class="mode-toggle-btn active" id="singleModeBtn" data-mode="single">
+                                    <i class="fa-solid fa-file-lines mode-icon"></i>
+                                    <span class="mode-label">Einzelanwendung</span>
+                                    <span class="mode-description">Detaillierte Analyse</span>
+                                </button>
+                                <button class="mode-toggle-btn" id="multiModeBtn" data-mode="multi">
+                                    <i class="fa-solid fa-layer-group mode-icon"></i>
+                                    <span class="mode-label">Portfolio</span>
+                                    <span class="mode-description">Mehrere Apps</span>
+                                </button>
+                            </div>
+
+                            <!-- Single-App Mode (Default) -->
+                            <div id="singleAppInputMode" class="single-app-input-mode">
+                                <div class="search-input-wrapper">
+                                    <input
+                                        type="text"
+                                        id="appSearchInput"
+                                        class="search-input"
+                                        placeholder="z.B. SAP S/4HANA, GitLab, Nextcloud, Kubernetes App..."
+                                        autocomplete="off"
+                                    >
+                                    <div id="appDropdown" class="app-dropdown"></div>
+                                    <button id="searchBtn" class="search-button">
+                                        <span>Recherchieren</span>
+                                    </button>
+                                </div>
+
+                                <div class="quick-suggestions">
+                                    <span style="font-size: 0.85rem; color: var(--text-secondary); margin-right: 0.5rem;">Schnellauswahl:</span>
+                                    <button class="quick-suggestion" data-app="sap">SAP S/4HANA</button>
+                                    <button class="quick-suggestion" data-app="gitlab">GitLab</button>
+                                    <button class="quick-suggestion" data-app="wordpress">WordPress</button>
+                                    <button class="quick-suggestion" data-app="kubernetes-app">Kubernetes App</button>
+                                    <button class="quick-suggestion" data-app="nextcloud">Nextcloud</button>
+                                    <button class="quick-suggestion" data-app="jira">Jira</button>
+                                    <button class="quick-suggestion" data-app="custom">Benutzerdefiniert</button>
+                                </div>
+
+                                <div id="researchResult" style="display: none;"></div>
+                            </div>
+
+                            <!-- Multi-App Mode (Hidden by default) -->
+                            <div id="multiAppInputMode" class="multi-app-input-mode" style="display: none;">
+
+                                <textarea
+                                    id="multiAppInput"
+                                    class="multi-app-textarea"
+                                    placeholder="Geben Sie Ihre Anwendungen ein (eine pro Zeile), z.B.:&#10;SAP ERP Produktion&#10;GitLab Enterprise&#10;WordPress Marketing&#10;Nextcloud Filesharing klein&#10;&#10;Tipp: Sie können Größenangaben hinzufügen (klein, mittel, groß)"
+                                    rows="10"></textarea>
+
+                                <!-- Quick Templates -->
+                                <div class="quick-templates" style="margin-top: 1rem;">
+                                    <span style="font-size: 0.85rem; color: var(--text-secondary); margin-right: 0.5rem;">Vorlagen:</span>
+                                    <button class="quick-suggestion" data-template="erp">ERP-Portfolio</button>
+                                    <button class="quick-suggestion" data-template="devops">DevOps-Stack</button>
+                                    <button class="quick-suggestion" data-template="web">Web-Plattform</button>
+                                    <button class="quick-suggestion" data-template="analytics">Data & Analytics</button>
+                                    <button class="quick-suggestion" data-template="collaboration">Collaboration</button>
+                                </div>
+
+                                <button id="parseAppsBtn" class="nav-button primary" style="margin-top: 1.5rem; width: 100%;">
+                                    Apps analysieren und zuordnen →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: App Mapping (Multi-App Mode only, skipped in Single-App Mode) -->
+                    <div class="step-content" id="step1">
+                        <div class="app-mapping-section">
+                            <h2 class="card-title">Anwendungen zuordnen und konfigurieren</h2>
+                            <p class="card-description">
+                                Überprüfen Sie die automatischen Vorschläge und passen Sie Typ und Größe bei Bedarf an.
+                            </p>
+
+                            <!-- Mapping Table -->
+                            <div class="app-mapping-table-wrapper">
+                                <table class="app-mapping-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 5%">#</th>
+                                            <th style="width: 25%">Ihre Eingabe</th>
+                                            <th style="width: 30%">Anwendungstyp</th>
+                                            <th style="width: 20%">Größe</th>
+                                            <th style="width: 15%">Erkennung</th>
+                                            <th style="width: 5%"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="appMappingTableBody">
+                                        <!-- Dynamisch gefüllt via renderAppMappingTable() -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Summary Info entfernt - wird in Analyse-Ergebnissen angezeigt -->
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Component Selection -->
+                    <div class="step-content" id="step2">
+                        <!-- Single-App Mode (Standard) -->
+                        <div id="singleAppConfig" class="single-app-config">
+                            <div class="card">
+                                <h2 class="card-title">Architektur-Komponenten auswählen</h2>
+                                <p class="card-description">
+                                    Wählen Sie alle Komponenten aus, die Ihre Anwendung benötigt.
+                                    Die Analyse berücksichtigt die Verfügbarkeit dieser Services bei allen Cloud-Anbietern.
+                                </p>
+
+                                <div id="selectedComponentsSummary" class="selected-components" style="margin-top: 1rem;">
+                                    <p style="color: var(--text-tertiary);">Noch keine Komponenten ausgewählt</p>
+                                </div>
+                            </div>
+
+                            <div id="componentsContainer">
+                                <!-- Wird dynamisch befüllt -->
+                            </div>
+                        </div>
+
+                        <!-- Multi-App Mode -->
+                        <div id="multiAppConfig" class="multi-app-config-section" style="display: none;">
+                            <h2 class="card-title">Komponenten für jede Anwendung definieren</h2>
+                            <p class="card-description">
+                                Konfigurieren Sie die Komponenten für jede Anwendung. Verwenden Sie die Tabs, um zwischen Apps zu wechseln.
+                            </p>
+
+                            <!-- App Tabs -->
+                            <div class="app-config-tabs-container">
+                                <div class="app-config-tabs" id="appConfigTabs">
+                                    <!-- Dynamisch gefüllt -->
+                                </div>
+
+                                <!-- Current App Configuration -->
+                                <div class="app-config-content" id="appConfigContent">
+                                    <div class="app-config-header">
+                                        <h3 id="currentAppName">App Name</h3>
+                                        <div class="app-config-meta">
+                                            <!-- Dynamisch gefüllt -->
+                                        </div>
+                                    </div>
+
+                                    <!-- System Requirements -->
+                                    <div id="currentAppSystemReqs" class="system-reqs-summary">
+                                        <!-- Dynamisch gefüllt -->
+                                    </div>
+
+                                    <!-- Selected Components Summary -->
+                                    <div id="currentAppComponentsSummary" class="selected-components" style="margin-top: 1rem;">
+                                        <p style="color: var(--text-tertiary);">Noch keine Komponenten ausgewählt</p>
+                                    </div>
+
+                                    <!-- Components Container -->
+                                    <div id="currentAppComponentsContainer">
+                                        <!-- Wird dynamisch befüllt -->
+                                    </div>
+
+                                    <!-- Navigation between Apps -->
+                                    <div class="app-navigation">
+                                        <button class="btn btn-secondary" id="prevAppBtn">
+                                            ← Vorherige App
+                                        </button>
+                                        <span class="app-counter" id="appCounter">1 von 1</span>
+                                        <button class="btn btn-primary" id="nextAppBtn">
+                                            Nächste App →
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Analysis Results -->
+                    <div class="step-content" id="step3">
+                        <div id="analysisResultsContainer">
+                            <!-- Wird dynamisch befüllt -->
+                        </div>
+                    </div>
+
+                    <!-- Navigation -->
+                    <div class="wizard-navigation">
+                        <button id="prevBtn" class="nav-button secondary" style="visibility: hidden;">
+                            ← Zurück
+                        </button>
+                        <button id="nextBtn" class="nav-button primary">
+                            Weiter →
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <img src="btc-logo.png" alt="BTC AG Logo" class="footer-logo">
+                <p class="footer-text">
+                    Ihr Partner für souveräne Cloud-Transformation |
+                    <a href="https://www.btc-ag.com/digital-sovereignty" class="footer-link">Mehr über Go Sovereign!</a> |
+                    <a href="https://www.btc-ag.com/Impressum" class="footer-link">Impressum</a>
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Analysiere Cloud-Anbieter...</p>
+        </div>
+    </div>
+
+    <!-- Settings Overlay -->
+    <div class="settings-overlay" id="settingsOverlay">
+        <div class="settings-dialog">
+            <div class="settings-header">
+                <h2 class="settings-title">Algorithmus-Einstellungen</h2>
+                <button id="closeSettingsBtn" class="settings-close">&times;</button>
+            </div>
+            <div class="settings-content">
+                <!-- Preset Selection -->
+                <div class="settings-section">
+                    <h3 class="settings-section-title">Bewertungsprofil wählen</h3>
+                    <div class="preset-grid" id="presetGrid">
+                        <div class="preset-card active" data-preset="balanced">
+                            <div class="preset-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+                            <div class="preset-name">Ausgewogen</div>
+                            <div class="preset-desc">Gleichmäßige Gewichtung aller Faktoren</div>
+                            <div class="preset-weights">
+                                <span>Kontrolle 25%</span>
+                                <span>Leistung 25%</span>
+                                <span>Verfügbarkeit 35%</span>
+                                <span>Kosten 15%</span>
+                            </div>
+                        </div>
+                        <div class="preset-card" data-preset="sovereign">
+                            <div class="preset-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                            <div class="preset-name">Maximale Souveränität</div>
+                            <div class="preset-desc">Fokus auf Datenkontrolle und DSGVO</div>
+                            <div class="preset-weights">
+                                <span>Kontrolle 50%</span>
+                                <span>Leistung 15%</span>
+                                <span>Verfügbarkeit 25%</span>
+                                <span>Kosten 10%</span>
+                            </div>
+                        </div>
+                        <div class="preset-card" data-preset="performance">
+                            <div class="preset-icon"><i class="fa-solid fa-rocket"></i></div>
+                            <div class="preset-name">Performance First</div>
+                            <div class="preset-desc">Maximale Leistung und Service-Umfang</div>
+                            <div class="preset-weights">
+                                <span>Kontrolle 10%</span>
+                                <span>Leistung 60%</span>
+                                <span>Verfügbarkeit 20%</span>
+                                <span>Kosten 10%</span>
+                            </div>
+                        </div>
+                        <div class="preset-card" data-preset="cost">
+                            <div class="preset-icon"><i class="fa-solid fa-coins"></i></div>
+                            <div class="preset-name">Kostenoptimiert</div>
+                            <div class="preset-desc">Günstigste Lösung priorisieren</div>
+                            <div class="preset-weights">
+                                <span>Kontrolle 10%</span>
+                                <span>Leistung 10%</span>
+                                <span>Verfügbarkeit 20%</span>
+                                <span>Kosten 60%</span>
+                            </div>
+                        </div>
+                        <div class="preset-card" data-preset="availability">
+                            <div class="preset-icon"><i class="fa-solid fa-check-circle"></i></div>
+                            <div class="preset-name">Maximale Abdeckung</div>
+                            <div class="preset-desc">Alle Komponenten aus einer Hand</div>
+                            <div class="preset-weights">
+                                <span>Kontrolle 15%</span>
+                                <span>Leistung 20%</span>
+                                <span>Verfügbarkeit 55%</span>
+                                <span>Kosten 10%</span>
+                            </div>
+                        </div>
+                        <div class="preset-card" data-preset="custom">
+                            <div class="preset-icon"><i class="fa-solid fa-sliders"></i></div>
+                            <div class="preset-name">Benutzerdefiniert</div>
+                            <div class="preset-desc">Eigene Gewichtung festlegen</div>
+                            <div class="preset-weights" id="customWeightsPreview">
+                                <span>Kontrolle 25%</span>
+                                <span>Leistung 25%</span>
+                                <span>Verfügbarkeit 35%</span>
+                                <span>Kosten 15%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Custom Weights Editor -->
+                    <div class="custom-weights-editor" id="customWeightsEditor" style="display: none;">
+                        <h4>Benutzerdefinierte Gewichtung</h4>
+                        <div class="custom-weight-inputs">
+                            <div class="custom-weight-row">
+                                <label><i class="fa-solid fa-lock"></i> Kontrolle</label>
+                                <input type="number" id="customControl" min="0" max="100" value="25">
+                                <span>%</span>
+                            </div>
+                            <div class="custom-weight-row">
+                                <label><i class="fa-solid fa-bolt"></i> Leistung</label>
+                                <input type="number" id="customPerformance" min="0" max="100" value="25">
+                                <span>%</span>
+                            </div>
+                            <div class="custom-weight-row">
+                                <label><i class="fa-solid fa-box"></i> Verfügbarkeit</label>
+                                <input type="number" id="customAvailability" min="0" max="100" value="35">
+                                <span>%</span>
+                            </div>
+                            <div class="custom-weight-row">
+                                <label><i class="fa-solid fa-coins"></i> Kosten</label>
+                                <input type="number" id="customCost" min="0" max="100" value="15">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div class="custom-weight-total" id="customWeightTotal">
+                            Summe: <strong>100%</strong> <i class="fa-solid fa-check"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Algorithm Formula Preview -->
+                <div class="settings-section">
+                    <h3 class="settings-section-title">Berechnungsformel</h3>
+                    <div class="algorithm-preview">
+                        <div class="algorithm-formula" id="algorithmFormula">
+                            <code>
+                                Score = Kontrolle × <span class="weight-control">0.25</span> +
+                                Leistung × <span class="weight-performance">0.25</span> +
+                                Verfügbarkeit × <span class="weight-availability">0.35</span> +
+                                Kosteneffizienz × <span class="weight-cost">0.15</span>
+                            </code>
+                        </div>
+                    </div>
+                    <div class="algorithm-explanation" style="margin-top: 1rem;">
+                        <div class="algorithm-item">
+                            <div class="algorithm-content">
+                                <strong><i class="fa-solid fa-lock"></i> Kontrolle</strong>
+                                <p>Datensouveränität, Jurisdiktion, DSGVO-Konformität, Vendor Lock-in Risiko</p>
+                            </div>
+                        </div>
+                        <div class="algorithm-item">
+                            <div class="algorithm-content">
+                                <strong><i class="fa-solid fa-bolt"></i> Leistung</strong>
+                                <p>Service-Reife, Feature-Umfang, Skalierbarkeit, Netzwerk-Performance</p>
+                            </div>
+                        </div>
+                        <div class="algorithm-item">
+                            <div class="algorithm-content">
+                                <strong><i class="fa-solid fa-box"></i> Verfügbarkeit</strong>
+                                <p>Anteil der benötigten Services die verfügbar sind (Preview = 50%)</p>
+                            </div>
+                        </div>
+                        <div class="algorithm-item">
+                            <div class="algorithm-content">
+                                <strong><i class="fa-solid fa-coins"></i> Kosteneffizienz</strong>
+                                <p>TCO-Bewertung: Verbrauch, Betriebsaufwand, Projektkosten (invertiert: niedrig = gut)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(90, 166, 231, 0.1); border-radius: 8px; border: 1px solid rgba(90, 166, 231, 0.3);">
+                        <i class="fa-solid fa-circle-info" style="color: var(--btc-accent); margin-right: 0.5rem;"></i>
+                        <a href="evaluation-criteria.html" style="color: var(--btc-accent); text-decoration: none; font-weight: 500;">
+                            Detaillierte Bewertungskriterien anzeigen <i class="fa-solid fa-arrow-right" style="font-size: 0.85em; margin-left: 0.25rem;"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Maturity Factor Settings -->
+                <div class="settings-section">
+                    <h3 class="settings-section-title"><i class="fa-solid fa-microscope"></i> Reife-Faktor</h3>
+                    <p class="settings-description">
+                        Der Reife-Faktor reduziert den Score für Provider mit unreifen Services (Preview) oder fehlenden Services (Self-Build erforderlich).
+                    </p>
+                    <div class="maturity-settings">
+                        <div class="maturity-toggle">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="maturityEnabled" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span>Reife-Faktor aktivieren</span>
+                        </div>
+                        <div class="maturity-penalties" id="maturityPenalties">
+                            <div class="custom-weight-row">
+                                <label><i class="fa-solid fa-triangle-exclamation"></i> Preview-Service Abzug</label>
+                                <input type="number" id="previewPenalty" min="0" max="20" value="2">
+                                <span>%</span>
+                            </div>
+                            <div class="custom-weight-row">
+                                <label><i class="fa-solid fa-xmark"></i> Fehlender Service Abzug</label>
+                                <input type="number" id="missingPenalty" min="0" max="30" value="3">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div class="maturity-example" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                            Beispiel: 2 Preview + 1 fehlend = Faktor 0.93 (Score × 0.93)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Operations Cost Settings -->
+                <div class="settings-section">
+                    <h3 class="settings-section-title"><i class="fa-solid fa-users"></i> Betriebsaufwand</h3>
+                    <p class="settings-description">
+                        Der Betriebsaufwand (FTE-Kosten) kann in der Bewertung und TCO-Berechnung berücksichtigt oder ausgeblendet werden.
+                    </p>
+                    <div class="maturity-settings">
+                        <div class="maturity-toggle">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="operationsEnabled" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span>Betriebsaufwand in Bewertung einbeziehen</span>
+                        </div>
+                        <div class="maturity-example" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                            Wenn deaktiviert: Betriebsaufwand wird angezeigt (ausgegraut), aber nicht in Kosten-Score und TCO-Summen eingerechnet.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Effort Settings -->
+                <div class="settings-section">
+                    <h3 class="settings-section-title"><i class="fa-solid fa-calendar-days"></i> Projektaufwand</h3>
+                    <p class="settings-description">
+                        Der Projektaufwand (Personentage) kann in der Bewertung und TCO-Berechnung berücksichtigt oder ausgeblendet werden.
+                    </p>
+                    <div class="maturity-settings">
+                        <div class="maturity-toggle">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="projectEffortEnabled" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span>Projektaufwand in Bewertung einbeziehen</span>
+                        </div>
+                        <div class="maturity-example" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                            Wenn deaktiviert: Projektaufwand wird angezeigt (ausgegraut), aber nicht in Kosten-Score und TCO-Summen eingerechnet.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Key Section (at bottom) -->
+                <div class="settings-section">
+                    <h3 class="settings-section-title">🔑 API-Zugang für KI-Recherche (optional)</h3>
+                    <p class="settings-description">
+                        Mit einem Claude API-Key können unbekannte Anwendungen durch KI recherchiert werden.
+                    </p>
+                    <div class="api-key-input-wrapper">
+                        <input type="password" id="apiKeyInput" class="api-key-input" placeholder="sk-ant-api03-...">
+                        <button id="toggleApiKeyBtn" class="api-key-toggle" title="Anzeigen/Verbergen">👁️</button>
+                    </div>
+                    <div id="apiKeyStatus" class="api-key-status"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Popup Overlay -->
+    <div class="detail-popup-overlay" id="detailPopupOverlay">
+        <div class="detail-popup">
+            <div class="detail-popup-header">
+                <h3 class="detail-popup-title" id="detailPopupTitle">Details</h3>
+                <button class="detail-popup-close" onclick="app.closeDetailPopup()">&times;</button>
+            </div>
+            <div class="detail-popup-content" id="detailPopupContent">
+                <!-- Wird dynamisch befüllt -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Management -->
+    <script>
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        function closeInfoBanner() {
+            const banner = document.getElementById('infoBanner');
+            const showBtn = document.getElementById('showInfoBtn');
+            if (banner) {
+                banner.style.display = 'none';
+                localStorage.setItem('infoBannerHidden', 'true');
+            }
+            if (showBtn) {
+                showBtn.style.display = 'inline-flex';
+            }
+        }
+
+        function showInfoBanner() {
+            const banner = document.getElementById('infoBanner');
+            const showBtn = document.getElementById('showInfoBtn');
+            if (banner) {
+                banner.style.display = 'block';
+                localStorage.setItem('infoBannerHidden', 'false');
+            }
+            if (showBtn) {
+                showBtn.style.display = 'none';
+            }
+        }
+
+        function initInfoBanner() {
+            const isHidden = localStorage.getItem('infoBannerHidden');
+            const banner = document.getElementById('infoBanner');
+            const showBtn = document.getElementById('showInfoBtn');
+
+            if (isHidden === 'true') {
+                if (banner) {
+                    banner.style.display = 'none';
+                }
+                if (showBtn) {
+                    showBtn.style.display = 'inline-flex';
+                }
+            }
+        }
+
+        initTheme();
+        initInfoBanner();
+    </script>
+
+    <!-- Data Module -->
+    <script src="saa-data.js"></script>
+    <!-- Analysis Engine -->
+    <script src="saa-analysis.js"></script>
+    <!-- Main Application -->
+    <script src="saa-app.js"></script>
+</body>
+</html>

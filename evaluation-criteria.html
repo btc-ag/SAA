@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bewertungskriterien - Sovereign Architecture Advisor</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Base Styles from SCC -->
+    <link rel="stylesheet" href="../SCC/styles.css">
+    <!-- SAA-specific Styles -->
+    <link rel="stylesheet" href="saa-styles.css">
+    <!-- Criteria Page Styles -->
+    <link rel="stylesheet" href="criteria-styles.css">
+</head>
+<body>
+    <div class="protected-content unlocked">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <nav class="header-nav">
+                    <a href="#" class="logo">
+                        <img src="btc-logo.png" alt="BTC AG Logo" class="logo-img">
+                    </a>
+                    <div class="header-actions">
+                        <div class="theme-toggle" onclick="toggleTheme()" role="button" aria-label="Toggle dark mode"></div>
+                        <a href="Sovereign_Architecture_Advisor.html" class="btn btn-secondary">
+                            <i class="fa-solid fa-arrow-left"></i> Zurück zum Advisor
+                        </a>
+                        <a href="../SCC/Sovereign_Cloud_Compass_v3.html" class="btn btn-secondary">
+                            Cloud Compass
+                        </a>
+                        <a href="https://outlook.office.com/book/BTCAGManagedCloudServices@btcag.onmicrosoft.com/s/U1HPjhE9b0qdW-uTHThOSw2?ismsaljsauthenabled" target="_blank" class="btn btn-primary">
+                            Beratung
+                        </a>
+                    </div>
+                </nav>
+                <h1 class="header-title">Bewertungskriterien & Methodik</h1>
+                <p class="header-subtitle">Transparente Darstellung der Cloud-Provider Bewertungen</p>
+            </div>
+        </header>
+
+        <!-- Main -->
+        <main class="main">
+            <div class="container criteria-page-container">
+
+                <!-- Navigation -->
+                <div class="criteria-nav">
+                    <a href="#uebersicht" class="criteria-nav-link active">Übersicht</a>
+                    <a href="#kontrolle" class="criteria-nav-link">Kontrolle</a>
+                    <a href="#leistung" class="criteria-nav-link">Leistung</a>
+                    <a href="#verfuegbarkeit" class="criteria-nav-link">Verfügbarkeit</a>
+                    <a href="#kosten" class="criteria-nav-link">Kosten</a>
+                    <a href="#provider" class="criteria-nav-link">Provider-Details</a>
+                </div>
+
+                <!-- Übersicht -->
+                <section id="uebersicht" class="criteria-section">
+                    <h2 class="section-title">
+                        <i class="fa-solid fa-info-circle"></i> Wie funktioniert die Bewertung?
+                    </h2>
+                    <div class="intro-card">
+                        <p>
+                            Der Sovereign Architecture Advisor bewertet Cloud-Anbieter anhand von vier Hauptkriterien,
+                            die gewichtet in den Gesamt-Score einfließen. Jeder Provider erhält für jedes Kriterium
+                            einen Score zwischen 0 und 100 Punkten.
+                        </p>
+                        <div class="formula-box">
+                            <h4>Berechnungsformel</h4>
+                            <code class="formula">
+                                Gesamt-Score = (Kontrolle × Gewicht₁) +<br>
+                                               (Leistung × Gewicht₂) +<br>
+                                               (Verfügbarkeit × Gewicht₃) +<br>
+                                               (Kosteneffizienz × Gewicht₄)
+                            </code>
+                            <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.9;">
+                                Gewicht₁₋₄ = Individuelle Gewichtungen für die vier Kriterien (z.B. 40%, 25%, 20%, 15%)
+                            </p>
+                        </div>
+                        <p class="note">
+                            <i class="fa-solid fa-lightbulb"></i>
+                            <strong>Wichtig:</strong> Die Gewichtung kann in den Einstellungen angepasst werden,
+                            um verschiedene Anforderungen abzubilden (z.B. "Maximale Souveränität" vs. "Performance First").
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Kontrolle & Souveränität -->
+                <section id="kontrolle" class="criteria-section">
+                    <h2 class="section-title">
+                        <i class="fa-solid fa-lock"></i> 1. Kontrolle & Souveränität
+                    </h2>
+                    <div class="criteria-card">
+                        <div class="criteria-intro">
+                            <p>
+                                Bewertet die Datensouveränität und rechtliche Kontrolle über Ihre Infrastruktur.
+                                Dieser Score basiert auf der Analyse von Jurisdiktion, DSGVO-Konformität und Vendor Lock-in Risiko.
+                            </p>
+                        </div>
+
+                        <h3><i class="fa-solid fa-list-check"></i> Bewertungsfaktoren</h3>
+                        <div class="factors-grid">
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #5A67D8;">
+                                    <i class="fa-solid fa-gavel"></i>
+                                </div>
+                                <h4>Jurisdiktion & Rechtsraum</h4>
+                                <p>In welchem Rechtsraum operiert der Anbieter?</p>
+                                <ul>
+                                    <li><strong>Deutschland:</strong> Höchste Kontrolle (+30 Punkte)</li>
+                                    <li><strong>EU:</strong> Hohe Kontrolle, DSGVO-konform (+20 Punkte)</li>
+                                    <li><strong>Schweiz:</strong> Gute Kontrolle (+15 Punkte)</li>
+                                    <li><strong>USA/Global:</strong> Eingeschränkte Kontrolle (0 Punkte)</li>
+                                </ul>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #10B981;">
+                                    <i class="fa-solid fa-shield-halved"></i>
+                                </div>
+                                <h4>DSGVO-Konformität</h4>
+                                <p>Einhaltung europäischer Datenschutzstandards</p>
+                                <ul>
+                                    <li><strong>Native DSGVO:</strong> Provider in EU (+25 Punkte)</li>
+                                    <li><strong>DSGVO-zertifiziert:</strong> US-Provider mit EU-Garantien (+10 Punkte)</li>
+                                    <li><strong>Standard-Maßnahmen:</strong> Basis-Compliance (0 Punkte)</li>
+                                </ul>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #F59E0B;">
+                                    <i class="fa-solid fa-lock-open"></i>
+                                </div>
+                                <h4>Vendor Lock-in Risiko</h4>
+                                <p>Wie einfach ist ein Anbieterwechsel?</p>
+                                <ul>
+                                    <li><strong>Open Source:</strong> OpenStack, Kubernetes-native (+20 Punkte)</li>
+                                    <li><strong>Standard-APIs:</strong> Kompatible Schnittstellen (+10 Punkte)</li>
+                                    <li><strong>Proprietary:</strong> Proprietäre Services (0 Punkte, -10 für AWS Lambda, etc.)</li>
+                                </ul>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #8B5CF6;">
+                                    <i class="fa-solid fa-building"></i>
+                                </div>
+                                <h4>Eigentümerstruktur</h4>
+                                <p>Wem gehört der Cloud-Provider?</p>
+                                <ul>
+                                    <li><strong>Deutsche Eigentümer:</strong> +15 Punkte</li>
+                                    <li><strong>EU-Eigentümer:</strong> +10 Punkte</li>
+                                    <li><strong>US-Konzern:</strong> 0 Punkte</li>
+                                </ul>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #EC4899;">
+                                    <i class="fa-solid fa-eye"></i>
+                                </div>
+                                <h4>Transparenz & Zugriffe</h4>
+                                <p>Offenheit über Datenverarbeitung</p>
+                                <ul>
+                                    <li><strong>Volle Transparenz:</strong> Offenlegung aller Zugriffe (+10 Punkte)</li>
+                                    <li><strong>Standard-Reporting:</strong> Basis-Transparenz (+5 Punkte)</li>
+                                    <li><strong>Intransparent:</strong> Keine Offenlegung (0 Punkte)</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <h3><i class="fa-solid fa-chart-line"></i> Provider-Scores im Detail</h3>
+                        <div id="controlScoresTable"></div>
+                    </div>
+                </section>
+
+                <!-- Leistung & Service-Umfang -->
+                <section id="leistung" class="criteria-section">
+                    <h2 class="section-title">
+                        <i class="fa-solid fa-bolt"></i> 2. Leistung & Service-Umfang
+                    </h2>
+                    <div class="criteria-card">
+                        <div class="criteria-intro">
+                            <p>
+                                Misst die technische Leistungsfähigkeit und den Reifegrad der Services.
+                                Dieser Score basiert auf der Analyse von Service-Portfolio, Reife und Innovation.
+                            </p>
+                        </div>
+
+                        <h3><i class="fa-solid fa-list-check"></i> Bewertungsfaktoren</h3>
+                        <div class="factors-grid">
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #F59E0B;">
+                                    <i class="fa-solid fa-box"></i>
+                                </div>
+                                <h4>Service-Portfolio Umfang</h4>
+                                <p>Anzahl und Vielfalt der Services</p>
+                                <ul>
+                                    <li><strong>Hyperscaler:</strong> 200+ Services (+40 Punkte)</li>
+                                    <li><strong>Umfangreich:</strong> 50-100 Services (+30 Punkte)</li>
+                                    <li><strong>Basis:</strong> 20-50 Services (+20 Punkte)</li>
+                                    <li><strong>Minimal:</strong> &lt;20 Services (+10 Punkte)</li>
+                                </ul>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #10B981;">
+                                    <i class="fa-solid fa-check-circle"></i>
+                                </div>
+                                <h4>Service-Reife (Maturity)</h4>
+                                <p>GA vs. Preview/Beta Services</p>
+                                <ul>
+                                    <li><strong>GA (Generally Available):</strong> Produktiv einsetzbar (+20 Punkte)</li>
+                                    <li><strong>Preview/Beta:</strong> Eingeschränkt verfügbar (+10 Punkte)</li>
+                                    <li><strong>Planned:</strong> Nur angekündigt (0 Punkte)</li>
+                                </ul>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #8B5CF6;">
+                                    <i class="fa-solid fa-arrow-up-right-dots"></i>
+                                </div>
+                                <h4>Skalierbarkeit & Performance</h4>
+                                <p>Auto-Scaling, globale Verfügbarkeit</p>
+                                <ul>
+                                    <li><strong>Global:</strong> Mehrere Regionen weltweit (+15 Punkte)</li>
+                                    <li><strong>Regional:</strong> EU/Deutschland (+10 Punkte)</li>
+                                    <li><strong>Lokal:</strong> Einzelner Standort (+5 Punkte)</li>
+                                </ul>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #EF4444;">
+                                    <i class="fa-solid fa-robot"></i>
+                                </div>
+                                <h4>Innovation & KI/ML</h4>
+                                <p>Moderne Cloud-native Tools</p>
+                                <ul>
+                                    <li><strong>Führend:</strong> Eigene KI/ML-Services (+15 Punkte)</li>
+                                    <li><strong>Standard:</strong> Basis KI-Integration (+8 Punkte)</li>
+                                    <li><strong>Keine:</strong> Keine KI-Services (0 Punkte)</li>
+                                </ul>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #06B6D4;">
+                                    <i class="fa-solid fa-puzzle-piece"></i>
+                                </div>
+                                <h4>Ökosystem & Integration</h4>
+                                <p>Partner, Marketplace, Tools</p>
+                                <ul>
+                                    <li><strong>Umfangreich:</strong> Großer Marketplace (+10 Punkte)</li>
+                                    <li><strong>Solide:</strong> Partner-Integration (+5 Punkte)</li>
+                                    <li><strong>Begrenzt:</strong> Basis-Integration (0 Punkte)</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <h3><i class="fa-solid fa-chart-line"></i> Provider-Scores im Detail</h3>
+                        <div id="performanceScoresTable"></div>
+                    </div>
+                </section>
+
+                <!-- Verfügbarkeit & Service-Abdeckung -->
+                <section id="verfuegbarkeit" class="criteria-section">
+                    <h2 class="section-title">
+                        <i class="fa-solid fa-box"></i> 3. Verfügbarkeit & Service-Abdeckung
+                    </h2>
+                    <div class="criteria-card">
+                        <div class="criteria-intro">
+                            <p>
+                                Anteil der benötigten Services, die bei einem Anbieter verfügbar sind.
+                                Dieser Score wird dynamisch basierend auf Ihrer Architektur-Auswahl berechnet.
+                            </p>
+                        </div>
+
+                        <div class="formula-box">
+                            <h4>Berechnungsformel</h4>
+                            <code class="formula">
+                                Coverage = (Verfügbare Services + Preview-Services × 0.5) / Benötigte Services × 100%
+                            </code>
+                        </div>
+
+                        <h3><i class="fa-solid fa-list-check"></i> Bewertungsfaktoren</h3>
+                        <div class="factors-grid">
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #10B981;">
+                                    <i class="fa-solid fa-check"></i>
+                                </div>
+                                <h4>Verfügbare Services (GA)</h4>
+                                <p>Produktiv einsetzbare Services</p>
+                                <ul>
+                                    <li>Zählen zu <strong>100%</strong> zur Coverage</li>
+                                    <li>Fully managed und produktiv verfügbar</li>
+                                    <li>SLA-Garantien vorhanden</li>
+                                </ul>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #F59E0B;">
+                                    <i class="fa-solid fa-flask"></i>
+                                </div>
+                                <h4>Preview/Beta Services</h4>
+                                <p>Services in Entwicklung</p>
+                                <ul>
+                                    <li>Zählen zu <strong>50%</strong> zur Coverage</li>
+                                    <li>Eingeschränkte SLA-Garantien</li>
+                                    <li>Höheres Risiko für Breaking Changes</li>
+                                </ul>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #8B5CF6;">
+                                    <i class="fa-solid fa-calendar"></i>
+                                </div>
+                                <h4>Planned Services</h4>
+                                <p>Angekündigte Services</p>
+                                <ul>
+                                    <li>Zählen zu <strong>0%</strong> zur Coverage</li>
+                                    <li>Nur Roadmap-Information</li>
+                                    <li>Verfügbarkeit ungewiss</li>
+                                </ul>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #EF4444;">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </div>
+                                <h4>Fehlende Services</h4>
+                                <p>Self-Build erforderlich</p>
+                                <ul>
+                                    <li>Zählen zu <strong>0%</strong> zur Coverage</li>
+                                    <li>Erhöhter Projektaufwand</li>
+                                    <li>Höherer Betriebsaufwand</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="example-box">
+                            <h4><i class="fa-solid fa-calculator"></i> Berechnungsbeispiel</h4>
+                            <p><strong>Szenario:</strong> Ihre Architektur benötigt 10 Services</p>
+                            <ul>
+                                <li>8 Services sind verfügbar (GA)</li>
+                                <li>2 Services sind in Preview</li>
+                                <li>0 Services fehlen</li>
+                            </ul>
+                            <p class="calculation">
+                                Coverage = (8 + 2 × 0.5) / 10 × 100% = <strong>90%</strong>
+                            </p>
+                        </div>
+
+                        <p class="note">
+                            <i class="fa-solid fa-info-circle"></i>
+                            <strong>Hinweis:</strong> Der Verfügbarkeits-Score ist dynamisch und hängt von Ihrer
+                            spezifischen Architektur-Auswahl ab. Ein Provider mit 100% Coverage für Ihre Anwendung
+                            kann für eine andere Architektur nur 60% erreichen.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Kosten & Preisfaktoren -->
+                <section id="kosten" class="criteria-section">
+                    <h2 class="section-title">
+                        <i class="fa-solid fa-coins"></i> 4. Kosten & Preisfaktoren
+                    </h2>
+                    <div class="criteria-card">
+                        <div class="criteria-intro">
+                            <p>
+                                Die Kostenberechnung basiert auf <strong>Preisfaktoren</strong>, die für jeden Provider
+                                und Service hinterlegt sind. Diese Faktoren sind relativ zu AWS (Referenz = 1.0) und
+                                spiegeln Marktpreise wider.
+                            </p>
+                        </div>
+
+                        <div class="important-note">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <strong>Wichtig:</strong> Die Kosten werden nicht als statischer Score bewertet, sondern
+                            dynamisch basierend auf Ihrer Konfiguration berechnet. Der Kosten-Score vergleicht die
+                            Provider relativ zueinander (günstigster = 100 Punkte, teuerster = 30 Punkte).
+                        </div>
+
+                        <h3><i class="fa-solid fa-chart-bar"></i> Preisfaktoren pro Provider</h3>
+                        <div id="pricingFactorsTable"></div>
+
+                        <h3><i class="fa-solid fa-calculator"></i> TCO-Dimensionen</h3>
+                        <div class="factors-grid">
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #5AA6E7;">
+                                    <i class="fa-solid fa-cloud"></i>
+                                </div>
+                                <h4>1. Verbrauchskosten (Consumption)</h4>
+                                <p>Monatliche Cloud-Infrastruktur-Kosten</p>
+                                <ul>
+                                    <li>Compute (VMs, Container)</li>
+                                    <li>Storage (Object, Block, File)</li>
+                                    <li>Datenbanken (SQL, NoSQL)</li>
+                                    <li>Networking (Load Balancer, CDN)</li>
+                                    <li>Managed Services</li>
+                                </ul>
+                                <p class="factor-note">
+                                    <strong>Berechnung:</strong> Service-Kosten × Preisfaktor des Providers
+                                </p>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #10B981;">
+                                    <i class="fa-solid fa-users"></i>
+                                </div>
+                                <h4>2. Betriebsaufwand (Operations)</h4>
+                                <p>FTE-Kosten für laufenden Betrieb</p>
+                                <ul>
+                                    <li>Monitoring & Alerting</li>
+                                    <li>Updates & Patches</li>
+                                    <li>Incident Response</li>
+                                    <li>Backup & Recovery</li>
+                                    <li>Self-Build Service Management</li>
+                                </ul>
+                                <p class="factor-note">
+                                    <strong>Schätzung:</strong> ~8.000€/Monat pro FTE<br>
+                                    Managed Services = weniger FTE, Self-Build = mehr FTE
+                                </p>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #F59E0B;">
+                                    <i class="fa-solid fa-calendar-days"></i>
+                                </div>
+                                <h4>3. Projektaufwand (Project Effort)</h4>
+                                <p>Initiale Setup-Kosten</p>
+                                <ul>
+                                    <li>Infrastruktur-Setup</li>
+                                    <li>Service-Konfiguration</li>
+                                    <li>Migration & Deployment</li>
+                                    <li>Testing & Validierung</li>
+                                    <li>Self-Build Implementierung</li>
+                                </ul>
+                                <p class="factor-note">
+                                    <strong>Schätzung:</strong> ~800€ pro Personentag<br>
+                                    Self-Build Services erhöhen Projektaufwand erheblich
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="example-box">
+                            <h4><i class="fa-solid fa-calculator"></i> Kostenbeispiel</h4>
+                            <div class="cost-example">
+                                <div class="provider-cost-example">
+                                    <h5>Provider A (AWS - Faktor 1.0)</h5>
+                                    <ul>
+                                        <li>Compute: 4 vCPU, 16 GB RAM = 200€</li>
+                                        <li>Database: PostgreSQL 100 GB = 130€</li>
+                                        <li>Storage: 500 GB Object Storage = 12€</li>
+                                    </ul>
+                                    <p class="total">Verbrauch: <strong>342€/Monat</strong></p>
+                                </div>
+                                <div class="provider-cost-example">
+                                    <h5>Provider B (OVH - Faktor 0.75)</h5>
+                                    <ul>
+                                        <li>Compute: 4 vCPU, 16 GB RAM = 150€ <span class="factor">(200€ × 0.75)</span></li>
+                                        <li>Database: PostgreSQL 100 GB = 98€ <span class="factor">(130€ × 0.75)</span></li>
+                                        <li>Storage: 500 GB Object Storage = 9€ <span class="factor">(12€ × 0.75)</span></li>
+                                    </ul>
+                                    <p class="total">Verbrauch: <strong>257€/Monat</strong> <span class="savings">(25% günstiger)</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Provider-Details -->
+                <section id="provider" class="criteria-section">
+                    <h2 class="section-title">
+                        <i class="fa-solid fa-cloud"></i> Cloud-Provider im Detail
+                    </h2>
+                    <div class="criteria-card">
+                        <p>
+                            Detaillierte Übersicht aller bewerteten Cloud-Provider mit ihren Scores und Preisfaktoren.
+                        </p>
+                        <div id="providerDetailsTable"></div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <img src="btc-logo.png" alt="BTC AG Logo" class="footer-logo">
+                <p class="footer-text">
+                    Ihr Partner für souveräne Cloud-Transformation |
+                    <a href="https://www.btc-ag.com/digital-sovereignty" class="footer-link">Mehr über Go Sovereign!</a>
+                </p>
+            </div>
+        </footer>
+
+        <!-- Edit Provider Modal -->
+        <div class="edit-modal-overlay" id="editModalOverlay">
+            <div class="edit-modal">
+                <div class="edit-modal-header">
+                    <h3 id="editModalTitle">Provider bearbeiten</h3>
+                    <button class="edit-modal-close" onclick="criteriaPage.closeEditModal()">&times;</button>
+                </div>
+                <div class="edit-modal-content" id="editModalContent">
+                    <!-- Dynamisch gefüllt -->
+                </div>
+                <div class="edit-modal-footer">
+                    <button class="btn-secondary" onclick="criteriaPage.closeEditModal()">Abbrechen</button>
+                    <button class="btn-primary" onclick="criteriaPage.saveProviderScores()">Speichern</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating Action Button for Reset -->
+        <!-- Floating Back to Advisor Button -->
+        <div class="floating-back-btn">
+            <a href="Sovereign_Architecture_Advisor.html" title="Zurück zum Advisor">
+                <i class="fa-solid fa-arrow-left"></i> Zurück zum Advisor
+            </a>
+        </div>
+
+        <div class="floating-reset-btn" id="floatingResetBtn" style="display: none;">
+            <button onclick="criteriaPage.showResetConfirmation()" title="Alle Änderungen zurücksetzen">
+                <i class="fa-solid fa-rotate-left"></i> Zurück zum Standard
+            </button>
+        </div>
+
+        <!-- Reset Confirmation Modal -->
+        <div class="confirmation-modal-overlay" id="resetConfirmationOverlay">
+            <div class="confirmation-modal">
+                <div class="confirmation-icon">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h3>Alle Änderungen zurücksetzen?</h3>
+                <p>Alle individuellen Anpassungen an den Provider-Scores werden auf die Standard-Werte zurückgesetzt.</p>
+                <div class="confirmation-actions">
+                    <button class="btn-secondary" onclick="criteriaPage.closeResetConfirmation()">Abbrechen</button>
+                    <button class="btn-danger" onclick="criteriaPage.confirmReset()">Zurücksetzen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Management -->
+    <script>
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        initTheme();
+    </script>
+
+    <!-- Data Module -->
+    <script src="saa-data.js"></script>
+    <!-- Criteria Page Logic -->
+    <script src="criteria-page.js"></script>
+</body>
+</html>
