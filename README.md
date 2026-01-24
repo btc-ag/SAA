@@ -131,15 +131,34 @@ In `saa-data.js` unter `cloudProviders` einen neuen Eintrag anlegen:
 ```
 
 ### Neue Applikationen hinzufügen
-In `saa-data.js` unter `applicationProfiles` ergänzen:
+In `saa-data.js` eine neue Applikation ergänzen:
 
 ```javascript
-{
-    id: 'neue_app',
+'app-id': {
     name: 'Neue Applikation',
-    category: 'custom',
     description: 'Beschreibung der Applikation',
-    components: ['compute_vm', 'storage_block', 'network_vpc']
+    components: ['compute', 'storage_block', 'database_sql', 'dns'],
+    systemRequirements: {
+        small: {
+            users: '1-100',
+            compute: { cpu: 2, ram: 8 },
+            storage: { type: 'SSD', size: '100GB' }
+        },
+        medium: {
+            users: '100-1000',
+            compute: { cpu: 4, ram: 16 },
+            storage: { type: 'SSD', size: '500GB' }
+        },
+        large: {
+            users: '1000+',
+            compute: { cpu: 8, ram: 32 },
+            storage: { type: 'SSD', size: '1TB+' }
+        }
+    },
+    sizing: {
+        note: 'Zusätzliche Sizing-Hinweise',
+        source: 'https://...'
+    }
 }
 ```
 
