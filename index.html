@@ -14,6 +14,52 @@
     <link rel="stylesheet" href="saa-styles.css">
 </head>
 <body>
+    <!-- Mobile Navigation Overlay -->
+    <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileNav()"></div>
+
+    <!-- Mobile Navigation Drawer -->
+    <nav class="mobile-nav-drawer" id="mobileNavDrawer">
+        <div class="drawer-header">
+            <img src="btc-logo.png" alt="BTC AG Logo" class="drawer-logo">
+            <button class="drawer-close" onclick="closeMobileNav()" aria-label="Menü schließen">
+                &times;
+            </button>
+        </div>
+        <div class="drawer-content">
+            <span class="drawer-section-label">Navigation</span>
+            <a href="evaluation-criteria.html" class="drawer-nav-link">
+                <i class="fas fa-clipboard-list"></i>
+                Bewertungskriterien
+            </a>
+            <a href="https://btc-ag.github.io/SCC/" class="drawer-nav-link">
+                <i class="fas fa-compass"></i>
+                Cloud Compass
+            </a>
+            <div class="drawer-divider"></div>
+            <span class="drawer-section-label">Einstellungen</span>
+            <a href="#" class="drawer-nav-link" onclick="closeMobileNav(); document.getElementById('settingsBtn').click(); return false;">
+                <i class="fas fa-sliders"></i>
+                Algorithmus-Einstellungen
+            </a>
+            <div class="drawer-divider"></div>
+            <span class="drawer-section-label">Kontakt</span>
+            <a href="https://outlook.office.com/book/BTCAGManagedCloudServices@btcag.onmicrosoft.com/s/U1HPjhE9b0qdW-uTHThOSw2?ismsaljsauthenabled" target="_blank" class="drawer-nav-link primary">
+                <i class="fas fa-calendar-check"></i>
+                Beratungstermin
+            </a>
+            <a href="https://www.btc-ag.com/digital-sovereignty" target="_blank" class="drawer-nav-link">
+                <i class="fas fa-shield-alt"></i>
+                Go Sovereign!
+            </a>
+        </div>
+        <div class="drawer-footer">
+            <div class="drawer-theme-toggle">
+                <span class="drawer-theme-label">Dark Mode</span>
+                <div class="theme-toggle" onclick="toggleTheme()" role="button" aria-label="Toggle dark mode"></div>
+            </div>
+        </div>
+    </nav>
+
     <!-- Main Content (kein Password-Overlay für SAA) -->
     <div class="protected-content unlocked">
         <!-- Header -->
@@ -24,19 +70,30 @@
                         <img src="btc-logo.png" alt="BTC AG Logo" class="logo-img">
                     </a>
                     <div class="header-actions">
-                        <button id="showInfoBtn" class="btn btn-icon" title="Hinweis einblenden" style="display: none;" onclick="showInfoBanner()">
-                            <i class="fa-solid fa-info-circle"></i>
+                        <!-- Desktop Navigation -->
+                        <div class="desktop-nav">
+                            <button id="showInfoBtn" class="btn btn-icon" title="Hinweis einblenden" style="display: none;" onclick="showInfoBanner()">
+                                <i class="fa-solid fa-info-circle"></i>
+                            </button>
+                            <button id="settingsBtn" class="btn btn-icon" title="Einstellungen & Algorithmus">
+                                <i class="fa-solid fa-sliders"></i>
+                            </button>
+                            <div class="theme-toggle" onclick="toggleTheme()" role="button" aria-label="Toggle dark mode"></div>
+                            <a href="https://btc-ag.github.io/SCC/" class="btn btn-secondary">
+                                Cloud Compass
+                            </a>
+                            <a href="https://outlook.office.com/book/BTCAGManagedCloudServices@btcag.onmicrosoft.com/s/U1HPjhE9b0qdW-uTHThOSw2?ismsaljsauthenabled" target="_blank" class="btn btn-primary">
+                                Beratung
+                            </a>
+                        </div>
+                        <!-- Mobile Burger Menu Toggle -->
+                        <button class="burger-menu-toggle" id="burgerMenuToggle" onclick="toggleMobileNav()" aria-label="Menü öffnen">
+                            <span class="burger-icon">
+                                <span class="burger-line"></span>
+                                <span class="burger-line"></span>
+                                <span class="burger-line"></span>
+                            </span>
                         </button>
-                        <button id="settingsBtn" class="btn btn-icon" title="Einstellungen & Algorithmus">
-                            <i class="fa-solid fa-sliders"></i>
-                        </button>
-                        <div class="theme-toggle" onclick="toggleTheme()" role="button" aria-label="Toggle dark mode"></div>
-                        <a href="https://btc-ag.github.io/SCC/" class="btn btn-secondary">
-                            Cloud Compass
-                        </a>
-                        <a href="https://outlook.office.com/book/BTCAGManagedCloudServices@btcag.onmicrosoft.com/s/U1HPjhE9b0qdW-uTHThOSw2?ismsaljsauthenabled" target="_blank" class="btn btn-primary">
-                            Beratung
-                        </a>
                     </div>
                 </nav>
                 <h1 class="header-title">Sovereign Architecture Advisor</h1>
@@ -612,6 +669,49 @@
 
         initTheme();
         initInfoBanner();
+
+        // Mobile Navigation Management
+        function toggleMobileNav() {
+            const drawer = document.getElementById('mobileNavDrawer');
+            const overlay = document.getElementById('mobileNavOverlay');
+            const toggle = document.getElementById('burgerMenuToggle');
+
+            const isOpen = drawer.classList.contains('open');
+
+            if (isOpen) {
+                closeMobileNav();
+            } else {
+                drawer.classList.add('open');
+                overlay.classList.add('visible');
+                toggle.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeMobileNav() {
+            const drawer = document.getElementById('mobileNavDrawer');
+            const overlay = document.getElementById('mobileNavOverlay');
+            const toggle = document.getElementById('burgerMenuToggle');
+
+            drawer.classList.remove('open');
+            overlay.classList.remove('visible');
+            toggle.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close mobile nav on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeMobileNav();
+            }
+        });
+
+        // Close mobile nav on window resize to desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 992) {
+                closeMobileNav();
+            }
+        });
     </script>
 
     <!-- Data Module -->

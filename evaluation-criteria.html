@@ -16,6 +16,68 @@
     <link rel="stylesheet" href="criteria-styles.css">
 </head>
 <body>
+    <!-- Mobile Navigation Overlay -->
+    <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileNav()"></div>
+
+    <!-- Mobile Navigation Drawer -->
+    <nav class="mobile-nav-drawer" id="mobileNavDrawer">
+        <div class="drawer-header">
+            <img src="btc-logo.png" alt="BTC AG Logo" class="drawer-logo">
+            <button class="drawer-close" onclick="closeMobileNav()" aria-label="Menü schließen">
+                &times;
+            </button>
+        </div>
+        <div class="drawer-content">
+            <span class="drawer-section-label">Navigation</span>
+            <a href="index.html" class="drawer-nav-link">
+                <i class="fas fa-home"></i>
+                Zurück zum Advisor
+            </a>
+            <a href="https://btc-ag.github.io/SCC/" class="drawer-nav-link">
+                <i class="fas fa-compass"></i>
+                Cloud Compass
+            </a>
+            <div class="drawer-divider"></div>
+            <span class="drawer-section-label">Auf dieser Seite</span>
+            <a href="#uebersicht" class="drawer-nav-link" onclick="closeMobileNav()">
+                <i class="fas fa-info-circle"></i>
+                Übersicht
+            </a>
+            <a href="#kontrolle" class="drawer-nav-link" onclick="closeMobileNav()">
+                <i class="fas fa-lock"></i>
+                Kontrolle & Souveränität
+            </a>
+            <a href="#leistung" class="drawer-nav-link" onclick="closeMobileNav()">
+                <i class="fas fa-bolt"></i>
+                Leistung & Service-Umfang
+            </a>
+            <a href="#verfuegbarkeit" class="drawer-nav-link" onclick="closeMobileNav()">
+                <i class="fas fa-box"></i>
+                Verfügbarkeit
+            </a>
+            <a href="#kosten" class="drawer-nav-link" onclick="closeMobileNav()">
+                <i class="fas fa-coins"></i>
+                Kosten
+            </a>
+            <a href="#provider" class="drawer-nav-link" onclick="closeMobileNav()">
+                <i class="fas fa-cloud"></i>
+                Provider-Details
+            </a>
+            <div class="drawer-divider"></div>
+            <span class="drawer-section-label">Kontakt</span>
+            <a href="https://outlook.office.com/book/BTCAGManagedCloudServices@btcag.onmicrosoft.com/s/U1HPjhE9b0qdW-uTHThOSw2?ismsaljsauthenabled" target="_blank" class="drawer-nav-link primary">
+                <i class="fas fa-calendar-check"></i>
+                Beratungstermin
+            </a>
+        </div>
+        <div class="drawer-footer">
+            <div class="drawer-theme-toggle">
+                <span class="drawer-theme-label">Dark Mode</span>
+                <div class="theme-toggle" onclick="toggleTheme()" role="button" aria-label="Toggle dark mode"></div>
+            </div>
+        </div>
+    </nav>
+
     <div class="protected-content unlocked">
         <!-- Header -->
         <header class="header">
@@ -25,16 +87,27 @@
                         <img src="btc-logo.png" alt="BTC AG Logo" class="logo-img">
                     </a>
                     <div class="header-actions">
-                        <div class="theme-toggle" onclick="toggleTheme()" role="button" aria-label="Toggle dark mode"></div>
-                        <a href="index.html" class="btn btn-secondary">
-                            <i class="fa-solid fa-arrow-left"></i> Zurück zum Advisor
-                        </a>
-                        <a href="https://btc-ag.github.io/SCC/" class="btn btn-secondary">
-                            Cloud Compass
-                        </a>
-                        <a href="https://outlook.office.com/book/BTCAGManagedCloudServices@btcag.onmicrosoft.com/s/U1HPjhE9b0qdW-uTHThOSw2?ismsaljsauthenabled" target="_blank" class="btn btn-primary">
-                            Beratung
-                        </a>
+                        <!-- Desktop Navigation -->
+                        <div class="desktop-nav">
+                            <div class="theme-toggle" onclick="toggleTheme()" role="button" aria-label="Toggle dark mode"></div>
+                            <a href="index.html" class="btn btn-secondary">
+                                <i class="fa-solid fa-arrow-left"></i> Zurück zum Advisor
+                            </a>
+                            <a href="https://btc-ag.github.io/SCC/" class="btn btn-secondary">
+                                Cloud Compass
+                            </a>
+                            <a href="https://outlook.office.com/book/BTCAGManagedCloudServices@btcag.onmicrosoft.com/s/U1HPjhE9b0qdW-uTHThOSw2?ismsaljsauthenabled" target="_blank" class="btn btn-primary">
+                                Beratung
+                            </a>
+                        </div>
+                        <!-- Mobile Burger Menu Toggle -->
+                        <button class="burger-menu-toggle" id="burgerMenuToggle" onclick="toggleMobileNav()" aria-label="Menü öffnen">
+                            <span class="burger-icon">
+                                <span class="burger-line"></span>
+                                <span class="burger-line"></span>
+                                <span class="burger-line"></span>
+                            </span>
+                        </button>
                     </div>
                 </nav>
                 <h1 class="header-title">Bewertungskriterien & Methodik</h1>
@@ -46,7 +119,7 @@
         <main class="main">
             <div class="container criteria-page-container">
 
-                <!-- Navigation -->
+                <!-- Desktop Navigation -->
                 <div class="criteria-nav">
                     <a href="#uebersicht" class="criteria-nav-link active">Übersicht</a>
                     <a href="#kontrolle" class="criteria-nav-link">Kontrolle</a>
@@ -54,6 +127,30 @@
                     <a href="#verfuegbarkeit" class="criteria-nav-link">Verfügbarkeit</a>
                     <a href="#kosten" class="criteria-nav-link">Kosten</a>
                     <a href="#provider" class="criteria-nav-link">Provider-Details</a>
+                </div>
+
+                <!-- Mobile Section Navigation (Tabs) - Tablet -->
+                <div class="mobile-criteria-tabs" id="mobileCriteriaTabs">
+                    <div class="mobile-criteria-tabs-inner">
+                        <a href="#uebersicht" class="mobile-criteria-tab active" data-section="uebersicht">Übersicht</a>
+                        <a href="#kontrolle" class="mobile-criteria-tab" data-section="kontrolle">Kontrolle</a>
+                        <a href="#leistung" class="mobile-criteria-tab" data-section="leistung">Leistung</a>
+                        <a href="#verfuegbarkeit" class="mobile-criteria-tab" data-section="verfuegbarkeit">Verfügbarkeit</a>
+                        <a href="#kosten" class="mobile-criteria-tab" data-section="kosten">Kosten</a>
+                        <a href="#provider" class="mobile-criteria-tab" data-section="provider">Provider</a>
+                    </div>
+                </div>
+
+                <!-- Mobile Section Navigation (Dropdown) - Phone -->
+                <div class="mobile-section-nav" id="mobileSectionNav">
+                    <select class="mobile-section-selector" id="mobileSectionSelector" onchange="navigateToSection(this.value)">
+                        <option value="uebersicht">Übersicht</option>
+                        <option value="kontrolle">Kontrolle & Souveränität</option>
+                        <option value="leistung">Leistung & Service-Umfang</option>
+                        <option value="verfuegbarkeit">Verfügbarkeit</option>
+                        <option value="kosten">Kosten & Preisfaktoren</option>
+                        <option value="provider">Provider-Details</option>
+                    </select>
                 </div>
 
                 <!-- Übersicht -->
@@ -556,6 +653,113 @@
         }
 
         initTheme();
+
+        // Mobile Navigation Management
+        function toggleMobileNav() {
+            const drawer = document.getElementById('mobileNavDrawer');
+            const overlay = document.getElementById('mobileNavOverlay');
+            const toggle = document.getElementById('burgerMenuToggle');
+
+            const isOpen = drawer.classList.contains('open');
+
+            if (isOpen) {
+                closeMobileNav();
+            } else {
+                drawer.classList.add('open');
+                overlay.classList.add('visible');
+                toggle.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeMobileNav() {
+            const drawer = document.getElementById('mobileNavDrawer');
+            const overlay = document.getElementById('mobileNavOverlay');
+            const toggle = document.getElementById('burgerMenuToggle');
+
+            drawer.classList.remove('open');
+            overlay.classList.remove('visible');
+            toggle.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close mobile nav on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeMobileNav();
+            }
+        });
+
+        // Close mobile nav on window resize to desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 992) {
+                closeMobileNav();
+            }
+        });
+
+        // Mobile Section Navigation
+        function navigateToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth' });
+                updateMobileNavState(sectionId);
+            }
+        }
+
+        function updateMobileNavState(sectionId) {
+            // Update dropdown
+            const selector = document.getElementById('mobileSectionSelector');
+            if (selector) {
+                selector.value = sectionId;
+            }
+
+            // Update tabs
+            const tabs = document.querySelectorAll('.mobile-criteria-tab');
+            tabs.forEach(tab => {
+                if (tab.dataset.section === sectionId) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+        }
+
+        // Mobile Tabs Click Handler
+        document.querySelectorAll('.mobile-criteria-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                const sectionId = tab.dataset.section;
+                navigateToSection(sectionId);
+            });
+        });
+
+        // Scroll Spy for Mobile Navigation
+        function initMobileScrollSpy() {
+            const sections = ['uebersicht', 'kontrolle', 'leistung', 'verfuegbarkeit', 'kosten', 'provider'];
+            const observerOptions = {
+                root: null,
+                rootMargin: '-20% 0px -70% 0px',
+                threshold: 0
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        updateMobileNavState(entry.target.id);
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(sectionId => {
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    observer.observe(section);
+                }
+            });
+        }
+
+        // Initialize mobile scroll spy when DOM is ready
+        document.addEventListener('DOMContentLoaded', initMobileScrollSpy);
     </script>
 
     <!-- Data Module -->
