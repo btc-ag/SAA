@@ -25,7 +25,7 @@ Ein interaktiver Wizard zur Bewertung und Empfehlung souveräner Cloud-Architekt
 - Open Telekom Cloud (T-Systems)
 - IONOS Cloud (United Internet)
 - AWS European Sovereign Cloud (ESC)
-- Microsoft DELOS Cloud (T-Systems)
+- Microsoft Cloud for Sovereignty (DELOS)
 
 ### Private Cloud
 - OpenStack Private Cloud (Self-Managed)
