@@ -21,9 +21,12 @@
     <nav class="mobile-nav-drawer" id="mobileNavDrawer">
         <div class="drawer-header">
             <img src="btc-logo.png" alt="BTC AG Logo" class="drawer-logo">
-            <button class="drawer-close" onclick="closeMobileNav()" aria-label="Menü schließen">
-                &times;
-            </button>
+            <div class="drawer-header-actions">
+                <div class="theme-toggle" onclick="toggleTheme()" role="button" aria-label="Toggle dark mode"></div>
+                <button class="drawer-close" onclick="closeMobileNav()" aria-label="Menü schließen">
+                    &times;
+                </button>
+            </div>
         </div>
         <div class="drawer-content">
             <span class="drawer-section-label">Navigation</span>
@@ -51,12 +54,6 @@
                 <i class="fas fa-shield-alt"></i>
                 Go Sovereign!
             </a>
-        </div>
-        <div class="drawer-footer">
-            <div class="drawer-theme-toggle">
-                <span class="drawer-theme-label">Dark Mode</span>
-                <div class="theme-toggle" onclick="toggleTheme()" role="button" aria-label="Toggle dark mode"></div>
-            </div>
         </div>
     </nav>
 

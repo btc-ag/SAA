@@ -5072,6 +5072,16 @@ input:checked + .toggle-slider:before {
     width: auto;
 }
 
+.drawer-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.drawer-header-actions .theme-toggle {
+    transform: scale(0.9);
+}
+
 .drawer-close {
     background: none;
     border: none;
