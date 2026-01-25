@@ -5,6 +5,26 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-01-25
+
+### Added
+- **Mobile Navigation**: Burger menu with slide-out drawer for mobile devices
+- **Responsive Criteria Navigation**: Scrollable tabs (tablet) and dropdown selector (phone)
+- **Dark Mode Toggle**: Accessible in mobile drawer header
+- **Scroll Spy**: Automatic navigation state updates when scrolling through sections
+- Impressum link in criteria page footer
+
+### Changed
+- Complete mobile-first redesign matching SCC design system
+- Navigation drawer with card-style links and smooth animations
+- Burger menu with animated icon transition (hamburger to X)
+- Improved touch targets and mobile usability
+
+### Technical
+- CSS breakpoints: 992px (tablet), 576px (phone)
+- Backdrop blur effects for modern glass-morphism look
+- Cubic-bezier transitions for smooth animations
+
 ## [1.0.2] - 2026-01-24
 
 ### Added
@@ -49,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **1.1.0** - Mobile optimization with burger menu navigation
 - **1.0.2** - Repository optimization for GitHub Pages, CHANGELOG added
 - **1.0.1** - Documentation improvements
 - **1.0.0** - Initial release
