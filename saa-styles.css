@@ -5134,12 +5134,14 @@ input:checked + .toggle-slider:before {
 }
 
 .drawer-nav-link.highlight {
+    background: rgba(90, 166, 231, 0.1);
     color: var(--btc-primary);
     font-weight: 600;
+    border-left-color: var(--btc-primary);
 }
 
 .drawer-nav-link.highlight:hover {
-    background: rgba(90, 166, 231, 0.1);
+    background: rgba(90, 166, 231, 0.2);
 }
 
 .drawer-nav-link i {
