@@ -5373,7 +5373,7 @@ input:checked + .toggle-slider:before {
     }
 
     .burger-menu-toggle {
-        display: block;
+        display: flex;
     }
 
     .header-actions {
