@@ -5009,3 +5009,447 @@ input:checked + .toggle-slider:before {
         gap: 0.75rem;
     }
 }
+
+/* ============================================
+   MOBILE NAVIGATION - BURGER MENU
+   ============================================ */
+
+/* Mobile Navigation Overlay */
+.mobile-nav-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 9998;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.mobile-nav-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Mobile Navigation Drawer */
+.mobile-nav-drawer {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 100%;
+    max-width: 360px;
+    height: 100vh;
+    height: 100dvh;
+    background: var(--bg-secondary);
+    backdrop-filter: blur(40px) saturate(180%);
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    transition: right 0.3s ease;
+    overflow: hidden;
+}
+
+.mobile-nav-drawer.open {
+    right: 0;
+}
+
+/* Drawer Header */
+.drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+}
+
+.drawer-logo {
+    height: 32px;
+    width: auto;
+}
+
+.drawer-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.drawer-header-actions .theme-toggle {
+    transform: scale(0.9);
+}
+
+.drawer-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+}
+
+.drawer-close:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border-color-hover, var(--border-color));
+}
+
+/* Drawer Content */
+.drawer-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.drawer-section-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0.5rem 0.25rem;
+    margin-top: 0.5rem;
+}
+
+.drawer-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.drawer-nav-link:hover {
+    background: var(--bg-secondary);
+    border-color: var(--btc-primary);
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.drawer-nav-link.highlight {
+    background: var(--btc-primary);
+    border-color: var(--btc-primary);
+    color: white;
+}
+
+.drawer-nav-link.highlight:hover {
+    background: var(--btc-secondary, #4a9fd4);
+    border-color: var(--btc-secondary, #4a9fd4);
+    transform: translateX(4px);
+}
+
+.drawer-nav-link.highlight i {
+    color: white;
+}
+
+.drawer-nav-link i {
+    font-size: 1.1rem;
+    color: var(--btc-primary);
+    width: 24px;
+    text-align: center;
+}
+
+.drawer-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 0.5rem 0;
+}
+
+/* Drawer Footer */
+.drawer-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.drawer-theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.drawer-theme-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Burger Menu Toggle Button */
+.burger-menu-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 44px;
+    height: 44px;
+    background: var(--bg-tertiary);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    z-index: 1001;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
+}
+
+.burger-menu-toggle:hover {
+    background: var(--bg-secondary);
+    border-color: var(--border-color-hover, var(--border-color));
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.burger-menu-toggle:active {
+    transform: scale(0.95);
+}
+
+.burger-icon {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 22px;
+    height: 16px;
+    position: relative;
+}
+
+.burger-line {
+    position: absolute;
+    width: 22px;
+    height: 2.5px;
+    background: var(--text-primary);
+    border-radius: 2px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.burger-line:nth-child(1) {
+    top: 0;
+}
+
+.burger-line:nth-child(2) {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.burger-line:nth-child(3) {
+    bottom: 0;
+}
+
+/* Burger Animation - Active State */
+.burger-menu-toggle.active .burger-line:nth-child(1) {
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+}
+
+.burger-menu-toggle.active .burger-line:nth-child(2) {
+    opacity: 0;
+    transform: translateX(-10px);
+}
+
+.burger-menu-toggle.active .burger-line:nth-child(3) {
+    bottom: 50%;
+    transform: translateY(50%) rotate(-45deg);
+}
+
+/* Desktop Navigation Container */
+.desktop-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Mobile Criteria Tabs (Tablet) */
+.mobile-criteria-tabs {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg-primary);
+    padding: 0.75rem 0;
+    margin: 0 -1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.mobile-criteria-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.mobile-criteria-tabs-inner {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0 1rem;
+    min-width: max-content;
+}
+
+.mobile-criteria-tab {
+    padding: 0.5rem 1rem;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-color);
+}
+
+.mobile-criteria-tab:hover {
+    background: var(--btc-primary);
+    color: white;
+    border-color: var(--btc-primary);
+}
+
+.mobile-criteria-tab.active {
+    background: var(--btc-accent);
+    color: white;
+    border-color: var(--btc-accent);
+}
+
+/* Mobile Section Navigation (Phone - Dropdown) */
+.mobile-section-nav {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg-primary);
+    padding: 0.75rem 1rem;
+    margin: 0 -1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.mobile-section-selector {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+.mobile-section-selector:focus {
+    outline: none;
+    border-color: var(--btc-primary);
+    box-shadow: 0 0 0 3px rgba(90, 166, 231, 0.1);
+}
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS - MOBILE NAVIGATION
+   ============================================ */
+
+/* Tablet and below - Show burger menu */
+@media (max-width: 992px) {
+    .desktop-nav {
+        display: none;
+    }
+
+    .burger-menu-toggle {
+        display: flex;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+    }
+}
+
+/* Tablet - Show scrollable tabs for criteria page */
+@media (max-width: 992px) and (min-width: 577px) {
+    .criteria-nav {
+        display: none;
+    }
+
+    .mobile-criteria-tabs {
+        display: block;
+    }
+}
+
+/* Phone - Show dropdown for criteria page */
+@media (max-width: 576px) {
+    .criteria-nav {
+        display: none;
+    }
+
+    .mobile-criteria-tabs {
+        display: none;
+    }
+
+    .mobile-section-nav {
+        display: block;
+    }
+
+    /* Full width drawer on small screens */
+    .mobile-nav-drawer {
+        max-width: 100%;
+    }
+
+    .drawer-nav-link {
+        padding: 0.75rem 1.25rem;
+        font-size: 0.9rem;
+    }
+
+    .drawer-section-label {
+        padding: 0.5rem 1.25rem 0.25rem;
+        font-size: 0.65rem;
+    }
+}
+
+/* Dark mode adjustments for mobile nav */
+[data-theme="dark"] .mobile-nav-drawer {
+    background: var(--bg-primary);
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .drawer-header {
+    background: var(--bg-secondary);
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .drawer-footer {
+    background: var(--bg-secondary);
+    border-top-color: var(--border-color);
+}
+
+[data-theme="dark"] .drawer-nav-link:hover {
+    background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .mobile-criteria-tab {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .mobile-section-selector {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+}
