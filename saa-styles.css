@@ -5133,12 +5133,12 @@ input:checked + .toggle-slider:before {
     color: var(--btc-primary);
 }
 
-.drawer-nav-link.primary {
+.drawer-nav-link.highlight {
     color: var(--btc-primary);
     font-weight: 600;
 }
 
-.drawer-nav-link.primary:hover {
+.drawer-nav-link.highlight:hover {
     background: rgba(90, 166, 231, 0.1);
 }
 
