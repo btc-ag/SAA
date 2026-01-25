@@ -5038,11 +5038,13 @@ input:checked + .toggle-slider:before {
 .mobile-nav-drawer {
     position: fixed;
     top: 0;
-    right: -320px;
-    width: 300px;
-    max-width: 85vw;
+    right: -100%;
+    width: 100%;
+    max-width: 360px;
     height: 100vh;
-    background: var(--bg-primary);
+    height: 100dvh;
+    background: var(--bg-secondary);
+    backdrop-filter: blur(40px) saturate(180%);
     box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
     z-index: 9999;
     display: flex;
@@ -5349,9 +5351,9 @@ input:checked + .toggle-slider:before {
         display: block;
     }
 
-    /* Smaller drawer on very small screens */
+    /* Full width drawer on small screens */
     .mobile-nav-drawer {
-        width: 280px;
+        max-width: 100%;
     }
 
     .drawer-nav-link {
