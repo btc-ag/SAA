@@ -562,6 +562,104 @@
     font-size: 0.75rem;
 }
 
+/* Workload Breakdown Table */
+.workload-table th,
+.workload-table td {
+    vertical-align: middle;
+}
+
+.breakdown-cell {
+    padding: 0.5rem 0.25rem;
+}
+
+.cost-breakdown-mini {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.cost-breakdown-mini span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.5rem;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.cost-breakdown-mini span i {
+    font-size: 0.7rem;
+    opacity: 0.7;
+}
+
+.cost-breakdown-mini span:nth-child(1) i { color: #5AA6E7; }
+.cost-breakdown-mini span:nth-child(2) i { color: #10B981; }
+.cost-breakdown-mini span:nth-child(3) i { color: #8B5CF6; }
+.cost-breakdown-mini span:nth-child(4) i { color: #F59E0B; }
+
+.price-badge.total-price {
+    font-size: 1rem;
+    padding: 0.5rem 0.75rem;
+}
+
+/* Workload Legend */
+.workload-legend {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.workload-description {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    font-size: 0.85rem;
+}
+
+.workload-description strong {
+    color: var(--text-primary);
+}
+
+.workload-description span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--text-secondary);
+}
+
+.workload-description span i {
+    font-size: 0.75rem;
+}
+
+.workload-description span:nth-child(2) i { color: #5AA6E7; }
+.workload-description span:nth-child(3) i { color: #10B981; }
+.workload-description span:nth-child(4) i { color: #8B5CF6; }
+.workload-description span:nth-child(5) i { color: #F59E0B; }
+
+/* Mobile responsiveness for workload table */
+@media (max-width: 768px) {
+    .cost-breakdown-mini {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .cost-breakdown-mini span {
+        width: fit-content;
+    }
+
+    .workload-description {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.4rem;
+    }
+}
+
 /* Table Note */
 .table-note {
     margin-top: 1rem;

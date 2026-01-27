@@ -396,48 +396,121 @@ class CriteriaPage {
     }
 
     /**
-     * Rendert Preisvergleich-Tabelle mit echten EUR-Preisen
+     * Berechnet Workload-Kosten für einen Provider
+     * Typischer Workload: VM + DB + Object Storage + Block Storage
+     */
+    calculateWorkloadCost(providerId) {
+        const pricing = this.cloudPricing;
+
+        // Fallback-Preise wenn CloudPricing nicht verfügbar
+        const fallbackPrices = {
+            'aws':              { compute: 140, db: 37, objStorage: 12, blockStorage: 18 },
+            'azure':            { compute: 130, db: 33, objStorage: 11, blockStorage: 13 },
+            'gcp':              { compute: 120, db: 30, objStorage: 12, blockStorage: 13 },
+            'aws-sovereign':    { compute: 161, db: 43, objStorage: 14, blockStorage: 21 },
+            'delos':            { compute: 153, db: 39, objStorage: 13, blockStorage: 15 },
+            'stackit':          { compute: 80,  db: 26, objStorage: 9,  blockStorage: 13 },
+            'ionos':            { compute: 75,  db: 22, objStorage: 8,  blockStorage: 11 },
+            'ovh':              { compute: 70,  db: 25, objStorage: 6,  blockStorage: 10 },
+            'otc':              { compute: 95,  db: 30, objStorage: 10, blockStorage: 12 },
+            'azure-confidential': { compute: 156, db: 40, objStorage: 13, blockStorage: 16 },
+            'plusserver':       { compute: 85,  db: 28, objStorage: 10, blockStorage: 12 },
+            'noris':            { compute: 90,  db: 30, objStorage: 11, blockStorage: 13 },
+            'openstack':        { compute: 60,  db: 20, objStorage: 5,  blockStorage: 8 }
+        };
+
+        const fallback = fallbackPrices[providerId] || { compute: 100, db: 30, objStorage: 10, blockStorage: 12 };
+
+        // Workload-Konfiguration
+        // VM: 4 vCPU, 16 GB RAM
+        // DB: PostgreSQL 100 GB
+        // Object Storage: 500 GB Standard
+        // Block Storage: 200 GB SSD
+
+        let compute = fallback.compute;
+        let db = fallback.db;
+        let objStorage = fallback.objStorage;
+        let blockStorage = fallback.blockStorage;
+
+        if (pricing) {
+            // Compute
+            const computePricing = pricing.compute?.[providerId];
+            if (computePricing?.instanceTypes) {
+                const instances = computePricing.instanceTypes;
+                // Finde passende Instanz (4 vCPU, 16GB)
+                const match = Object.values(instances).find(i => i.vcpu === 4 && i.ram === 16);
+                if (match) compute = match.price;
+            } else if (computePricing?.pricePerVCPU) {
+                compute = (4 * computePricing.pricePerVCPU) + (16 * computePricing.pricePerGBRam);
+            }
+
+            // Database (PostgreSQL 100GB)
+            const dbPricing = pricing.database?.sql?.[providerId]?.postgresql;
+            if (dbPricing) {
+                db = dbPricing.base + (100 * dbPricing.storagePerGB);
+            }
+
+            // Object Storage (500 GB)
+            const objPricing = pricing.storage?.object?.[providerId];
+            if (objPricing) {
+                const rate = objPricing.standard || objPricing.hot || 0.024;
+                objStorage = Math.round(500 * rate);
+            }
+
+            // Block Storage (200 GB SSD)
+            const blockPricing = pricing.storage?.block?.[providerId];
+            if (blockPricing) {
+                const rate = blockPricing.gp3 || blockPricing.pdSSD || blockPricing.premiumSSD || blockPricing.ssd || 0.088;
+                blockStorage = Math.round(200 * rate);
+            }
+        }
+
+        // Sovereign Cloud Aufschläge
+        if (providerId === 'aws-sovereign') {
+            compute = Math.round(compute * 1.15);
+            db = Math.round(db * 1.15);
+            objStorage = Math.round(objStorage * 1.15);
+            blockStorage = Math.round(blockStorage * 1.15);
+        } else if (providerId === 'delos' || providerId === 'azure-confidential') {
+            const factor = providerId === 'delos' ? 1.18 : 1.20;
+            compute = Math.round(compute * factor);
+            db = Math.round(db * factor);
+            objStorage = Math.round(objStorage * factor);
+            blockStorage = Math.round(blockStorage * factor);
+        }
+
+        const total = compute + db + objStorage + blockStorage;
+
+        return { compute, db, objStorage, blockStorage, total };
+    }
+
+    /**
+     * Rendert Preisvergleich-Tabelle mit typischem Workload (alle Services)
      */
     renderPricingFactorsTable() {
         const container = document.getElementById('pricingFactorsTable');
         if (!container) return;
 
-        // Echte Preisdaten aus CloudPricing Modul (Standard-VM: 4 vCPU, 16GB RAM)
         const pricing = this.cloudPricing;
 
-        // Referenzpreise pro Provider (€/Monat für Standard-VM)
-        const providerPrices = {
-            'aws':              { price: pricing?.compute?.aws?.instanceTypes?.['m6i.xlarge']?.price || 140, source: 'AWS Price List API', region: 'Frankfurt (eu-central-1)' },
-            'azure':            { price: pricing?.compute?.azure?.instanceTypes?.['D4s_v5']?.price || 130, source: 'Azure Retail Prices API', region: 'Frankfurt (germanywestcentral)' },
-            'gcp':              { price: pricing?.compute?.gcp?.instanceTypes?.['n2-standard-4']?.price || 120, source: 'GCP Cloud Billing API', region: 'Frankfurt (europe-west3)' },
-            'aws-sovereign':    { price: Math.round((pricing?.compute?.aws?.instanceTypes?.['m6i.xlarge']?.price || 140) * 1.15), source: 'AWS ESC (geschätzt)', region: 'EU Sovereign' },
-            'delos':            { price: Math.round((pricing?.compute?.azure?.instanceTypes?.['D4s_v5']?.price || 130) * 1.18), source: 'MS DELOS (geschätzt)', region: 'Deutschland' },
-            'stackit':          { price: pricing?.compute?.stackit?.instanceTypes?.['c1.4']?.price || 80, source: 'STACKIT Preisliste', region: 'Frankfurt (de-fra)' },
-            'ionos':            { price: pricing?.compute?.ionos?.instanceTypes?.['M-4']?.price || 75, source: 'IONOS Preisliste', region: 'Frankfurt/Berlin' },
-            'ovh':              { price: pricing?.compute?.ovh?.instanceTypes?.['b2-15']?.price || 70, source: 'OVHcloud Preisliste', region: 'Frankfurt (de)' },
-            'otc':              { price: pricing?.compute?.otc?.instanceTypes?.['s3.xlarge.2']?.price || 95, source: 'OTC Preiskatalog', region: 'Deutschland' },
-            'azure-confidential': { price: Math.round((pricing?.compute?.azure?.instanceTypes?.['D4s_v5']?.price || 130) * 1.20), source: 'Azure (geschätzt)', region: 'EU Confidential' },
-            'plusserver':       { price: 85, source: 'plusserver Preisliste', region: 'Deutschland' },
-            'noris':            { price: 90, source: 'noris network Preisliste', region: 'Deutschland' },
-            'openstack':        { price: 60, source: 'Self-hosted (geschätzt)', region: 'On-Premise' }
-        };
+        // Berechne Workload-Kosten für alle Provider
+        const providerCosts = this.providers.map(p => ({
+            provider: p,
+            costs: this.calculateWorkloadCost(p.id),
+            isCustom: this.hasCustomScores(p.id)
+        }));
 
-        // Nach Preis sortieren (günstigster zuerst)
-        const sorted = this.providers
-            .map(p => ({
-                provider: p,
-                pricing: providerPrices[p.id] || { price: 100, source: 'Geschätzt', region: 'Unbekannt' }
-            }))
-            .sort((a, b) => a.pricing.price - b.pricing.price);
+        // Nach Gesamtpreis sortieren (günstigster zuerst)
+        providerCosts.sort((a, b) => a.costs.total - b.costs.total);
 
         // Referenzpreis (AWS als Basis)
-        const awsPrice = providerPrices['aws'].price;
+        const awsCosts = this.calculateWorkloadCost('aws');
+        const awsTotal = awsCosts.total;
 
-        const rows = sorted.map((item, index) => {
-            const { provider, pricing } = item;
+        const rows = providerCosts.map((item, index) => {
+            const { provider, costs, isCustom } = item;
             const isLowest = index === 0;
-            const diffPercent = ((pricing.price - awsPrice) / awsPrice * 100).toFixed(0);
-            const isCustom = this.hasCustomScores(provider.id);
+            const diffPercent = ((costs.total - awsTotal) / awsTotal * 100).toFixed(0);
 
             return `
                 <tr class="${isLowest ? 'lowest-price' : ''} ${isCustom ? 'custom-row' : ''}">
@@ -454,27 +527,25 @@ class CriteriaPage {
                         </div>
                     </td>
                     <td class="price-cell">
-                        <span class="price-badge">
-                            €${pricing.price}/Mo
+                        <span class="price-badge total-price">
+                            €${costs.total}/Mo
                         </span>
+                    </td>
+                    <td class="breakdown-cell">
+                        <div class="cost-breakdown-mini">
+                            <span title="Compute (4 vCPU, 16GB)"><i class="fa-solid fa-server"></i> €${costs.compute}</span>
+                            <span title="PostgreSQL 100GB"><i class="fa-solid fa-database"></i> €${costs.db}</span>
+                            <span title="Object Storage 500GB"><i class="fa-solid fa-box-archive"></i> €${costs.objStorage}</span>
+                            <span title="Block Storage 200GB"><i class="fa-solid fa-hard-drive"></i> €${costs.blockStorage}</span>
+                        </div>
                     </td>
                     <td class="comparison-cell">
                         ${diffPercent < 0
-                            ? `<span class="savings">${diffPercent}% vs AWS</span>`
+                            ? `<span class="savings">${diffPercent}%</span>`
                             : diffPercent > 0
-                            ? `<span class="premium-text">+${diffPercent}% vs AWS</span>`
-                            : '<span class="standard-text">= AWS-Niveau</span>'
+                            ? `<span class="premium-text">+${diffPercent}%</span>`
+                            : '<span class="standard-text">Basis</span>'
                         }
-                    </td>
-                    <td class="source-cell">
-                        <span class="source-info" title="${pricing.region}">
-                            <i class="fa-solid fa-database"></i> ${pricing.source}
-                        </span>
-                    </td>
-                    <td class="action-cell">
-                        <button class="edit-btn" onclick="criteriaPage.openEditModal('${provider.id}')" title="Bewertung bearbeiten">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
                     </td>
                 </tr>
             `;
@@ -484,14 +555,13 @@ class CriteriaPage {
 
         container.innerHTML = `
             <div class="provider-table-wrapper">
-                <table class="provider-scores-table pricing-table">
+                <table class="provider-scores-table pricing-table workload-table">
                     <thead>
                         <tr>
-                            <th style="width: 25%;">Provider</th>
-                            <th style="width: 15%;">Referenz-VM</th>
-                            <th style="width: 18%;">vs AWS</th>
-                            <th style="width: 30%;">Quelle</th>
-                            <th style="width: 10%;"></th>
+                            <th style="width: 22%;">Provider</th>
+                            <th style="width: 14%;">Gesamt</th>
+                            <th style="width: 46%;">Aufschlüsselung</th>
+                            <th style="width: 14%;">vs AWS</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -499,11 +569,19 @@ class CriteriaPage {
                     </tbody>
                 </table>
             </div>
-            <p class="table-note">
-                <i class="fa-solid fa-info-circle"></i>
-                <strong>Referenz-VM:</strong> 4 vCPU, 16 GB RAM, On-Demand, Region Frankfurt.
-                Preise aus öffentlichen APIs und Preislisten (Stand: ${lastUpdated}).
-            </p>
+            <div class="workload-legend">
+                <div class="workload-description">
+                    <strong><i class="fa-solid fa-cube"></i> Standard-Workload:</strong>
+                    <span><i class="fa-solid fa-server"></i> 1× VM (4 vCPU, 16 GB)</span>
+                    <span><i class="fa-solid fa-database"></i> PostgreSQL (100 GB)</span>
+                    <span><i class="fa-solid fa-box-archive"></i> Object Storage (500 GB)</span>
+                    <span><i class="fa-solid fa-hard-drive"></i> Block Storage (200 GB SSD)</span>
+                </div>
+                <p class="table-note" style="margin-top: 0.5rem;">
+                    <i class="fa-solid fa-info-circle"></i>
+                    On-Demand Preise, Region Frankfurt. Stand: ${lastUpdated}
+                </p>
+            </div>
         `;
     }
 
