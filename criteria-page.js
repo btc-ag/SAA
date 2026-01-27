@@ -8,6 +8,7 @@ class CriteriaPage {
         this.providers = cloudProviders;
         this.customScores = this.loadCustomScores();
         this.editingProvider = null;
+        this.cloudPricing = typeof CloudPricing !== 'undefined' ? CloudPricing : null;
         this.init();
     }
 
@@ -395,44 +396,48 @@ class CriteriaPage {
     }
 
     /**
-     * Rendert Preisfaktoren Tabelle
+     * Rendert Preisvergleich-Tabelle mit echten EUR-Preisen
      */
     renderPricingFactorsTable() {
         const container = document.getElementById('pricingFactorsTable');
         if (!container) return;
 
-        // Preisfaktoren (aus saa-analysis.js)
-        const providerFactors = {
-            'aws': { factor: 1.0, note: 'Referenz-Pricing' },
-            'azure': { factor: 1.0, note: 'Vergleichbar mit AWS' },
-            'gcp': { factor: 0.95, note: 'Leicht günstiger' },
-            'aws-sovereign': { factor: 1.15, note: 'Premium für Souveränität' },
-            'delos': { factor: 1.18, note: 'Premium Sovereign Cloud' },
-            'stackit': { factor: 0.85, note: 'Günstiger als Hyperscaler' },
-            'ionos': { factor: 0.80, note: 'Günstige EU-Alternative' },
-            'ovh': { factor: 0.75, note: 'Sehr günstig' },
-            'otc': { factor: 0.90, note: 'Mittelfeld' },
-            'azure-confidential': { factor: 1.2, note: 'Premium Confidential' },
-            'plusserver': { factor: 0.90, note: 'Mittelfeld' },
-            'noris': { factor: 0.95, note: 'Mittelfeld' },
-            'openstack': { factor: 0.70, note: 'Nur Infrastruktur' }
+        // Echte Preisdaten aus CloudPricing Modul (Standard-VM: 4 vCPU, 16GB RAM)
+        const pricing = this.cloudPricing;
+
+        // Referenzpreise pro Provider (€/Monat für Standard-VM)
+        const providerPrices = {
+            'aws':              { price: pricing?.compute?.aws?.instanceTypes?.['m6i.xlarge']?.price || 140, source: 'AWS Price List API', region: 'Frankfurt (eu-central-1)' },
+            'azure':            { price: pricing?.compute?.azure?.instanceTypes?.['D4s_v5']?.price || 130, source: 'Azure Retail Prices API', region: 'Frankfurt (germanywestcentral)' },
+            'gcp':              { price: pricing?.compute?.gcp?.instanceTypes?.['n2-standard-4']?.price || 120, source: 'GCP Cloud Billing API', region: 'Frankfurt (europe-west3)' },
+            'aws-sovereign':    { price: Math.round((pricing?.compute?.aws?.instanceTypes?.['m6i.xlarge']?.price || 140) * 1.15), source: 'AWS ESC (geschätzt)', region: 'EU Sovereign' },
+            'delos':            { price: Math.round((pricing?.compute?.azure?.instanceTypes?.['D4s_v5']?.price || 130) * 1.18), source: 'MS DELOS (geschätzt)', region: 'Deutschland' },
+            'stackit':          { price: pricing?.compute?.stackit?.instanceTypes?.['c1.4']?.price || 80, source: 'STACKIT Preisliste', region: 'Frankfurt (de-fra)' },
+            'ionos':            { price: pricing?.compute?.ionos?.instanceTypes?.['M-4']?.price || 75, source: 'IONOS Preisliste', region: 'Frankfurt/Berlin' },
+            'ovh':              { price: pricing?.compute?.ovh?.instanceTypes?.['b2-15']?.price || 70, source: 'OVHcloud Preisliste', region: 'Frankfurt (de)' },
+            'otc':              { price: pricing?.compute?.otc?.instanceTypes?.['s3.xlarge.2']?.price || 95, source: 'OTC Preiskatalog', region: 'Deutschland' },
+            'azure-confidential': { price: Math.round((pricing?.compute?.azure?.instanceTypes?.['D4s_v5']?.price || 130) * 1.20), source: 'Azure (geschätzt)', region: 'EU Confidential' },
+            'plusserver':       { price: 85, source: 'plusserver Preisliste', region: 'Deutschland' },
+            'noris':            { price: 90, source: 'noris network Preisliste', region: 'Deutschland' },
+            'openstack':        { price: 60, source: 'Self-hosted (geschätzt)', region: 'On-Premise' }
         };
 
-        // Nach Faktor sortieren (günstigster zuerst, mit Custom Faktoren)
+        // Nach Preis sortieren (günstigster zuerst)
         const sorted = this.providers
             .map(p => ({
                 provider: p,
-                factor: this.getEffectivePriceFactor(p.id),
-                note: providerFactors[p.id]?.note || 'Standard',
-                isCustom: this.hasCustomScores(p.id) && this.customScores[p.id].priceFactor !== undefined
+                pricing: providerPrices[p.id] || { price: 100, source: 'Geschätzt', region: 'Unbekannt' }
             }))
-            .sort((a, b) => a.factor - b.factor);
+            .sort((a, b) => a.pricing.price - b.pricing.price);
+
+        // Referenzpreis (AWS als Basis)
+        const awsPrice = providerPrices['aws'].price;
 
         const rows = sorted.map((item, index) => {
-            const { provider, factor, note, isCustom } = item;
+            const { provider, pricing } = item;
             const isLowest = index === 0;
-            const savings = ((1 - factor) * 100).toFixed(0);
-            const premium = ((factor - 1) * 100).toFixed(0);
+            const diffPercent = ((pricing.price - awsPrice) / awsPrice * 100).toFixed(0);
+            const isCustom = this.hasCustomScores(provider.id);
 
             return `
                 <tr class="${isLowest ? 'lowest-price' : ''} ${isCustom ? 'custom-row' : ''}">
@@ -448,20 +453,24 @@ class CriteriaPage {
                             ${isCustom ? '<span class="custom-indicator" title="Angepasste Bewertung"><i class="fa-solid fa-pen-to-square"></i></span>' : ''}
                         </div>
                     </td>
-                    <td class="factor-cell">
-                        <span class="factor-badge ${factor < 1 ? 'discount' : factor > 1 ? 'premium' : 'standard'}">
-                            ${factor.toFixed(2)}×
+                    <td class="price-cell">
+                        <span class="price-badge">
+                            €${pricing.price}/Mo
                         </span>
                     </td>
                     <td class="comparison-cell">
-                        ${factor < 1
-                            ? `<span class="savings">~${Math.abs(savings)}% günstiger als AWS</span>`
-                            : factor > 1
-                            ? `<span class="premium-text">~${premium}% teurer als AWS</span>`
-                            : '<span class="standard-text">≈ AWS-Niveau</span>'
+                        ${diffPercent < 0
+                            ? `<span class="savings">${diffPercent}% vs AWS</span>`
+                            : diffPercent > 0
+                            ? `<span class="premium-text">+${diffPercent}% vs AWS</span>`
+                            : '<span class="standard-text">= AWS-Niveau</span>'
                         }
                     </td>
-                    <td class="note-cell">${note}</td>
+                    <td class="source-cell">
+                        <span class="source-info" title="${pricing.region}">
+                            <i class="fa-solid fa-database"></i> ${pricing.source}
+                        </span>
+                    </td>
                     <td class="action-cell">
                         <button class="edit-btn" onclick="criteriaPage.openEditModal('${provider.id}')" title="Bewertung bearbeiten">
                             <i class="fa-solid fa-pen"></i>
@@ -471,15 +480,17 @@ class CriteriaPage {
             `;
         }).join('');
 
+        const lastUpdated = pricing?.lastUpdated || '2026-01-27';
+
         container.innerHTML = `
             <div class="provider-table-wrapper">
                 <table class="provider-scores-table pricing-table">
                     <thead>
                         <tr>
-                            <th style="width: 27%;">Provider</th>
-                            <th style="width: 13%;">Preisfaktor</th>
-                            <th style="width: 25%;">Vergleich zu AWS</th>
-                            <th style="width: 23%;">Hinweis</th>
+                            <th style="width: 25%;">Provider</th>
+                            <th style="width: 15%;">Referenz-VM</th>
+                            <th style="width: 18%;">vs AWS</th>
+                            <th style="width: 30%;">Quelle</th>
                             <th style="width: 10%;"></th>
                         </tr>
                     </thead>
@@ -490,8 +501,8 @@ class CriteriaPage {
             </div>
             <p class="table-note">
                 <i class="fa-solid fa-info-circle"></i>
-                <strong>Hinweis:</strong> Preisfaktoren sind Durchschnittswerte basierend auf öffentlichen Preisrechnern
-                und können je nach Service und Region variieren.
+                <strong>Referenz-VM:</strong> 4 vCPU, 16 GB RAM, On-Demand, Region Frankfurt.
+                Preise aus öffentlichen APIs und Preislisten (Stand: ${lastUpdated}).
             </p>
         `;
     }

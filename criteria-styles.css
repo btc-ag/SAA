@@ -529,6 +529,39 @@
     font-size: 0.85rem;
 }
 
+/* Price Cell (EUR prices) */
+.price-cell {
+    text-align: center;
+}
+
+.price-badge {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--btc-primary);
+    border: 2px solid var(--btc-primary);
+}
+
+/* Source Cell */
+.source-cell {
+    font-size: 0.85rem;
+}
+
+.source-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-secondary);
+}
+
+.source-info i {
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+}
+
 /* Table Note */
 .table-note {
     margin-top: 1rem;
