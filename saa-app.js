@@ -208,7 +208,16 @@ class SovereignArchitectureAdvisor {
                 this.isMultiAppMode = state.isMultiAppMode || false;
 
                 if (state.isMultiAppMode) {
-                    this.applications = state.applications || [];
+                    // Multi-App State - selectedComponents müssen als Set wiederhergestellt werden
+                    this.applications = (state.applications || []).map(app => {
+                        // Stelle sicher, dass selectedComponents ein Set ist
+                        if (app.selectedComponents && !(app.selectedComponents instanceof Set)) {
+                            app.selectedComponents = new Set(app.selectedComponents);
+                        } else if (!app.selectedComponents) {
+                            app.selectedComponents = new Set();
+                        }
+                        return app;
+                    });
                     this.currentAppIndex = state.currentAppIndex || 0;
                     this.aggregatedResults = state.aggregatedResults || null;
                 } else {
