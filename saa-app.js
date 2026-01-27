@@ -3643,8 +3643,21 @@ class SovereignArchitectureAdvisor {
             `;
         }
 
+        // Pricing Info vom Analyzer holen
+        const pricingInfo = this.analyzer?.getPricingInfo?.() || { source: 'Fallback', currency: 'EUR' };
+
         return `
             <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('📊', 'utility')} Kostenaufschlüsselung</h4>
+
+            <div class="pricing-info-box" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 12px 16px; margin-bottom: 1rem; display: flex; align-items: center; gap: 12px; font-size: 0.85rem;">
+                <span style="font-size: 1.2rem;">${IconMapper.toFontAwesome('📍', 'utility')}</span>
+                <div>
+                    <strong>Preisbasis:</strong> ${pricingInfo.source || 'Fallback'} |
+                    <strong>Region:</strong> Frankfurt (DE) |
+                    <strong>Währung:</strong> ${pricingInfo.currency || 'EUR'}
+                    ${pricingInfo.lastUpdated ? `| <strong>Stand:</strong> ${pricingInfo.lastUpdated}` : ''}
+                </div>
+            </div>
 
             <div class="cost-breakdown-section">
                 <h5 class="cost-breakdown-title">${IconMapper.toFontAwesome('☁️', 'component')} Verbrauchskosten (~${tco.consumption.monthlyEstimate.toLocaleString('de-DE')}€/Monat)</h5>

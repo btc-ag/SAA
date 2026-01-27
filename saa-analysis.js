@@ -1,6 +1,8 @@
 /**
  * Sovereign Architecture Advisor - Analysis Engine
  * Cloud-Analyse und Empfehlungslogik mit TCO-Berechnung
+ *
+ * Version 2.0 - Mit echten Cloud-Preisdaten für deutsche Regionen
  */
 
 class CloudAnalyzer {
@@ -8,6 +10,28 @@ class CloudAnalyzer {
         this.providers = providers;
         this.components = components;
         this.customScores = this.loadCustomScores();
+        // Cloud Pricing Module laden (wenn verfügbar)
+        this.cloudPricing = typeof CloudPricing !== 'undefined' ? CloudPricing : null;
+    }
+
+    /**
+     * Gibt Pricing-Metadaten zurück (Version, Region, etc.)
+     */
+    getPricingInfo() {
+        if (this.cloudPricing) {
+            return {
+                version: this.cloudPricing.version,
+                lastUpdated: this.cloudPricing.lastUpdated,
+                currency: this.cloudPricing.currency,
+                regions: this.cloudPricing.regions,
+                source: 'Cloud Pricing API (Frankfurt Region)'
+            };
+        }
+        return {
+            version: '1.0',
+            source: 'Fallback-Faktoren',
+            currency: 'EUR'
+        };
     }
 
     /**
@@ -438,10 +462,13 @@ class CloudAnalyzer {
 
     /**
      * Schätzt monatliche Verbrauchskosten pro Service basierend auf systemConfig
-     * @returns {Object} - { cost: number, breakdown: string }
+     * Verwendet echte Cloud-Preisdaten aus dem CloudPricing Modul (Frankfurt Region)
+     * @returns {Object} - { cost: number, breakdown: string, source: string }
      */
     getConsumptionEstimate(serviceId, level, systemConfig = null, provider = null) {
-        // Basis-Fallback-Kosten (ohne systemConfig)
+        const providerId = provider ? provider.id : null;
+
+        // Basis-Fallback-Kosten (ohne systemConfig oder CloudPricing)
         const baseCosts = {
             compute: 200, kubernetes: 400, serverless: 80,
             database_sql: 250, database_nosql: 180,
@@ -452,50 +479,41 @@ class CloudAnalyzer {
             ai_ml: 600, identity: 30
         };
 
-        // Provider-spezifische Preisfaktoren (relativ zu Hyperscaler-Preisen)
-        const providerFactors = {
-            'aws': 1.0,                // Hyperscaler Referenz
-            'azure': 1.0,              // Standard Hyperscaler
-            'gcp': 0.95,               // Leicht günstiger
-            'aws-sovereign': 1.15,     // Premium für Sovereign (15% über AWS)
-            'delos': 1.18,             // DELOS etwas teurer als AWS Sovereign
-            'stackit': 0.85,           // Oft günstiger als Hyperscaler
-            'ionos': 0.80,             // Günstigere EU-Alternative
-            'ovh': 0.75,               // Günstig
-            'otc': 0.90,               // Open Telekom Cloud
-            'azure-confidential': 1.2, // Premium
-            'plusserver': 0.90,        // Mittelfeld
-            'noris': 0.95,             // Mittelfeld
-            'openstack': 0.70,         // Nur Infrastrukturkosten, kein Managed
-            'default': 1.0
-        };
-
         // Custom Price Factor verwenden, falls vorhanden
-        const customFactor = this.getEffectivePriceFactor(provider ? provider.id : null);
-        const providerFactor = customFactor !== null
-            ? customFactor
-            : (provider ? (providerFactors[provider.id] || 1.0) : 1.0);
-
+        const customFactor = this.getEffectivePriceFactor(providerId);
         const levelMultiplier = level === 'low' ? 0.7 : level === 'high' ? 1.5 : 1.0;
 
-        // Wenn keine systemConfig vorhanden, Standard-Berechnung
+        // Versuche echte Preisdaten zu verwenden
+        const useRealPricing = this.cloudPricing && providerId;
+        const region = useRealPricing ? this.cloudPricing.getRegion(providerId) : null;
+
+        // Wenn keine systemConfig vorhanden, Standard-Berechnung mit echten Preisen wenn möglich
         if (!systemConfig || !systemConfig.config) {
-            const base = baseCosts[serviceId] || 50;
+            let baseCost = baseCosts[serviceId] || 50;
+
+            // Versuche echte Basispreise zu verwenden
+            if (useRealPricing) {
+                baseCost = this.getBaseServicePrice(serviceId, providerId) || baseCost;
+            }
+
+            // Custom Factor anwenden falls vorhanden
+            const effectiveFactor = customFactor !== null ? customFactor : 1.0;
             return {
-                cost: Math.round(base * levelMultiplier * providerFactor),
-                breakdown: null
+                cost: Math.round(baseCost * levelMultiplier * effectiveFactor),
+                breakdown: region ? `${region.name} (${region.country})` : null,
+                source: useRealPricing ? 'CloudPricing API' : 'Fallback'
             };
         }
 
         const config = systemConfig.config;
         let cost = 0;
         let breakdown = '';
+        let source = 'Konfigurationsbasiert';
 
         // Realistische Kostenberechnung basierend auf Ressourcen
         switch (serviceId) {
             case 'compute':
-                // RAM-basierte Berechnung: ~0.015€/GB RAM/Stunde = ~11€/GB RAM/Monat
-                // Für SAP HANA: HANA-zertifizierte VMs sind teurer (~1.5x Faktor)
+                // Verwende CloudPricing wenn verfügbar
                 const isSAP = config.database?.type?.toLowerCase().includes('hana') ||
                               config.database?.type?.toLowerCase().includes('sap');
 
@@ -505,49 +523,64 @@ class CloudAnalyzer {
                     let totalCPU = 0;
                     let totalRAM = 0;
                     let totalVMs = 0;
+                    const instanceDetails = [];
 
                     config.compute.vmGroups.forEach(vm => {
-                        // WICHTIG: Alles als Number konvertieren um String-Konkatenation zu vermeiden!
                         const vmCPU = Number(vm.cpu) || 4;
                         const vmRAM = Number(vm.ram) || 16;
                         const vmCount = Number(vm.count) || 1;
 
-                        // Basispreis pro GB RAM (inkl. CPU anteilig)
-                        const ramPricePerGB = isSAP ? 18 : 11;
-                        let vmCost = vmRAM * ramPricePerGB;
+                        // Echte Preise verwenden wenn verfügbar
+                        if (useRealPricing) {
+                            const priceResult = this.cloudPricing.calculateComputeCost(providerId, vmCPU, vmRAM, isSAP);
+                            totalCost += priceResult.price * vmCount;
+                            if (priceResult.instanceType) {
+                                instanceDetails.push(`${vmCount}× ${priceResult.instanceType}`);
+                            }
+                            source = 'CloudPricing API';
+                        } else {
+                            // Fallback: Alte Berechnung
+                            const ramPricePerGB = isSAP ? 18 : 11;
+                            let vmCost = vmRAM * ramPricePerGB;
+                            const cpuMinCost = vmCPU * 25;
+                            vmCost = Math.max(vmCost, cpuMinCost);
+                            totalCost += vmCost * vmCount;
+                        }
 
-                        // Mindestpreis basierend auf CPU
-                        const cpuMinCost = vmCPU * 25;
-                        vmCost = Math.max(vmCost, cpuMinCost);
-
-                        totalCost += vmCost * vmCount;
                         totalCPU += vmCPU * vmCount;
                         totalRAM += vmRAM * vmCount;
                         totalVMs += vmCount;
                     });
 
                     cost = totalCost;
-                    breakdown = `${totalCPU} vCPU, ${totalRAM} GB RAM (${totalVMs} VMs)${isSAP ? ' (SAP-zertifiziert)' : ''}`;
+                    breakdown = instanceDetails.length > 0
+                        ? `${instanceDetails.join(', ')}`
+                        : `${totalCPU} vCPU, ${totalRAM} GB RAM (${totalVMs} VMs)${isSAP ? ' (SAP)' : ''}`;
+                    if (region) breakdown += ` [${region.name}]`;
                 } else {
                     // Legacy: Einzelne VM
                     const ramGB = config.compute?.ram || 16;
                     const cpuCores = config.compute?.cpu || 4;
 
-                    // Basispreis pro GB RAM (inkl. CPU anteilig)
-                    const ramPricePerGB = isSAP ? 18 : 11;
-                    cost = ramGB * ramPricePerGB;
-
-                    // Mindestpreis basierend auf CPU
-                    const cpuMinCost = cpuCores * 25;
-                    cost = Math.max(cost, cpuMinCost);
-
-                    breakdown = `${cpuCores} vCPU, ${ramGB} GB RAM${isSAP ? ' (SAP-zertifiziert)' : ''}`;
+                    if (useRealPricing) {
+                        const priceResult = this.cloudPricing.calculateComputeCost(providerId, cpuCores, ramGB, isSAP);
+                        cost = priceResult.price;
+                        breakdown = priceResult.breakdown;
+                        if (region) breakdown += ` [${region.name}]`;
+                        source = 'CloudPricing API';
+                    } else {
+                        // Fallback
+                        const ramPricePerGB = isSAP ? 18 : 11;
+                        cost = ramGB * ramPricePerGB;
+                        const cpuMinCost = cpuCores * 25;
+                        cost = Math.max(cost, cpuMinCost);
+                        breakdown = `${cpuCores} vCPU, ${ramGB} GB RAM${isSAP ? ' (SAP-zertifiziert)' : ''}`;
+                    }
                 }
                 break;
 
             case 'database_sql':
-                // Datenbank-Kosten: Stark abhängig von Typ und Größe
-                // Unterstützung für databases Array (Multi-DB) und Legacy (einzelne DB)
+                // Datenbank-Kosten mit echten Preisen
                 if (config.database?.databases && Array.isArray(config.database.databases)) {
                     let totalCost = 0;
                     const breakdownParts = [];
@@ -556,49 +589,63 @@ class CloudAnalyzer {
                     config.database.databases.forEach(db => {
                         const dbType = db.type || 'PostgreSQL';
                         const dbSizeGB = db.size || 100;
-                        let dbCost = 0;
 
-                        if (dbType.toLowerCase().includes('hana')) {
-                            // SAP HANA: In-Memory DB, sehr teuer
-                            const hanaRam = config.compute?.ram || 512;
-                            dbCost = hanaRam * 8;
-                        } else if (dbType.toLowerCase().includes('oracle')) {
-                            dbCost = 500 + (dbSizeGB * 2);
+                        if (useRealPricing) {
+                            const priceResult = this.cloudPricing.calculateDatabaseCost(providerId, dbType, dbSizeGB, false);
+                            totalCost += priceResult.price;
+                            breakdownParts.push(priceResult.breakdown);
+                            source = 'CloudPricing API';
                         } else {
-                            dbCost = 80 + (dbSizeGB * 0.5);
+                            // Fallback
+                            let dbCost = 0;
+                            if (dbType.toLowerCase().includes('hana')) {
+                                const hanaRam = config.compute?.ram || 512;
+                                dbCost = hanaRam * 8;
+                            } else if (dbType.toLowerCase().includes('oracle')) {
+                                dbCost = 500 + (dbSizeGB * 2);
+                            } else {
+                                dbCost = 80 + (dbSizeGB * 0.5);
+                            }
+                            totalCost += dbCost;
+                            breakdownParts.push(`${dbType} ${dbSizeGB}GB`);
                         }
-
-                        totalCost += dbCost;
-                        breakdownParts.push(`${dbType} ${dbSizeGB}GB`);
                     });
 
                     cost = totalCost;
                     breakdown = dbCount > 1
                         ? `${dbCount}× DBs: ${breakdownParts.join(', ')}`
                         : breakdownParts[0];
+                    if (region) breakdown += ` [${region.name}]`;
                 } else {
                     // Legacy: Einzelne DB
                     const dbType = config.database?.type || 'PostgreSQL';
                     const dbSizeStr = config.database?.size || '100 GB';
                     const dbSizeGB = parseInt(dbSizeStr) || 100;
 
-                    if (dbType.toLowerCase().includes('hana')) {
-                        const hanaRam = config.compute?.ram || 512;
-                        cost = hanaRam * 8;
-                        breakdown = `${dbType} (${hanaRam} GB In-Memory)`;
-                    } else if (dbType.toLowerCase().includes('oracle')) {
-                        cost = 500 + (dbSizeGB * 2);
-                        breakdown = `${dbType} (${dbSizeGB} GB)`;
+                    if (useRealPricing) {
+                        const priceResult = this.cloudPricing.calculateDatabaseCost(providerId, dbType, dbSizeGB, false);
+                        cost = priceResult.price;
+                        breakdown = priceResult.breakdown;
+                        if (region) breakdown += ` [${region.name}]`;
+                        source = 'CloudPricing API';
                     } else {
-                        cost = 80 + (dbSizeGB * 0.5);
-                        breakdown = `${dbType} (${dbSizeGB} GB)`;
+                        if (dbType.toLowerCase().includes('hana')) {
+                            const hanaRam = config.compute?.ram || 512;
+                            cost = hanaRam * 8;
+                            breakdown = `${dbType} (${hanaRam} GB In-Memory)`;
+                        } else if (dbType.toLowerCase().includes('oracle')) {
+                            cost = 500 + (dbSizeGB * 2);
+                            breakdown = `${dbType} (${dbSizeGB} GB)`;
+                        } else {
+                            cost = 80 + (dbSizeGB * 0.5);
+                            breakdown = `${dbType} (${dbSizeGB} GB)`;
+                        }
                     }
                 }
                 break;
 
             case 'database_nosql':
-                // NoSQL Database: ~0.8-1.2€/GB/Monat für Managed NoSQL
-                // Unterstützt jetzt mehrere Instanzen mit unterschiedlichen Typen
+                // NoSQL Database mit echten Preisen
                 if (config.nosql?.instances && Array.isArray(config.nosql.instances)) {
                     let totalCost = 0;
                     const breakdownParts = [];
@@ -607,14 +654,27 @@ class CloudAnalyzer {
                         const nosqlType = db.type || 'MongoDB';
                         const nosqlSizeGB = db.size || 50;
 
-                        // Preis variiert je nach NoSQL-Typ
-                        let pricePerGB = 1.0; // Standard MongoDB
-                        if (nosqlType.toLowerCase().includes('redis')) {
-                            pricePerGB = 1.5; // Redis ist teurer (In-Memory)
-                        } else if (nosqlType.toLowerCase().includes('cosmos')) {
-                            pricePerGB = 1.8; // CosmosDB ist am teuersten
-                        } else if (nosqlType.toLowerCase().includes('cassandra')) {
-                            pricePerGB = 1.1;
+                        // Echte NoSQL-Preise verwenden
+                        let pricePerGB = 1.0;
+                        if (useRealPricing && this.cloudPricing.database?.nosql?.[providerId]) {
+                            // Preise aus CloudPricing verwenden
+                            if (nosqlType.toLowerCase().includes('dynamo') && providerId === 'aws') {
+                                pricePerGB = this.cloudPricing.database.nosql.aws.dynamodb.storagePerGB;
+                            } else if (nosqlType.toLowerCase().includes('cosmos') && providerId === 'azure') {
+                                pricePerGB = this.cloudPricing.database.nosql.azure.cosmosdb.storagePerGB;
+                            } else if (nosqlType.toLowerCase().includes('firestore') && providerId === 'gcp') {
+                                pricePerGB = this.cloudPricing.database.nosql.gcp.firestore.storagePerGB;
+                            }
+                            source = 'CloudPricing API';
+                        } else {
+                            // Fallback Preise
+                            if (nosqlType.toLowerCase().includes('redis')) {
+                                pricePerGB = 1.5;
+                            } else if (nosqlType.toLowerCase().includes('cosmos')) {
+                                pricePerGB = 1.8;
+                            } else if (nosqlType.toLowerCase().includes('cassandra')) {
+                                pricePerGB = 1.1;
+                            }
                         }
 
                         const dbCost = Math.max(50, nosqlSizeGB * pricePerGB);
@@ -626,6 +686,7 @@ class CloudAnalyzer {
                     breakdown = config.nosql.instances.length > 1
                         ? `${config.nosql.instances.length}× DBs: ${breakdownParts.join(', ')}`
                         : breakdownParts[0];
+                    if (region) breakdown += ` [${region.name}]`;
                 } else {
                     // Fallback
                     cost = baseCosts[serviceId] || 180;
@@ -634,27 +695,32 @@ class CloudAnalyzer {
                 break;
 
             case 'storage_object':
-                // Object Storage: ~0.02-0.03€/GB/Monat
+                // Object Storage mit echten Preisen
                 const storageSizeRaw = config.objectStorage?.size || config.storage?.size || 500;
                 let storageSizeGB, totalStorageGB;
 
                 if (typeof storageSizeRaw === 'number') {
-                    // Neues Format: Zahl in GB
                     totalStorageGB = storageSizeRaw;
                 } else {
-                    // Legacy Format: String wie "500 GB" oder "1 TB"
                     storageSizeGB = parseInt(storageSizeRaw.replace(/[^\d]/g, '')) || 500;
                     const storageUnit = storageSizeRaw.toLowerCase().includes('tb') ? 1024 : 1;
                     totalStorageGB = storageSizeGB * storageUnit;
                 }
 
-                cost = Math.max(20, totalStorageGB * 0.025);
-                breakdown = `${totalStorageGB} GB Object Storage`;
+                if (useRealPricing) {
+                    const priceResult = this.cloudPricing.calculateStorageCost(providerId, 'object', totalStorageGB, 'standard');
+                    cost = priceResult.price;
+                    breakdown = priceResult.breakdown;
+                    if (region) breakdown += ` [${region.name}]`;
+                    source = 'CloudPricing API';
+                } else {
+                    cost = Math.max(20, totalStorageGB * 0.025);
+                    breakdown = `${totalStorageGB} GB Object Storage`;
+                }
                 break;
 
             case 'storage_block':
-                // Block Storage: ~0.08-0.12€/GB/Monat (SSD)
-                // Unterstützung für volumes Array (Multi-Volume) und Legacy
+                // Block Storage mit echten Preisen
                 if (config.storage?.volumes && Array.isArray(config.storage.volumes)) {
                     let totalCost = 0;
                     const breakdownParts = [];
@@ -663,8 +729,17 @@ class CloudAnalyzer {
                     config.storage.volumes.forEach(vol => {
                         const volSize = vol.size || 200;
                         const volType = vol.type || 'ssd';
-                        const pricePerGB = volType === 'nvme' ? 0.15 : volType === 'hdd' ? 0.05 : 0.10;
-                        totalCost += volSize * pricePerGB;
+
+                        if (useRealPricing) {
+                            const tier = volType === 'nvme' ? 'pdExtreme' :
+                                        volType === 'hdd' ? 'pdStandard' : 'pdSSD';
+                            const priceResult = this.cloudPricing.calculateStorageCost(providerId, 'block', volSize, tier);
+                            totalCost += priceResult.price;
+                            source = 'CloudPricing API';
+                        } else {
+                            const pricePerGB = volType === 'nvme' ? 0.15 : volType === 'hdd' ? 0.05 : 0.10;
+                            totalCost += volSize * pricePerGB;
+                        }
                         breakdownParts.push(`${volType.toUpperCase()} ${volSize}GB`);
                     });
 
@@ -672,18 +747,27 @@ class CloudAnalyzer {
                     breakdown = volCount > 1
                         ? `${volCount}× Volumes: ${breakdownParts.join(', ')}`
                         : breakdownParts[0];
+                    if (region) breakdown += ` [${region.name}]`;
                 } else {
                     // Legacy: Einzelnes Volume
                     const blockStorageStr = config.storage?.size || '200 GB';
                     const blockStorageGB = parseInt(blockStorageStr.replace(/[^\d]/g, '')) || 200;
-                    cost = Math.max(30, blockStorageGB * 0.10);
-                    breakdown = `${blockStorageGB} GB Block Storage (SSD)`;
+
+                    if (useRealPricing) {
+                        const priceResult = this.cloudPricing.calculateStorageCost(providerId, 'block', blockStorageGB, 'ssd');
+                        cost = priceResult.price;
+                        breakdown = priceResult.breakdown;
+                        if (region) breakdown += ` [${region.name}]`;
+                        source = 'CloudPricing API';
+                    } else {
+                        cost = Math.max(30, blockStorageGB * 0.10);
+                        breakdown = `${blockStorageGB} GB Block Storage (SSD)`;
+                    }
                 }
                 break;
 
             case 'kubernetes':
-                // Kubernetes: Control Plane + Worker Nodes
-                // Unterstützt mehrere Cluster
+                // Kubernetes mit echten Preisen
                 if (config.kubernetes?.clusters && Array.isArray(config.kubernetes.clusters)) {
                     let totalCost = 0;
                     const breakdownParts = [];
@@ -693,28 +777,44 @@ class CloudAnalyzer {
                         const cpuPerNode = cluster.cpuPerNode || 4;
                         const ramPerNode = cluster.ramPerNode || 16;
 
-                        // Control Plane (~70€) + Worker Nodes
-                        const clusterCost = 70 + (nodes * ramPerNode * 8);
-                        totalCost += clusterCost;
-                        breakdownParts.push(`${nodes} Nodes (${ramPerNode}GB RAM)`);
+                        if (useRealPricing) {
+                            const k8sResult = this.cloudPricing.calculateKubernetesCost(providerId, nodes, cpuPerNode, ramPerNode);
+                            totalCost += k8sResult.price;
+                            breakdownParts.push(k8sResult.breakdown);
+                            source = 'CloudPricing API';
+                        } else {
+                            const clusterCost = 70 + (nodes * ramPerNode * 8);
+                            totalCost += clusterCost;
+                            breakdownParts.push(`${nodes} Nodes (${ramPerNode}GB RAM)`);
+                        }
                     });
 
                     cost = totalCost;
                     breakdown = config.kubernetes.clusters.length > 1
                         ? `${config.kubernetes.clusters.length}× Clusters: ${breakdownParts.join(', ')}`
                         : breakdownParts[0];
+                    if (region) breakdown += ` [${region.name}]`;
                 } else {
                     // Legacy/Fallback
                     const users = parseInt(config.users) || 100;
                     const estimatedNodes = Math.max(3, Math.ceil(users / 50));
                     const nodeRam = config.compute?.ram ? Math.ceil(config.compute.ram / estimatedNodes) : 16;
-                    cost = 70 + (estimatedNodes * nodeRam * 8);
-                    breakdown = `~${estimatedNodes} Worker-Nodes (je ~${nodeRam} GB RAM)`;
+
+                    if (useRealPricing) {
+                        const k8sResult = this.cloudPricing.calculateKubernetesCost(providerId, estimatedNodes, 4, nodeRam);
+                        cost = k8sResult.price;
+                        breakdown = k8sResult.breakdown;
+                        if (region) breakdown += ` [${region.name}]`;
+                        source = 'CloudPricing API';
+                    } else {
+                        cost = 70 + (estimatedNodes * nodeRam * 8);
+                        breakdown = `~${estimatedNodes} Worker-Nodes (je ~${nodeRam} GB RAM)`;
+                    }
                 }
                 break;
 
             case 'serverless':
-                // Serverless Functions: Basierend auf Invocations
+                // Serverless mit echten Preisen
                 if (config.serverless?.instances && Array.isArray(config.serverless.instances)) {
                     let totalCost = 0;
                     const breakdownParts = [];
@@ -723,9 +823,17 @@ class CloudAnalyzer {
                         const functions = instance.functions || 10;
                         const invocations = instance.invocationsPerMonth || 1000000;
 
-                        // Kosten: ~0.20€ pro 1M Invocations + Compute Time
-                        const invocationCost = (invocations / 1000000) * 0.20;
-                        const computeCost = (invocations / 1000000) * 15; // ~15€ per 1M inv für Compute
+                        // Echte Preise verwenden wenn verfügbar
+                        let invocationCost, computeCost;
+                        if (useRealPricing && this.cloudPricing.serverless?.[providerId]) {
+                            const pricing = this.cloudPricing.serverless[providerId];
+                            invocationCost = (invocations / 1000000) * (pricing.requestsPerMillion || 0.20);
+                            computeCost = (invocations / 1000000) * 15;
+                            source = 'CloudPricing API';
+                        } else {
+                            invocationCost = (invocations / 1000000) * 0.20;
+                            computeCost = (invocations / 1000000) * 15;
+                        }
                         const functionCost = invocationCost + computeCost;
 
                         totalCost += functionCost;
@@ -736,15 +844,15 @@ class CloudAnalyzer {
                     breakdown = config.serverless.instances.length > 1
                         ? `${config.serverless.instances.length}× Groups: ${breakdownParts.join(', ')}`
                         : breakdownParts[0];
+                    if (region) breakdown += ` [${region.name}]`;
                 } else {
-                    // Fallback
                     cost = baseCosts[serviceId] || 80;
                     breakdown = 'Serverless Functions';
                 }
                 break;
 
             case 'messaging':
-                // Message Queue: Basierend auf Messages/Monat
+                // Messaging mit echten Preisen
                 if (config.messaging?.instances && Array.isArray(config.messaging.instances)) {
                     let totalCost = 0;
                     const breakdownParts = [];
@@ -753,8 +861,17 @@ class CloudAnalyzer {
                         const queueType = instance.type || 'Standard';
                         const messages = instance.messagesPerMonth || 1000000;
 
-                        // Kosten: ~0.50€ pro 1M Messages (Standard), ~1.5€ (FIFO)
-                        const pricePerMillion = queueType === 'FIFO' ? 1.5 : 0.5;
+                        // Echte Preise verwenden
+                        let pricePerMillion;
+                        if (useRealPricing && this.cloudPricing.messaging?.[providerId]) {
+                            const pricing = this.cloudPricing.messaging[providerId];
+                            pricePerMillion = queueType === 'FIFO'
+                                ? (pricing.sqs?.fifoPerMillion || 0.50)
+                                : (pricing.sqs?.standardPerMillion || 0.40);
+                            source = 'CloudPricing API';
+                        } else {
+                            pricePerMillion = queueType === 'FIFO' ? 1.5 : 0.5;
+                        }
                         const queueCost = Math.max(5, (messages / 1000000) * pricePerMillion);
 
                         totalCost += queueCost;
@@ -765,26 +882,138 @@ class CloudAnalyzer {
                     breakdown = config.messaging.instances.length > 1
                         ? `${config.messaging.instances.length}× Queues: ${breakdownParts.join(', ')}`
                         : breakdownParts[0];
+                    if (region) breakdown += ` [${region.name}]`;
                 } else {
-                    // Fallback
                     cost = baseCosts[serviceId] || 50;
                     breakdown = 'Message Queue';
                 }
                 break;
 
             default:
-                // Fallback auf Basiskosten
-                const base = baseCosts[serviceId] || 50;
+                // Fallback auf Basiskosten mit echten Preisen wenn möglich
+                let baseCost = baseCosts[serviceId] || 50;
+                if (useRealPricing) {
+                    baseCost = this.getBaseServicePrice(serviceId, providerId) || baseCost;
+                    source = 'CloudPricing API';
+                }
+                const effectiveFactor = customFactor !== null ? customFactor : 1.0;
                 return {
-                    cost: Math.round(base * levelMultiplier * providerFactor),
-                    breakdown: null
+                    cost: Math.round(baseCost * levelMultiplier * effectiveFactor),
+                    breakdown: region ? `${region.name}` : null,
+                    source
                 };
         }
 
+        // Custom Factor anwenden falls vorhanden
+        const effectiveFactor = customFactor !== null ? customFactor : 1.0;
         return {
-            cost: Math.round(cost * levelMultiplier * providerFactor),
-            breakdown
+            cost: Math.round(cost * levelMultiplier * effectiveFactor),
+            breakdown,
+            source
         };
+    }
+
+    /**
+     * Holt den Basis-Preis für einen Service-Typ vom CloudPricing Modul
+     * Verwendet für Fallback-Berechnungen wenn keine detaillierte Config vorhanden ist
+     */
+    getBaseServicePrice(serviceId, providerId) {
+        if (!this.cloudPricing) return null;
+
+        // Mapping von Service-IDs zu CloudPricing-Daten
+        const serviceMapping = {
+            'compute': () => {
+                const pricing = this.cloudPricing.compute[providerId];
+                if (pricing?.instanceTypes) {
+                    // Durchschnittspreis der mittleren Instanzen
+                    const instances = Object.values(pricing.instanceTypes);
+                    const midRange = instances.filter(i => i.vcpu >= 4 && i.vcpu <= 8);
+                    if (midRange.length > 0) {
+                        return midRange.reduce((sum, i) => sum + i.price, 0) / midRange.length;
+                    }
+                }
+                return pricing?.minPrice ? pricing.minPrice * 3 : 200;
+            },
+            'kubernetes': () => {
+                const k8s = this.cloudPricing.kubernetes[providerId];
+                const compute = this.cloudPricing.compute[providerId];
+                if (k8s && compute) {
+                    // Control Plane + 3 kleine Nodes
+                    const controlPlane = k8s.controlPlane || 70;
+                    const nodePrice = compute.minPrice || 100;
+                    return controlPlane + (nodePrice * 3);
+                }
+                return 400;
+            },
+            'serverless': () => {
+                return 80; // Serverless ist nutzungsbasiert
+            },
+            'database_sql': () => {
+                const sql = this.cloudPricing.database?.sql?.[providerId];
+                if (sql?.postgresql) {
+                    return sql.postgresql.base + (100 * sql.postgresql.storagePerGB);
+                }
+                return 150;
+            },
+            'database_nosql': () => {
+                return 180;
+            },
+            'storage_object': () => {
+                const storage = this.cloudPricing.storage?.object?.[providerId];
+                if (storage?.standard) {
+                    return 500 * storage.standard; // 500 GB Standard
+                }
+                return 40;
+            },
+            'storage_block': () => {
+                const storage = this.cloudPricing.storage?.block?.[providerId];
+                if (storage) {
+                    const ssdPrice = storage.gp3 || storage.pdSSD || storage.premiumSSD || 0.10;
+                    return 200 * ssdPrice;
+                }
+                return 60;
+            },
+            'storage_file': () => {
+                const storage = this.cloudPricing.storage?.file?.[providerId];
+                if (storage?.standard || storage?.basic) {
+                    return 100 * (storage.standard || storage.basic);
+                }
+                return 100;
+            },
+            'loadbalancer': () => {
+                const lb = this.cloudPricing.networking?.loadbalancer?.[providerId];
+                if (lb?.alb) {
+                    return lb.alb.perHour * 730; // Monatlich
+                }
+                return 40;
+            },
+            'cdn': () => {
+                return 30; // CDN ist traffikbasiert
+            },
+            'dns': () => {
+                const dns = this.cloudPricing.networking?.dns?.[providerId];
+                return dns?.hostedZonePerMonth || 8;
+            },
+            'messaging': () => {
+                return 50;
+            },
+            'cache': () => {
+                const cache = this.cloudPricing.cache?.[providerId];
+                if (cache?.redis?.pricePerGB) {
+                    return cache.redis.pricePerGB * 8; // 8 GB Redis
+                }
+                return 120;
+            },
+            'container_registry': () => 25,
+            'secrets': () => 15,
+            'monitoring': () => 60,
+            'logging': () => 50,
+            'ai_ml': () => 600,
+            'identity': () => 30
+        };
+
+        const priceGetter = serviceMapping[serviceId];
+        return priceGetter ? priceGetter() : null;
     }
 
     /**
