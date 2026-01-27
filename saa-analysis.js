@@ -743,7 +743,7 @@ class CloudAnalyzer {
                         breakdownParts.push(`${volType.toUpperCase()} ${volSize}GB`);
                     });
 
-                    cost = Math.max(30, totalCost);
+                    cost = totalCost;
                     breakdown = volCount > 1
                         ? `${volCount}× Volumes: ${breakdownParts.join(', ')}`
                         : breakdownParts[0];
@@ -760,7 +760,7 @@ class CloudAnalyzer {
                         if (region) breakdown += ` [${region.name}]`;
                         source = 'CloudPricing API';
                     } else {
-                        cost = Math.max(30, blockStorageGB * 0.10);
+                        cost = blockStorageGB * 0.10;
                         breakdown = `${blockStorageGB} GB Block Storage (SSD)`;
                     }
                 }

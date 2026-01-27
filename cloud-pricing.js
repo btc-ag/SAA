@@ -1206,15 +1206,30 @@ const CloudPricing = {
             };
         }
 
-        // Finde passenden Tier
-        const tierPrice = providerPricing[tier] || providerPricing.standard ||
-                          Object.values(providerPricing)[0] || 0.05;
+        // Tier-Normalisierung: Verschiedene Provider nutzen unterschiedliche Namen
+        // AWS: gp3, io2, st1, sc1
+        // Azure: premiumSSD, standardSSD, standardHDD
+        // GCP: pdSSD, pdBalanced, pdStandard
+        const tierMapping = {
+            // Generische SSD-Tier-Namen zu Provider-spezifischen
+            'ssd': sourceId === 'aws' ? 'gp3' : sourceId === 'azure' ? 'premiumSSD' : 'pdSSD',
+            'pdSSD': sourceId === 'aws' ? 'gp3' : sourceId === 'azure' ? 'premiumSSD' : 'pdSSD',
+            'hdd': sourceId === 'aws' ? 'st1' : sourceId === 'azure' ? 'standardHDD' : 'pdStandard',
+            'pdStandard': sourceId === 'aws' ? 'st1' : sourceId === 'azure' ? 'standardHDD' : 'pdStandard',
+            'nvme': sourceId === 'aws' ? 'io2' : sourceId === 'azure' ? 'ultraDisk' : 'pdExtreme',
+            'pdExtreme': sourceId === 'aws' ? 'io2' : sourceId === 'azure' ? 'ultraDisk' : 'pdExtreme'
+        };
+        const normalizedTier = tierMapping[tier] || tier;
+
+        // Finde passenden Tier-Preis
+        const tierPrice = providerPricing[normalizedTier] || providerPricing[tier] ||
+                          providerPricing.standard || Object.values(providerPricing)[0] || 0.05;
 
         const price = sizeGB * tierPrice * premiumFactor;
 
         return {
             price: Math.round(price * 100) / 100,
-            breakdown: `${sizeGB} GB ${storageType} (${tier})${sovereign ? ' (Sovereign)' : ''}`
+            breakdown: `${sizeGB} GB ${storageType} (${normalizedTier})${sovereign ? ' (Sovereign)' : ''}`
         };
     },
 
