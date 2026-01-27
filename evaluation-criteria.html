@@ -473,7 +473,7 @@
                             deutsche Regionen berechnet.
                         </div>
 
-                        <h3><i class="fa-solid fa-link"></i> Preisquellen</h3>
+                        <h3><i class="fa-solid fa-link"></i> Preisquellen - Hyperscaler</h3>
                         <div class="factors-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
                             <div class="factor-card">
                                 <div class="factor-icon" style="background: #FF9900;">
@@ -483,6 +483,9 @@
                                 <p>Region: <strong>eu-central-1</strong> (Frankfurt)</p>
                                 <a href="https://calculator.aws/" target="_blank" rel="noopener" style="color: #FF9900; font-size: 0.85rem;">
                                     <i class="fa-solid fa-external-link"></i> AWS Pricing Calculator
+                                </a><br>
+                                <a href="https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/price-changes.html" target="_blank" rel="noopener" style="color: #FF9900; font-size: 0.75rem;">
+                                    <i class="fa-solid fa-code"></i> Price List API
                                 </a>
                             </div>
 
@@ -494,6 +497,9 @@
                                 <p>Region: <strong>germanywestcentral</strong> (Frankfurt)</p>
                                 <a href="https://azure.microsoft.com/pricing/" target="_blank" rel="noopener" style="color: #0078D4; font-size: 0.85rem;">
                                     <i class="fa-solid fa-external-link"></i> Azure Pricing
+                                </a><br>
+                                <a href="https://learn.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices" target="_blank" rel="noopener" style="color: #0078D4; font-size: 0.75rem;">
+                                    <i class="fa-solid fa-code"></i> Retail Prices API
                                 </a>
                             </div>
 
@@ -505,8 +511,100 @@
                                 <p>Region: <strong>europe-west3</strong> (Frankfurt)</p>
                                 <a href="https://cloud.google.com/compute/all-pricing" target="_blank" rel="noopener" style="color: #4285F4; font-size: 0.85rem;">
                                     <i class="fa-solid fa-external-link"></i> GCP Pricing
+                                </a><br>
+                                <a href="https://cloud.google.com/billing/docs/reference/catalog" target="_blank" rel="noopener" style="color: #4285F4; font-size: 0.75rem;">
+                                    <i class="fa-solid fa-code"></i> Cloud Billing API
                                 </a>
                             </div>
+                        </div>
+
+                        <h3><i class="fa-solid fa-flag-eu"></i> Preisquellen - EU-Provider</h3>
+                        <div class="factors-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #E20074;">
+                                    <i class="fa-solid fa-cloud"></i>
+                                </div>
+                                <h4>STACKIT</h4>
+                                <p>Region: <strong>de-fra</strong> (Frankfurt)</p>
+                                <a href="https://www.stackit.de/de/preise" target="_blank" rel="noopener" style="color: #E20074; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> STACKIT Preise
+                                </a>
+                                <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">Öffentliche Preisliste</p>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #003D8F;">
+                                    <i class="fa-solid fa-cloud"></i>
+                                </div>
+                                <h4>IONOS</h4>
+                                <p>Region: <strong>de/fra</strong> (Frankfurt)</p>
+                                <a href="https://www.ionos.de/cloud" target="_blank" rel="noopener" style="color: #003D8F; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> IONOS Cloud
+                                </a>
+                                <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">Öffentliche Preisliste</p>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #123456;">
+                                    <i class="fa-solid fa-cloud"></i>
+                                </div>
+                                <h4>OVHcloud</h4>
+                                <p>Region: <strong>de-fra</strong> (Frankfurt)</p>
+                                <a href="https://www.ovhcloud.com/de/public-cloud/prices/" target="_blank" rel="noopener" style="color: #123456; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> OVH Preise
+                                </a>
+                                <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">Öffentliche Preisliste</p>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #E20074;">
+                                    <i class="fa-solid fa-cloud"></i>
+                                </div>
+                                <h4>Open Telekom Cloud</h4>
+                                <p>Region: <strong>eu-de</strong> (Deutschland)</p>
+                                <a href="https://open-telekom-cloud.com/de/preise" target="_blank" rel="noopener" style="color: #E20074; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> OTC Preise
+                                </a>
+                                <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">Öffentliche Preisliste</p>
+                            </div>
+                        </div>
+
+                        <h3><i class="fa-solid fa-shield-halved"></i> Preisquellen - Sovereign Clouds</h3>
+                        <div class="factors-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: linear-gradient(135deg, #FF9900, #232F3E);">
+                                    <i class="fa-solid fa-shield"></i>
+                                </div>
+                                <h4>AWS European Sovereign Cloud</h4>
+                                <p>Region: <strong>eu-central-1-sovereign</strong></p>
+                                <a href="https://aws.amazon.com/de/sovereign-cloud/" target="_blank" rel="noopener" style="color: #FF9900; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> AWS ESC Info
+                                </a>
+                                <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">
+                                    <i class="fa-solid fa-calculator"></i> Geschätzt: AWS + 15-18% Aufschlag
+                                </p>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: linear-gradient(135deg, #0078D4, #00BCF2);">
+                                    <i class="fa-solid fa-shield"></i>
+                                </div>
+                                <h4>DELOS Cloud</h4>
+                                <p>Region: <strong>de-delos</strong> (Deutschland)</p>
+                                <a href="https://dfrn.de/" target="_blank" rel="noopener" style="color: #0078D4; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> DELOS Info
+                                </a>
+                                <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">
+                                    <i class="fa-solid fa-calculator"></i> Geschätzt: Azure + 18-20% Aufschlag
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="important-note" style="margin-top: 1.5rem;">
+                            <i class="fa-solid fa-info-circle"></i>
+                            <strong>Hinweis zu Preisquellen:</strong> Die Hyperscaler (AWS, Azure, GCP) bieten öffentliche Pricing-APIs.
+                            Für EU-Provider und Sovereign Clouds werden die öffentlichen Preislisten verwendet. Sovereign Cloud Preise
+                            sind teilweise geschätzt, da diese noch nicht vollständig öffentlich verfügbar sind.
                         </div>
 
                         <h3><i class="fa-solid fa-cogs"></i> Preisberechnung nach Service-Typ</h3>
