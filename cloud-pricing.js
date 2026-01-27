@@ -1027,32 +1027,42 @@ const CloudPricing = {
      * @returns {Object} - { price, breakdown }
      */
     calculateComputeCost(providerId, vcpu, ramGB, isSAP = false) {
-        const providerPricing = this.compute[providerId];
+        // Sovereign Cloud Handling: Nutze Basis-Provider-Preise + Premium
+        const sovereignMapping = {
+            'aws-sovereign': { base: 'aws', factor: 1.15 },
+            'delos': { base: 'azure', factor: 1.18 },
+            'azure-confidential': { base: 'azure', factor: 1.20 }
+        };
+        const sovereign = sovereignMapping[providerId];
+        const sourceId = sovereign ? sovereign.base : providerId;
+        const premiumFactor = sovereign ? sovereign.factor : 1.0;
+
+        const providerPricing = this.compute[sourceId];
         if (!providerPricing) {
             // Fallback für unbekannte Provider
             return {
-                price: Math.max(35, vcpu * 25 + ramGB * 7),
-                breakdown: `${vcpu} vCPU, ${ramGB} GB RAM (geschätzt)`
+                price: Math.round(Math.max(35, vcpu * 25 + ramGB * 7) * premiumFactor),
+                breakdown: `${vcpu} vCPU, ${ramGB} GB RAM (geschätzt)${sovereign ? ' (Sovereign)' : ''}`
             };
         }
 
         // SAP HANA benötigt spezielle Preise
-        if (isSAP && this.database.hana[providerId]) {
-            const hana = this.database.hana[providerId];
+        if (isSAP && this.database.hana[sourceId]) {
+            const hana = this.database.hana[sourceId];
             // Finde passende HANA-Instanz
             for (const [name, instance] of Object.entries(hana.instances || {})) {
                 if (instance.ram >= ramGB) {
                     return {
-                        price: instance.price,
-                        breakdown: `SAP HANA ${name} (${instance.ram} GB RAM)`,
+                        price: Math.round(instance.price * premiumFactor),
+                        breakdown: `SAP HANA ${name} (${instance.ram} GB RAM)${sovereign ? ' (Sovereign)' : ''}`,
                         instanceType: name
                     };
                 }
             }
             // Fallback: Preis pro GB RAM
             return {
-                price: ramGB * hana.pricePerGBRam,
-                breakdown: `SAP HANA ${ramGB} GB RAM`
+                price: Math.round(ramGB * hana.pricePerGBRam * premiumFactor),
+                breakdown: `SAP HANA ${ramGB} GB RAM${sovereign ? ' (Sovereign)' : ''}`
             };
         }
 
@@ -1072,8 +1082,8 @@ const CloudPricing = {
 
             if (bestMatch) {
                 return {
-                    price: bestMatch.price,
-                    breakdown: `${bestMatch.name} (${bestMatch.vcpu} vCPU, ${bestMatch.ram} GB RAM)`,
+                    price: Math.round(bestMatch.price * premiumFactor),
+                    breakdown: `${bestMatch.name} (${bestMatch.vcpu} vCPU, ${bestMatch.ram} GB RAM)${sovereign ? ' (Sovereign)' : ''}`,
                     instanceType: bestMatch.name
                 };
             }
@@ -1085,8 +1095,8 @@ const CloudPricing = {
         const price = Math.max(providerPricing.minPrice || 30, cpuCost + ramCost);
 
         return {
-            price: Math.round(price),
-            breakdown: `${vcpu} vCPU, ${ramGB} GB RAM`
+            price: Math.round(price * premiumFactor),
+            breakdown: `${vcpu} vCPU, ${ramGB} GB RAM${sovereign ? ' (Sovereign)' : ''}`
         };
     },
 
@@ -1100,12 +1110,23 @@ const CloudPricing = {
      */
     calculateDatabaseCost(providerId, dbType, sizeGB, multiAZ = false) {
         const normalizedType = dbType.toLowerCase();
-        const providerSQL = this.database.sql[providerId];
+
+        // Sovereign Cloud Handling: Nutze Basis-Provider-Preise + Premium
+        const sovereignMapping = {
+            'aws-sovereign': { base: 'aws', factor: 1.15 },
+            'delos': { base: 'azure', factor: 1.18 },
+            'azure-confidential': { base: 'azure', factor: 1.20 }
+        };
+        const sovereign = sovereignMapping[providerId];
+        const sourceId = sovereign ? sovereign.base : providerId;
+        const premiumFactor = sovereign ? sovereign.factor : 1.0;
+
+        const providerSQL = this.database.sql[sourceId];
 
         if (!providerSQL) {
             // Fallback
             return {
-                price: 80 + (sizeGB * 0.5),
+                price: Math.round((80 + (sizeGB * 0.5)) * premiumFactor),
                 breakdown: `${dbType} ${sizeGB} GB (geschätzt)`
             };
         }
@@ -1128,7 +1149,7 @@ const CloudPricing = {
 
         if (!dbPricing) {
             return {
-                price: 80 + (sizeGB * 0.5),
+                price: Math.round((80 + (sizeGB * 0.5)) * premiumFactor),
                 breakdown: `${dbType} ${sizeGB} GB (geschätzt)`
             };
         }
@@ -1141,9 +1162,12 @@ const CloudPricing = {
             price *= dbPricing.multiAZ;
         }
 
+        // Sovereign Premium anwenden
+        price *= premiumFactor;
+
         return {
             price: Math.round(price),
-            breakdown: `${dbType} ${sizeGB} GB${multiAZ ? ' (HA)' : ''}`
+            breakdown: `${dbType} ${sizeGB} GB${multiAZ ? ' (HA)' : ''}${sovereign ? ' (Sovereign)' : ''}`
         };
     },
 
@@ -1156,18 +1180,28 @@ const CloudPricing = {
      * @returns {Object} - { price, breakdown }
      */
     calculateStorageCost(providerId, storageType, sizeGB, tier = 'standard') {
+        // Sovereign Cloud Handling: Nutze Basis-Provider-Preise + Premium
+        const sovereignMapping = {
+            'aws-sovereign': { base: 'aws', factor: 1.15 },
+            'delos': { base: 'azure', factor: 1.18 },
+            'azure-confidential': { base: 'azure', factor: 1.20 }
+        };
+        const sovereign = sovereignMapping[providerId];
+        const sourceId = sovereign ? sovereign.base : providerId;
+        const premiumFactor = sovereign ? sovereign.factor : 1.0;
+
         const storageSection = this.storage[storageType];
         if (!storageSection) {
             return {
-                price: sizeGB * 0.05,
+                price: Math.round(sizeGB * 0.05 * premiumFactor),
                 breakdown: `${sizeGB} GB ${storageType} (geschätzt)`
             };
         }
 
-        const providerPricing = storageSection[providerId];
+        const providerPricing = storageSection[sourceId];
         if (!providerPricing) {
             return {
-                price: sizeGB * 0.05,
+                price: Math.round(sizeGB * 0.05 * premiumFactor),
                 breakdown: `${sizeGB} GB ${storageType} (geschätzt)`
             };
         }
@@ -1176,11 +1210,11 @@ const CloudPricing = {
         const tierPrice = providerPricing[tier] || providerPricing.standard ||
                           Object.values(providerPricing)[0] || 0.05;
 
-        const price = sizeGB * tierPrice;
+        const price = sizeGB * tierPrice * premiumFactor;
 
         return {
             price: Math.round(price * 100) / 100,
-            breakdown: `${sizeGB} GB ${storageType} (${tier})`
+            breakdown: `${sizeGB} GB ${storageType} (${tier})${sovereign ? ' (Sovereign)' : ''}`
         };
     },
 
@@ -1193,12 +1227,23 @@ const CloudPricing = {
      * @returns {Object} - { price, breakdown }
      */
     calculateKubernetesCost(providerId, nodes, nodeVCPU = 4, nodeRAM = 16) {
-        const k8sPricing = this.kubernetes[providerId];
+        // Sovereign Cloud Handling: Nutze Basis-Provider-Preise + Premium
+        const sovereignMapping = {
+            'aws-sovereign': { base: 'aws', factor: 1.15 },
+            'delos': { base: 'azure', factor: 1.18 },
+            'azure-confidential': { base: 'azure', factor: 1.20 }
+        };
+        const sovereign = sovereignMapping[providerId];
+        const sourceId = sovereign ? sovereign.base : providerId;
+        const premiumFactor = sovereign ? sovereign.factor : 1.0;
 
-        // Control Plane Kosten
-        const controlPlaneCost = k8sPricing?.controlPlane || 70;
+        const k8sPricing = this.kubernetes[sourceId];
 
-        // Worker Node Kosten (berechnet über Compute)
+        // Control Plane Kosten (mit Premium-Aufschlag für Sovereign Clouds)
+        const baseControlPlaneCost = k8sPricing?.controlPlane || 70;
+        const controlPlaneCost = Math.round(baseControlPlaneCost * premiumFactor);
+
+        // Worker Node Kosten (berechnet über Compute - hat eigene Sovereign-Behandlung)
         const nodeResult = this.calculateComputeCost(providerId, nodeVCPU, nodeRAM);
         const workerCost = nodeResult.price * nodes;
 
@@ -1206,7 +1251,7 @@ const CloudPricing = {
 
         return {
             price: Math.round(totalCost),
-            breakdown: `Control Plane + ${nodes}× Worker (${nodeVCPU} vCPU, ${nodeRAM} GB)`,
+            breakdown: `Control Plane + ${nodes}× Worker (${nodeVCPU} vCPU, ${nodeRAM} GB)${sovereign ? ' (Sovereign)' : ''}`,
             details: {
                 controlPlane: controlPlaneCost,
                 workers: workerCost,
@@ -1302,8 +1347,18 @@ const CloudPricing = {
      * @returns {Object} - { price, breakdown }
      */
     calculateObservabilityCost(providerId, metrics = 10, alarms = 5, logsGB = 10, retentionGB = 30) {
-        const mon = this.observability?.monitoring?.[providerId];
-        const log = this.observability?.logging?.[providerId];
+        // Sovereign Cloud Handling: Nutze Basis-Provider-Preise + Premium
+        const sovereignMapping = {
+            'aws-sovereign': { base: 'aws', factor: 1.15 },
+            'delos': { base: 'azure', factor: 1.18 },
+            'azure-confidential': { base: 'azure', factor: 1.20 }
+        };
+        const sovereign = sovereignMapping[providerId];
+        const sourceId = sovereign ? sovereign.base : providerId;
+        const premiumFactor = sovereign ? sovereign.factor : 1.0;
+
+        const mon = this.observability?.monitoring?.[sourceId];
+        const log = this.observability?.logging?.[sourceId];
 
         // Provider-Typ für Fallback-Schätzung
         const isEuProvider = ['stackit', 'ionos', 'ovh', 'otc', 'plusserver', 'noris'].includes(providerId);
@@ -1312,11 +1367,11 @@ const CloudPricing = {
         if (!mon || !log) {
             // Fallback basierend auf Provider-Typ
             if (isOpenStack) {
-                return { price: 70, breakdown: 'Self-hosted Observability Stack (geschätzt)' };
+                return { price: Math.round(70 * premiumFactor), breakdown: `Self-hosted Observability Stack (geschätzt)${sovereign ? ' (Sovereign)' : ''}` };
             } else if (isEuProvider) {
-                return { price: 50, breakdown: 'Observability Add-on (geschätzt)' };
+                return { price: Math.round(50 * premiumFactor), breakdown: `Observability Add-on (geschätzt)${sovereign ? ' (Sovereign)' : ''}` };
             } else {
-                return { price: 20, breakdown: 'Cloud-native Observability (geschätzt)' };
+                return { price: Math.round(20 * premiumFactor), breakdown: `Cloud-native Observability (geschätzt)${sovereign ? ' (Sovereign)' : ''}` };
             }
         }
 
@@ -1341,9 +1396,12 @@ const CloudPricing = {
 
         breakdown.push(`${metrics} Metriken, ${alarms} Alarme, ${logsGB}GB Logs`);
 
+        // Sovereign Premium anwenden
+        cost *= premiumFactor;
+
         return {
             price: Math.round(cost),
-            breakdown: breakdown.join(', ')
+            breakdown: breakdown.join(', ') + (sovereign ? ' (Sovereign)' : '')
         };
     },
 
