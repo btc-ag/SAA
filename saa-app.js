@@ -117,6 +117,13 @@ class SovereignArchitectureAdvisor {
             includeInCosts: true     // Projektaufwand in TCO-Berechnung einbeziehen
         };
 
+        // Architektur-Modus Einstellungen
+        this.architectureSettings = {
+            mode: null,              // null = Auto, 'cloud_native' = Cloud-native/PaaS, 'classic' = VM-basiert
+            appId: null              // App-ID für spezifische Pattern-Erkennung
+        };
+        this.detectedPattern = null; // Erkanntes Deployment-Pattern
+
         // Preset-Definitionen
         this.presets = {
             balanced: { control: 25, performance: 25, availability: 35, cost: 15 },
@@ -669,7 +676,117 @@ class SovereignArchitectureAdvisor {
             grouped[comp.category].push(comp);
         });
 
-        let html = '';
+        // Deployment-Pattern erkennen für aktuelle Komponenten
+        const componentIds = Array.from(this.selectedComponents).map(id => id.replace(/-\d+$/, ''));
+        const appId = this.applicationData ? Object.keys(knownApplications).find(k => knownApplications[k].name === this.applicationData.name) : null;
+        this.detectedPattern = typeof detectDeploymentPattern === 'function'
+            ? detectDeploymentPattern(componentIds, appId)
+            : null;
+
+        // Architektur-Modus Toggle
+        let html = `
+            <div class="architecture-mode-panel" style="
+                background: var(--surface-secondary);
+                border: 1px solid var(--border-color);
+                border-radius: 12px;
+                padding: 1rem 1.25rem;
+                margin-bottom: 1.5rem;
+            ">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <i class="fa-solid fa-cloud" style="color: var(--primary-color); font-size: 1.1rem;"></i>
+                    <span style="font-weight: 600; color: var(--text-primary);">Architektur-Modus</span>
+                    ${this.detectedPattern ? `<span class="pattern-badge" style="
+                        background: var(--primary-color);
+                        color: white;
+                        font-size: 0.7rem;
+                        padding: 0.2rem 0.5rem;
+                        border-radius: 4px;
+                        margin-left: auto;
+                    ">Erkannt: ${this.detectedPattern.name}</span>` : ''}
+                </div>
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                    <label class="architecture-mode-option" style="
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        padding: 0.5rem 1rem;
+                        border: 2px solid ${this.architectureSettings.mode === 'cloud_native' ? 'var(--primary-color)' : 'var(--border-color)'};
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                        background: ${this.architectureSettings.mode === 'cloud_native' ? 'var(--primary-color-light)' : 'var(--surface-primary)'};
+                    ">
+                        <input type="radio" name="architectureMode" value="cloud_native"
+                            ${this.architectureSettings.mode === 'cloud_native' ? 'checked' : ''}
+                            style="accent-color: var(--primary-color);">
+                        <i class="fa-solid fa-cloud" style="color: ${this.architectureSettings.mode === 'cloud_native' ? 'var(--primary-color)' : 'var(--text-secondary)'};"></i>
+                        <div>
+                            <div style="font-weight: 500; font-size: 0.9rem;">Cloud-native</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">PaaS, Serverless, weniger Aufwand</div>
+                        </div>
+                    </label>
+                    <label class="architecture-mode-option" style="
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        padding: 0.5rem 1rem;
+                        border: 2px solid ${this.architectureSettings.mode === 'classic' ? 'var(--primary-color)' : 'var(--border-color)'};
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                        background: ${this.architectureSettings.mode === 'classic' ? 'var(--primary-color-light)' : 'var(--surface-primary)'};
+                    ">
+                        <input type="radio" name="architectureMode" value="classic"
+                            ${this.architectureSettings.mode === 'classic' ? 'checked' : ''}
+                            style="accent-color: var(--primary-color);">
+                        <i class="fa-solid fa-server" style="color: ${this.architectureSettings.mode === 'classic' ? 'var(--primary-color)' : 'var(--text-secondary)'};"></i>
+                        <div>
+                            <div style="font-weight: 500; font-size: 0.9rem;">Klassisch</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">VMs, volle Kontrolle</div>
+                        </div>
+                    </label>
+                    <label class="architecture-mode-option" style="
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        padding: 0.5rem 1rem;
+                        border: 2px solid ${this.architectureSettings.mode === null ? 'var(--primary-color)' : 'var(--border-color)'};
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                        background: ${this.architectureSettings.mode === null ? 'var(--primary-color-light)' : 'var(--surface-primary)'};
+                    ">
+                        <input type="radio" name="architectureMode" value="auto"
+                            ${this.architectureSettings.mode === null ? 'checked' : ''}
+                            style="accent-color: var(--primary-color);">
+                        <i class="fa-solid fa-wand-magic-sparkles" style="color: ${this.architectureSettings.mode === null ? 'var(--primary-color)' : 'var(--text-secondary)'};"></i>
+                        <div>
+                            <div style="font-weight: 500; font-size: 0.9rem;">Automatisch</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Basierend auf Workload</div>
+                        </div>
+                    </label>
+                </div>
+                ${this.detectedPattern && this.architectureSettings.mode !== 'classic' ? `
+                    <div style="
+                        margin-top: 0.75rem;
+                        padding: 0.75rem;
+                        background: var(--surface-primary);
+                        border-radius: 8px;
+                        border-left: 3px solid var(--primary-color);
+                    ">
+                        <div style="font-size: 0.85rem; color: var(--text-primary); margin-bottom: 0.25rem;">
+                            <i class="fa-solid fa-lightbulb" style="color: var(--warning-color); margin-right: 0.5rem;"></i>
+                            <strong>${this.detectedPattern.name}</strong> erkannt
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                            ${this.detectedPattern.cloudNative?.description || ''}
+                            ${this.detectedPattern.cloudNative?.operationsFactor < 1 ? `<br><span style="color: var(--success-color);">→ ~${Math.round((1 - this.detectedPattern.cloudNative.operationsFactor) * 100)}% weniger Betriebsaufwand</span>` : ''}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+
         for (const [categoryId, components] of Object.entries(grouped)) {
             const category = componentCategories[categoryId];
             html += `
@@ -786,6 +903,16 @@ class SovereignArchitectureAdvisor {
 
         // Event Listener für Config-Felder
         this.bindComponentConfigEvents(container);
+
+        // Event Listener für Architektur-Modus Toggle
+        container.querySelectorAll('input[name="architectureMode"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const value = e.target.value;
+                this.architectureSettings.mode = value === 'auto' ? null : value;
+                // Re-render um visuelles Feedback zu geben
+                this.renderComponents();
+            });
+        });
     }
 
     /**
@@ -4124,15 +4251,28 @@ class SovereignArchitectureAdvisor {
         // Sicherstellen, dass systemConfig die aktuellen Komponenten-Konfigurationen widerspiegelt
         this.updateSystemConfigFromComponents();
 
+        // App-ID für Pattern-Erkennung ermitteln
+        const appId = this.applicationData
+            ? Object.keys(knownApplications).find(k => knownApplications[k].name === this.applicationData.name)
+            : null;
+
+        // Architektur-Einstellungen vorbereiten
+        const archSettings = {
+            mode: this.architectureSettings.mode, // null = Auto, 'cloud_native' oder 'classic'
+            appId: appId
+        };
+
         // Neue 4-Gewichte-API verwenden, mit systemConfig für realistische Kostenberechnung
         // maturitySettings für konfigurierbaren Reife-Faktor übergeben
+        // architectureSettings für Cloud-native vs. Klassisch
         this.analysisResults = this.analyzer.analyzeForComponents(
             componentIds,
             this.weights,
             this.systemConfig,
             this.maturitySettings,
             this.operationsSettings,
-            this.projectEffortSettings
+            this.projectEffortSettings,
+            archSettings
         );
         this.renderAnalysisResults();
 
@@ -4195,6 +4335,15 @@ class SovereignArchitectureAdvisor {
         // System-Konfiguration Zusammenfassung
         const systemConfigHtml = this.renderSystemConfigSummary();
 
+        // Architektur-Informationen aus den Analyse-Ergebnissen extrahieren
+        const archInfo = this.analysisResults[0]?.serviceAnalysis?.architectureInfo;
+        const archModeDisplay = {
+            'cloud_native': { icon: 'fa-cloud', label: 'Cloud-native / PaaS', color: 'var(--primary-color)' },
+            'classic': { icon: 'fa-server', label: 'Klassisch / VM-basiert', color: 'var(--text-secondary)' },
+            null: { icon: 'fa-wand-magic-sparkles', label: 'Automatisch', color: 'var(--accent-color)' }
+        };
+        const currentMode = archModeDisplay[this.architectureSettings.mode] || archModeDisplay[null];
+
         let html = `
             <!-- Ausgewählte Komponenten -->
             <div class="analysis-section">
@@ -4208,6 +4357,72 @@ class SovereignArchitectureAdvisor {
                 </div>
                 ${systemConfigHtml}
             </div>
+
+            <!-- Architektur-Modus Info -->
+            ${archInfo ? `
+            <div class="analysis-section" style="background: var(--surface-secondary); border: 1px solid var(--border-color);">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <i class="fa-solid ${currentMode.icon}" style="color: ${currentMode.color}; font-size: 1.2rem;"></i>
+                    <h3 class="analysis-title" style="margin: 0;">Architektur-Modus: ${currentMode.label}</h3>
+                </div>
+                ${archInfo.pattern ? `
+                    <div style="
+                        padding: 0.75rem;
+                        background: var(--surface-primary);
+                        border-radius: 8px;
+                        border-left: 3px solid var(--primary-color);
+                        margin-bottom: 0.75rem;
+                    ">
+                        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">
+                            <i class="fa-solid fa-lightbulb" style="color: var(--warning-color); margin-right: 0.5rem;"></i>
+                            Workload-Typ: ${archInfo.pattern.name}
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                            ${archInfo.pattern.description || ''}
+                        </div>
+                    </div>
+                ` : ''}
+                ${archInfo.transformation?.applied ? `
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        ${archInfo.operationsFactor < 1 ? `
+                            <span style="
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 0.25rem;
+                                padding: 0.35rem 0.75rem;
+                                background: var(--success-color-light, rgba(16, 185, 129, 0.1));
+                                color: var(--success-color);
+                                border-radius: 6px;
+                                font-size: 0.8rem;
+                                font-weight: 500;
+                            ">
+                                <i class="fa-solid fa-arrow-down"></i>
+                                ${Math.round((1 - archInfo.operationsFactor) * 100)}% weniger Betriebsaufwand
+                            </span>
+                        ` : ''}
+                        ${archInfo.transformation.reason ? `
+                            <span style="
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 0.25rem;
+                                padding: 0.35rem 0.75rem;
+                                background: var(--info-color-light, rgba(59, 130, 246, 0.1));
+                                color: var(--info-color, #3b82f6);
+                                border-radius: 6px;
+                                font-size: 0.8rem;
+                            ">
+                                <i class="fa-solid fa-info-circle"></i>
+                                ${archInfo.transformation.reason}
+                            </span>
+                        ` : ''}
+                    </div>
+                ` : `
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+                        ${archInfo.transformation?.reason || 'Klassische VM-basierte Architektur wird verwendet.'}
+                    </p>
+                `}
+            </div>
+            ` : ''}
 
             <!-- Algorithm Profile Info -->
             <div class="algorithm-profile-info">

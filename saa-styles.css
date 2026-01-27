@@ -8,6 +8,13 @@
     --saa-step-active: var(--btc-primary);
     --saa-step-complete: var(--btc-accent);
     --saa-step-pending: var(--text-tertiary);
+
+    /* Architektur-Modus Farben */
+    --primary-color-light: rgba(59, 130, 246, 0.1);
+    --success-color-light: rgba(16, 185, 129, 0.1);
+    --info-color-light: rgba(59, 130, 246, 0.1);
+    --warning-color-light: rgba(245, 158, 11, 0.1);
+    --info-color: #3b82f6;
 }
 
 /* Wizard Steps */

@@ -59,8 +59,9 @@ class CloudAnalyzer {
      * @param {Object} maturitySettings - Einstellungen für den Reife-Faktor
      * @param {Object} operationsSettings - Einstellungen für Betriebsaufwand
      * @param {Object} projectEffortSettings - Einstellungen für Projektaufwand
+     * @param {Object} architectureSettings - Einstellungen für Architektur-Modus {mode: 'cloud_native'|'classic'|null, appId: string|null}
      */
-    analyzeForComponents(selectedComponentIds, weights = { control: 25, performance: 25, availability: 35, cost: 15 }, systemConfig = null, maturitySettings = null, operationsSettings = null, projectEffortSettings = null) {
+    analyzeForComponents(selectedComponentIds, weights = { control: 25, performance: 25, availability: 35, cost: 15 }, systemConfig = null, maturitySettings = null, operationsSettings = null, projectEffortSettings = null, architectureSettings = null) {
         // Legacy-Support: Wenn eine Zahl übergeben wird, in Gewichte umwandeln
         if (typeof weights === 'number') {
             const strategyWeight = weights;
@@ -89,12 +90,47 @@ class CloudAnalyzer {
             includeInCosts: true
         };
 
-        const requiredServices = this.getRequiredServices(selectedComponentIds);
+        // Default Architecture Settings
+        const architecture = architectureSettings || {
+            mode: null, // null = Legacy-Verhalten (keine Transformation)
+            appId: null
+        };
+
+        // Service-Ermittlung mit optionalem Architektur-Modus
+        const serviceResult = this.getRequiredServices(
+            selectedComponentIds,
+            architecture.mode,
+            architecture.appId
+        );
+
+        // Prüfen ob neues Format (Objekt) oder Legacy (Array)
+        const isArchitectureAware = !Array.isArray(serviceResult);
+        const requiredServices = isArchitectureAware ? serviceResult.services : serviceResult;
+        const architectureInfo = isArchitectureAware ? serviceResult : null;
 
         // Phase 1: Sammle TCO für alle Provider
         const providerData = this.providers.map(provider => {
             const serviceAnalysis = this.analyzeProviderServices(provider, requiredServices);
-            const tcoEstimate = this.calculateTCO(provider, serviceAnalysis, requiredServices, systemConfig, operations, projectEffort);
+
+            // Architektur-Informationen an Service-Analyse anhängen
+            if (architectureInfo) {
+                serviceAnalysis.architectureInfo = {
+                    mode: architectureInfo.transformation?.mode || 'classic',
+                    pattern: architectureInfo.pattern,
+                    transformation: architectureInfo.transformation,
+                    operationsFactor: architectureInfo.transformation?.operationsFactor || 1.0
+                };
+            }
+
+            const tcoEstimate = this.calculateTCO(
+                provider,
+                serviceAnalysis,
+                requiredServices,
+                systemConfig,
+                operations,
+                projectEffort,
+                architectureInfo?.transformation?.operationsFactor || 1.0 // Operations-Faktor für PaaS
+            );
             return { provider, serviceAnalysis, tcoEstimate };
         });
 
@@ -126,16 +162,133 @@ class CloudAnalyzer {
 
     /**
      * Ermittelt alle benötigten Services aus den Komponenten
+     * Berücksichtigt optionalen Architektur-Modus für Cloud-native vs. Klassisch
+     * @param {Array} componentIds - Liste der Komponenten-IDs
+     * @param {string} architectureMode - 'cloud_native' | 'classic' | null (auto)
+     * @param {string} appId - Optional: App-ID für spezifische Pattern-Erkennung
+     * @returns {Object} { services: Array, pattern: Object|null, transformation: Object|null }
      */
-    getRequiredServices(componentIds) {
+    getRequiredServices(componentIds, architectureMode = null, appId = null) {
         const services = new Set();
+
+        // Erst alle Services aus Komponenten sammeln
         componentIds.forEach(compId => {
-            const component = this.components.find(c => c.id === compId);
+            // Handle Instanz-IDs wie 'compute-2'
+            const baseId = compId.replace(/-\d+$/, '');
+            const component = this.components.find(c => c.id === baseId);
             if (component && component.requiredServices) {
                 component.requiredServices.forEach(s => services.add(s));
             }
         });
-        return Array.from(services);
+
+        let baseServices = Array.from(services);
+
+        // Wenn kein Modus angegeben, gib einfach die Services zurück (Rückwärtskompatibilität)
+        if (architectureMode === null) {
+            return baseServices; // Legacy-Verhalten
+        }
+
+        // Architektur-Modus transformieren die Services
+        const transformedResult = this.transformServicesForArchitectureMode(
+            baseServices,
+            componentIds,
+            architectureMode,
+            appId
+        );
+
+        return transformedResult;
+    }
+
+    /**
+     * Transformiert Services basierend auf Architektur-Modus und erkanntem Pattern
+     * @returns {Object} { services: Array, pattern: Object|null, transformation: Object }
+     */
+    transformServicesForArchitectureMode(baseServices, componentIds, mode, appId = null) {
+        // Pattern erkennen
+        const detectedPattern = typeof detectDeploymentPattern === 'function'
+            ? detectDeploymentPattern(componentIds, appId)
+            : null;
+
+        // Wenn kein Pattern erkannt oder klassischer Modus, keine Transformation
+        if (!detectedPattern || mode === 'classic') {
+            return {
+                services: baseServices,
+                pattern: detectedPattern,
+                transformation: {
+                    mode: mode || 'classic',
+                    applied: false,
+                    reason: detectedPattern ? 'Klassischer Modus gewählt' : 'Kein passendes Pattern erkannt',
+                    operationsFactor: detectedPattern?.classic?.operationsFactor || 1.0,
+                    description: detectedPattern?.classic?.description || 'Klassische VM-basierte Architektur'
+                }
+            };
+        }
+
+        // Cloud-native Transformation anwenden
+        const patternConfig = detectedPattern.cloudNative;
+        const transformedServices = new Set(baseServices);
+
+        // 1. Services ersetzen
+        if (patternConfig.replaceServices) {
+            Object.entries(patternConfig.replaceServices).forEach(([from, to]) => {
+                if (transformedServices.has(from)) {
+                    transformedServices.delete(from);
+                    transformedServices.add(to);
+                }
+            });
+        }
+
+        // 2. Services hinzufügen
+        if (patternConfig.addServices) {
+            patternConfig.addServices.forEach(s => transformedServices.add(s));
+        }
+
+        // 3. Services entfernen
+        if (patternConfig.removeServices) {
+            patternConfig.removeServices.forEach(s => transformedServices.delete(s));
+        }
+
+        return {
+            services: Array.from(transformedServices),
+            pattern: detectedPattern,
+            transformation: {
+                mode: 'cloud_native',
+                applied: true,
+                patternId: detectedPattern.id,
+                patternName: detectedPattern.name,
+                reason: patternConfig.description,
+                operationsFactor: patternConfig.operationsFactor || 0.5,
+                description: patternConfig.description,
+                replacements: patternConfig.replaceServices || {},
+                additions: patternConfig.addServices || [],
+                removals: patternConfig.removeServices || []
+            }
+        };
+    }
+
+    /**
+     * Berechnet die Service-Verfügbarkeit für einen Provider unter Berücksichtigung der Architektur
+     * @param {Object} provider - Der Cloud-Provider
+     * @param {Object} serviceResult - Ergebnis von getRequiredServices mit Architektur-Modus
+     * @returns {Object} Verfügbarkeitsanalyse mit Architektur-Info
+     */
+    analyzeProviderServicesWithArchitecture(provider, serviceResult) {
+        // Wenn einfaches Array (Legacy), in Objekt umwandeln
+        if (Array.isArray(serviceResult)) {
+            return this.analyzeProviderServices(provider, serviceResult);
+        }
+
+        const analysis = this.analyzeProviderServices(provider, serviceResult.services);
+
+        // Architektur-Informationen anhängen
+        analysis.architectureInfo = {
+            mode: serviceResult.transformation?.mode || 'classic',
+            pattern: serviceResult.pattern,
+            transformation: serviceResult.transformation,
+            operationsFactor: serviceResult.transformation?.operationsFactor || 1.0
+        };
+
+        return analysis;
     }
 
     /**
@@ -309,8 +462,9 @@ class CloudAnalyzer {
      * @param {Object} systemConfig - Optionale System-Konfiguration für realistische Kostenberechnung
      * @param {Object} operationsSettings - Einstellungen für Betriebsaufwand
      * @param {Object} projectEffortSettings - Einstellungen für Projektaufwand
+     * @param {number} architectureOperationsFactor - Faktor für Betriebsaufwand aus Architektur-Modus (1.0 = normal, 0.5 = 50% weniger)
      */
-    calculateTCO(provider, serviceAnalysis, requiredServices, systemConfig = null, operationsSettings = null, projectEffortSettings = null) {
+    calculateTCO(provider, serviceAnalysis, requiredServices, systemConfig = null, operationsSettings = null, projectEffortSettings = null, architectureOperationsFactor = 1.0) {
         const allServices = [...serviceAnalysis.available, ...serviceAnalysis.preview];
         const missingServices = serviceAnalysis.missing;
 
@@ -323,9 +477,10 @@ class CloudAnalyzer {
         // Consumption Costs (Verbrauchskosten) - jetzt mit systemConfig
         const consumptionCosts = this.calculateConsumptionCosts(allServices, requiredServices, systemConfig, provider);
 
-        // Operations Costs (Betriebsaufwand) - mit systemConfig für Skalierung
-        const operationsCosts = this.calculateOperationsCosts(allServices, missingServices, systemConfig);
+        // Operations Costs (Betriebsaufwand) - mit systemConfig für Skalierung und Architektur-Faktor
+        const operationsCosts = this.calculateOperationsCosts(allServices, missingServices, systemConfig, architectureOperationsFactor);
         operationsCosts.includedInCosts = opSettings.includeInCosts;
+        operationsCosts.architectureFactor = architectureOperationsFactor; // Speichere für Anzeige
 
         // Project Effort (Projektaufwand) - mit systemConfig für Skalierung
         const projectEffortCalc = this.calculateProjectEffort(allServices, missingServices, systemConfig);
@@ -377,7 +532,11 @@ class CloudAnalyzer {
             'monitoring': 'Monitoring',
             'logging': 'Logging',
             'ai_ml': 'AI/ML',
-            'identity': 'Identity Management'
+            'identity': 'Identity Management',
+            // PaaS / Cloud-native Services
+            'static_hosting': 'Static Website Hosting',
+            'app_service': 'App Service / PaaS',
+            'api_gateway': 'API Gateway'
         };
 
         services.forEach(service => {
@@ -449,7 +608,11 @@ class CloudAnalyzer {
             loadbalancer: 40, cdn: 30, dns: 8,
             messaging: 50, cache: 120, container_registry: 25,
             secrets: 15, monitoring: 60, logging: 50,
-            ai_ml: 600, identity: 30
+            ai_ml: 600, identity: 30,
+            // PaaS / Cloud-native Services (günstiger als VMs!)
+            static_hosting: 5,      // S3/Blob Static Hosting ist sehr günstig
+            app_service: 25,        // Lightsail/App Service Basiskosten
+            api_gateway: 15         // API Gateway Basiskosten
         };
 
         // Provider-spezifische Preisfaktoren (relativ zu Hyperscaler-Preisen)
@@ -772,6 +935,51 @@ class CloudAnalyzer {
                 }
                 break;
 
+            // ═══ PaaS / Cloud-native Services ═══
+            case 'static_hosting':
+                // Static Website Hosting: Sehr günstig, hauptsächlich Storage + CDN
+                // S3 Static Hosting: ~0.023€/GB Storage + ~0.085€/GB Transfer
+                const staticStorageGB = config.storage?.objectSize || 10; // Typische Website: 10-100 GB
+                const staticTransferGB = staticStorageGB * 5; // Annahme: 5x Transfer/Monat
+                cost = (staticStorageGB * 0.023) + (staticTransferGB * 0.085);
+                cost = Math.max(cost, 2); // Minimum 2€/Monat
+                breakdown = `${staticStorageGB} GB Storage, ~${staticTransferGB} GB Transfer/Monat`;
+                break;
+
+            case 'app_service':
+                // App Service / PaaS: Basiert auf Compute-Größe
+                // Lightsail: 5-160€/Monat, App Service: 10-500€/Monat
+                if (config.compute?.vmGroups && config.compute.vmGroups.length > 0) {
+                    // Multi-Instance App Service
+                    let totalCost = 0;
+                    let totalInstances = 0;
+                    config.compute.vmGroups.forEach(vm => {
+                        const ram = Number(vm.ram) || 2;
+                        const count = Number(vm.count) || 1;
+                        // App Service: ~3-5€/GB RAM (günstiger als EC2 für kleine Workloads)
+                        totalCost += (ram * 4) * count;
+                        totalInstances += count;
+                    });
+                    cost = Math.max(totalCost, 5); // Minimum 5€/Monat
+                    breakdown = `${totalInstances} App Service Instance(s)`;
+                } else {
+                    // Standard-Sizing basierend auf Compute-Config
+                    const ram = config.compute?.ram || 2;
+                    cost = Math.max(ram * 4, 5); // ~4€/GB, min 5€
+                    breakdown = `${ram} GB RAM App Service`;
+                }
+                break;
+
+            case 'api_gateway':
+                // API Gateway: Basiert auf Requests/Monat
+                // AWS API Gateway: ~3.50€ pro 1M Requests (REST), ~1€ (HTTP)
+                // Default: 1M Requests/Monat
+                const requestsPerMonth = config.apiGateway?.requestsPerMonth || 1000000;
+                const pricePerMillion = 2.5; // Durchschnitt REST/HTTP
+                cost = Math.max((requestsPerMonth / 1000000) * pricePerMillion, 3); // Min 3€
+                breakdown = `~${(requestsPerMonth / 1000000).toFixed(1)}M Requests/Monat`;
+                break;
+
             default:
                 // Fallback auf Basiskosten
                 const base = baseCosts[serviceId] || 50;
@@ -832,8 +1040,12 @@ class CloudAnalyzer {
 
     /**
      * Berechnet Betriebsaufwand (Operations)
+     * @param {Array} services - Liste der Services
+     * @param {Array} missingServices - Liste der fehlenden Services
+     * @param {Object} systemConfig - System-Konfiguration
+     * @param {number} architectureOperationsFactor - Faktor für Cloud-native Architektur (1.0 = normal, 0.3 = 70% weniger)
      */
-    calculateOperationsCosts(services, missingServices, systemConfig = null) {
+    calculateOperationsCosts(services, missingServices, systemConfig = null, architectureOperationsFactor = 1.0) {
         const levelMap = { low: 1, medium: 2, high: 3 };
         let totalLevel = 0;
         let details = [];
@@ -875,14 +1087,22 @@ class CloudAnalyzer {
         const overallLevel = avgLevel <= 1.5 ? 'low' : avgLevel <= 2.5 ? 'medium' : 'high';
 
         // FTE-Schätzung (Full Time Equivalent)
-        const totalFTE = details.reduce((sum, d) => sum + d.fteEstimate, 0);
+        let totalFTE = details.reduce((sum, d) => sum + d.fteEstimate, 0);
+
+        // Architektur-Faktor anwenden (Cloud-native reduziert Betriebsaufwand)
+        const adjustedFTE = totalFTE * architectureOperationsFactor;
+        const fteSavings = totalFTE - adjustedFTE;
 
         return {
             level: overallLevel,
             avgScore: Math.round(avgLevel * 10) / 10,
             details,
-            totalFTE: Math.round(totalFTE * 10) / 10,
-            monthlyPersonnelCost: Math.round(totalFTE * 8000) // ~8000€/Monat pro FTE
+            baseFTE: Math.round(totalFTE * 10) / 10, // FTE ohne Architektur-Faktor
+            totalFTE: Math.round(adjustedFTE * 10) / 10, // FTE mit Architektur-Faktor
+            fteSavings: Math.round(fteSavings * 100) / 100, // Einsparung durch Cloud-native
+            monthlyPersonnelCost: Math.round(adjustedFTE * 8000), // ~8000€/Monat pro FTE
+            basePersonnelCost: Math.round(totalFTE * 8000), // Kosten ohne Einsparung
+            monthlySavings: Math.round(fteSavings * 8000) // Monatliche Einsparung
         };
     }
 
