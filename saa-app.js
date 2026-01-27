@@ -211,9 +211,19 @@ class SovereignArchitectureAdvisor {
                     // Multi-App State - selectedComponents müssen als Set wiederhergestellt werden
                     this.applications = (state.applications || []).map(app => {
                         // Stelle sicher, dass selectedComponents ein Set ist
-                        if (app.selectedComponents && !(app.selectedComponents instanceof Set)) {
-                            app.selectedComponents = new Set(app.selectedComponents);
-                        } else if (!app.selectedComponents) {
+                        if (app.selectedComponents) {
+                            if (app.selectedComponents instanceof Set) {
+                                // Bereits ein Set - nichts tun
+                            } else if (Array.isArray(app.selectedComponents)) {
+                                // Array -> Set
+                                app.selectedComponents = new Set(app.selectedComponents);
+                            } else if (typeof app.selectedComponents === 'object') {
+                                // Objekt (z.B. von JSON) -> Values als Set
+                                app.selectedComponents = new Set(Object.values(app.selectedComponents));
+                            } else {
+                                app.selectedComponents = new Set();
+                            }
+                        } else {
                             app.selectedComponents = new Set();
                         }
                         return app;
