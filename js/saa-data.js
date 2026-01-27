@@ -83,6 +83,221 @@ const selfBuildOptions = {
     }
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// ARCHITEKTUR-MODI: Cloud-native vs. Klassisch
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Architektur-Modi definieren die grundsätzliche Deployment-Strategie
+ * - 'cloud_native': Nutzt PaaS/Serverless wo möglich, minimaler Betriebsaufwand
+ * - 'classic': Traditionelle VM-basierte Architektur, volle Kontrolle
+ */
+const architectureModes = {
+    cloud_native: {
+        id: 'cloud_native',
+        name: 'Cloud-native / Modern',
+        description: 'Nutzt Platform-as-a-Service (PaaS) und Serverless-Dienste wo möglich. Minimaler Betriebsaufwand, optimierte Kosten.',
+        icon: '☁️',
+        benefits: ['Geringerer Betriebsaufwand', 'Automatische Skalierung', 'Managed Security Updates', 'Pay-per-Use Preismodell'],
+        tradeoffs: ['Höherer Vendor Lock-in', 'Weniger Kontrolle über Infrastruktur', 'Abhängigkeit von Provider-Features']
+    },
+    classic: {
+        id: 'classic',
+        name: 'Klassisch / VM-basiert',
+        description: 'Traditionelle Architektur mit virtuellen Maschinen. Volle Kontrolle, aber höherer Betriebsaufwand.',
+        icon: '🖥️',
+        benefits: ['Volle Kontrolle', 'Portabilität', 'Keine PaaS-Einschränkungen', 'Flexible Konfiguration'],
+        tradeoffs: ['Höherer Betriebsaufwand', 'Manuelle Skalierung', 'Eigene Wartung & Updates']
+    }
+};
+
+/**
+ * Deployment Patterns: Optimale Service-Kombinationen basierend auf Workload-Typ
+ * Jedes Pattern definiert Cloud-native und Klassische Alternativen
+ */
+const deploymentPatterns = {
+    // Statische Websites (HTML/CSS/JS ohne Backend)
+    static_website: {
+        name: 'Statische Website',
+        description: 'Reine HTML/CSS/JS Websites ohne Server-seitige Logik',
+        // Erkennung: Nur Object Storage + CDN, kein Compute/DB
+        detection: (components) => {
+            const hasObjectStorage = components.includes('storage_object');
+            const hasCDN = components.includes('cdn');
+            const hasCompute = components.includes('compute') || components.includes('kubernetes');
+            const hasDB = components.includes('database_sql') || components.includes('database_nosql');
+            return (hasObjectStorage || hasCDN) && !hasCompute && !hasDB;
+        },
+        cloudNative: {
+            replaceServices: { storage_object: 'static_hosting' },
+            addServices: ['cdn', 'dns'],
+            removeServices: [],
+            operationsFactor: 0.1, // 90% weniger Betriebsaufwand
+            description: 'Static Website Hosting (S3/Blob) mit CDN'
+        },
+        classic: {
+            replaceServices: { storage_object: 'compute' },
+            addServices: ['loadbalancer', 'dns'],
+            removeServices: [],
+            operationsFactor: 1.0,
+            description: 'VM mit Nginx/Apache Webserver'
+        }
+    },
+
+    // Web-Applikationen (mit Backend-Logik)
+    web_application: {
+        name: 'Web-Applikation',
+        description: 'Dynamische Webanwendungen mit Backend-Logik',
+        detection: (components) => {
+            const hasCompute = components.includes('compute');
+            const hasDB = components.includes('database_sql') || components.includes('database_nosql');
+            const hasLB = components.includes('loadbalancer');
+            // Nicht Kubernetes-basiert für dieses Pattern
+            const hasK8s = components.includes('kubernetes');
+            return hasCompute && hasDB && !hasK8s;
+        },
+        cloudNative: {
+            replaceServices: { compute: 'app_service' },
+            addServices: [],
+            removeServices: [],
+            operationsFactor: 0.3, // 70% weniger Betriebsaufwand
+            description: 'Managed App Service (Lightsail, App Service, Cloud Run)'
+        },
+        classic: {
+            replaceServices: {},
+            addServices: [],
+            removeServices: [],
+            operationsFactor: 1.0,
+            description: 'VMs mit Load Balancer'
+        }
+    },
+
+    // API / Microservices
+    api_service: {
+        name: 'API / Microservices',
+        description: 'REST/GraphQL APIs und Microservice-Architekturen',
+        detection: (components) => {
+            const hasServerless = components.includes('serverless');
+            const hasMessaging = components.includes('messaging');
+            const hasCompute = components.includes('compute');
+            // Serverless oder kleine Compute + Messaging
+            return hasServerless || (hasCompute && hasMessaging);
+        },
+        cloudNative: {
+            replaceServices: { compute: 'serverless', serverless: 'serverless' },
+            addServices: ['api_gateway'],
+            removeServices: ['loadbalancer'],
+            operationsFactor: 0.15, // 85% weniger Betriebsaufwand
+            description: 'Serverless Functions mit API Gateway'
+        },
+        classic: {
+            replaceServices: { serverless: 'compute' },
+            addServices: ['loadbalancer'],
+            removeServices: [],
+            operationsFactor: 1.0,
+            description: 'VMs hinter Load Balancer'
+        }
+    },
+
+    // Container / Kubernetes Workloads
+    container_workload: {
+        name: 'Container-Workload',
+        description: 'Containerisierte Anwendungen auf Kubernetes',
+        detection: (components) => {
+            return components.includes('kubernetes');
+        },
+        cloudNative: {
+            replaceServices: {},
+            addServices: [],
+            removeServices: [],
+            operationsFactor: 0.5, // 50% weniger durch Managed K8s
+            description: 'Managed Kubernetes (EKS, AKS, GKE)'
+        },
+        classic: {
+            replaceServices: { kubernetes: 'compute' },
+            addServices: ['loadbalancer'],
+            removeServices: ['container_registry'],
+            operationsFactor: 1.2, // Mehr Aufwand für Self-managed
+            description: 'Self-managed K8s oder VMs'
+        }
+    },
+
+    // Datenbank-zentrische Anwendungen
+    database_centric: {
+        name: 'Datenbank-Anwendung',
+        description: 'Anwendungen mit Fokus auf Datenbankoperationen',
+        detection: (components) => {
+            const hasDB = components.includes('database_sql') || components.includes('database_nosql');
+            const hasCompute = components.includes('compute');
+            const hasK8s = components.includes('kubernetes');
+            return hasDB && !hasCompute && !hasK8s;
+        },
+        cloudNative: {
+            replaceServices: {},
+            addServices: [],
+            removeServices: [],
+            operationsFactor: 0.4, // 60% weniger durch Managed DB
+            description: 'Managed Database Services (RDS, Cloud SQL)'
+        },
+        classic: {
+            replaceServices: {},
+            addServices: ['compute'], // DB auf eigener VM
+            removeServices: [],
+            operationsFactor: 1.3, // Mehr Aufwand für DB-Betrieb
+            description: 'Datenbank auf eigener VM'
+        }
+    },
+
+    // Enterprise / Legacy Anwendungen (SAP, Oracle, etc.)
+    enterprise_legacy: {
+        name: 'Enterprise / Legacy',
+        description: 'Klassische Enterprise-Anwendungen wie SAP, Oracle EBS',
+        detection: (components, appId) => {
+            // Erkennung über App-ID oder spezifische Komponenten-Kombinationen
+            const enterpriseApps = ['sap-s4hana', 'sap-business-one', 'oracle-ebs', 'microsoft-dynamics-365'];
+            if (appId && enterpriseApps.includes(appId)) return true;
+            // Oder: Viel RAM + Block Storage + File Storage
+            const hasBlockStorage = components.includes('storage_block');
+            const hasFileStorage = components.includes('storage_file');
+            const hasCompute = components.includes('compute');
+            return hasCompute && hasBlockStorage && hasFileStorage;
+        },
+        cloudNative: {
+            replaceServices: {},
+            addServices: [],
+            removeServices: [],
+            operationsFactor: 0.7, // Nur 30% weniger, da oft VM-basiert
+            description: 'Optimierte Cloud-VMs mit managed Services wo möglich'
+        },
+        classic: {
+            replaceServices: {},
+            addServices: [],
+            removeServices: [],
+            operationsFactor: 1.0,
+            description: 'Klassische VM-Architektur'
+        }
+    }
+};
+
+/**
+ * Ermittelt das passende Deployment Pattern für gegebene Komponenten
+ * @param {Array} components - Liste der Komponenten-IDs
+ * @param {string} appId - Optional: App-ID für spezifische Erkennung
+ * @returns {Object|null} Das erkannte Pattern oder null
+ */
+function detectDeploymentPattern(components, appId = null) {
+    // Reihenfolge ist wichtig: Spezifischere Patterns zuerst
+    const patternOrder = ['static_website', 'api_service', 'container_workload', 'enterprise_legacy', 'web_application', 'database_centric'];
+
+    for (const patternId of patternOrder) {
+        const pattern = deploymentPatterns[patternId];
+        if (pattern.detection(components, appId)) {
+            return { id: patternId, ...pattern };
+        }
+    }
+    return null;
+}
+
 // Cloud Provider mit detaillierten Service-Bewertungen
 const cloudProviders = [
     {
@@ -208,6 +423,25 @@ const cloudProviders = [
                 control: 40, performance: 95,
                 controlReason: 'Identity-Daten bei AWS. Feingranulare Policies, aber AWS-proprietäres Format. Cognito-Lock-in.',
                 performanceReason: 'Feingranulares IAM, MFA, SAML/OIDC Federation, Cognito User Pools mit Social Login.'
+            }),
+            // ═══ PaaS / Cloud-native Services ═══
+            static_hosting: svc('S3 Static Hosting', true, 'production', {
+                consumption: 'very_low', operations: 'very_low', projectEffort: 'very_low',
+                control: 38, performance: 98,
+                controlReason: 'Einfaches Website-Hosting über S3. US-Jurisdiktion, aber kein Server-Management nötig.',
+                performanceReason: 'Hochverfügbar, global über CloudFront skalierbar, extrem kostengünstig für statische Inhalte.'
+            }),
+            app_service: svc('Lightsail / App Runner', true, 'production', {
+                consumption: 'low', operations: 'very_low', projectEffort: 'very_low',
+                control: 30, performance: 90,
+                controlReason: 'Vollständig managed PaaS. Wenig Konfigurationsmöglichkeiten. Starker AWS-Lock-in.',
+                performanceReason: 'Einfaches Deployment, automatische Skalierung, integriertes SSL, Container-Support mit App Runner.'
+            }),
+            api_gateway: svc('API Gateway', true, 'production', {
+                consumption: 'low', operations: 'very_low', projectEffort: 'low',
+                control: 28, performance: 97,
+                controlReason: 'Proprietäre API-Definition. Request/Response-Transformation AWS-spezifisch. Hoher Lock-in.',
+                performanceReason: 'WebSocket-Support, Request Throttling, Caching, REST & HTTP APIs, nahtlose Lambda-Integration.'
             })
         }
     },
@@ -334,6 +568,25 @@ const cloudProviders = [
                 control: 45, performance: 98,
                 controlReason: 'Enterprise-Grade IAM. Microsoft-Ökosystem, aber SAML/OIDC Standards.',
                 performanceReason: 'Conditional Access, PIM, B2B/B2C, Passwordless, Verified ID.'
+            }),
+            // ═══ PaaS / Cloud-native Services ═══
+            static_hosting: svc('Azure Static Web Apps', true, 'production', {
+                consumption: 'very_low', operations: 'very_low', projectEffort: 'very_low',
+                control: 40, performance: 95,
+                controlReason: 'Vollständig managed Static Hosting. GitHub/Azure DevOps Integration. Microsoft-Ökosystem.',
+                performanceReason: 'Globale Verteilung, integrierte API (Functions), automatische SSL-Zertifikate.'
+            }),
+            app_service: svc('App Service', true, 'production', {
+                consumption: 'low', operations: 'very_low', projectEffort: 'very_low',
+                control: 35, performance: 93,
+                controlReason: 'Managed PaaS von Microsoft. Eingeschränkte OS-Konfiguration. Azure-Lock-in.',
+                performanceReason: 'Einfaches Deployment, Auto-Scaling, Deployment Slots, integriertes CI/CD.'
+            }),
+            api_gateway: svc('API Management', true, 'production', {
+                consumption: 'medium', operations: 'low', projectEffort: 'low',
+                control: 38, performance: 92,
+                controlReason: 'Enterprise-Grade APIM. Policies Azure-spezifisch. Self-hosted Gateway Option.',
+                performanceReason: 'Developer Portal, Rate Limiting, Analytics, OAuth2/JWT, GraphQL Support.'
             })
         }
     },
@@ -460,6 +713,25 @@ const cloudProviders = [
                 control: 40, performance: 90,
                 controlReason: 'Google-IAM mit eigener Policy-Sprache. Workload Identity für externe IdPs.',
                 performanceReason: 'Fine-grained Roles, Workload Identity, Org Policies, IAM Conditions.'
+            }),
+            // ═══ PaaS / Cloud-native Services ═══
+            static_hosting: svc('Cloud Storage Hosting', true, 'production', {
+                consumption: 'very_low', operations: 'very_low', projectEffort: 'very_low',
+                control: 38, performance: 96,
+                controlReason: 'GCS Static Hosting. US-Jurisdiktion, aber Standard-Protokolle. Firebase Hosting Alternative.',
+                performanceReason: 'Globale Verfügbarkeit, Cloud CDN Integration, Firebase Hosting für SPAs.'
+            }),
+            app_service: svc('Cloud Run / App Engine', true, 'production', {
+                consumption: 'low', operations: 'very_low', projectEffort: 'very_low',
+                control: 32, performance: 95,
+                controlReason: 'Managed Container Platform. Knative-basiert (teilweise portabel). Google-Lock-in bei App Engine.',
+                performanceReason: 'Container-to-URL in Sekunden, automatische Skalierung auf 0, Knative-kompatibel.'
+            }),
+            api_gateway: svc('API Gateway / Apigee', true, 'production', {
+                consumption: 'low', operations: 'very_low', projectEffort: 'low',
+                control: 35, performance: 93,
+                controlReason: 'Google API Gateway oder Enterprise Apigee. OpenAPI-basiert. Apigee mit mehr Kontrolle.',
+                performanceReason: 'Serverless API Gateway, Apigee für Enterprise mit Analytics, Developer Portal.'
             })
         }
     },
@@ -593,6 +865,25 @@ const cloudProviders = [
                 control: 94, performance: 75,
                 controlReason: 'Open-Source Keycloak (CNCF). OIDC/SAML Standard. Volle Kontrolle, kein Lock-in.',
                 performanceReason: 'Keycloak-Features, Federation, MFA, Social Login, User Management.'
+            }),
+            // ═══ PaaS / Cloud-native Services ═══
+            static_hosting: svc('Object Storage Hosting', false, 'planned', {
+                consumption: 'very_low', operations: 'very_low', projectEffort: 'very_low',
+                control: 92, performance: 70,
+                controlReason: 'Geplant für STACKIT. Würde volle Datensouveränität bieten.',
+                performanceReason: 'In Planung - Details noch nicht verfügbar.'
+            }),
+            app_service: svc('App Plattform', false, 'planned', {
+                consumption: 'low', operations: 'low', projectEffort: 'low',
+                control: 90, performance: 70,
+                controlReason: 'Geplant - würde Container-Deployment mit deutscher Souveränität ermöglichen.',
+                performanceReason: 'In Planung - Kubernetes-basierte PaaS erwartet.'
+            }),
+            api_gateway: svc('API Gateway', false, 'planned', {
+                consumption: 'low', operations: 'low', projectEffort: 'low',
+                control: 92, performance: 70,
+                controlReason: 'Geplant - würde souveränes API-Management ermöglichen.',
+                performanceReason: 'In Planung.'
             })
         }
     },
@@ -721,6 +1012,25 @@ const cloudProviders = [
                 control: 78, performance: 90,
                 controlReason: 'Separates IAM in EU-Sovereign Partition. Kein zentrales Identity über Partitionen hinweg. Zusätzliche Accounts/Rollen nötig.',
                 performanceReason: 'Vollständiges IAM, EU-basiert.'
+            }),
+            // ═══ PaaS / Cloud-native Services ═══
+            static_hosting: svc('S3 Static Hosting', true, 'production', {
+                consumption: 'very_low', operations: 'very_low', projectEffort: 'very_low',
+                control: 75, performance: 92,
+                controlReason: 'S3 in EU-Sovereign Partition. EU-Datenresidenz, aber AWS-Technologie und -Betrieb.',
+                performanceReason: 'Wie Standard AWS S3, aber nur EU-Locations.'
+            }),
+            app_service: svc('Lightsail / App Runner', true, 'preview', {
+                consumption: 'low', operations: 'very_low', projectEffort: 'very_low',
+                control: 70, performance: 85,
+                controlReason: 'PaaS in EU-Sovereign - EU-Datenresidenz. Feature-Set möglicherweise eingeschränkt.',
+                performanceReason: 'Wie AWS Standard, aber EU-only Deployment.'
+            }),
+            api_gateway: svc('API Gateway', true, 'production', {
+                consumption: 'low', operations: 'very_low', projectEffort: 'low',
+                control: 72, performance: 90,
+                controlReason: 'API Gateway in EU-Sovereign. Gleiche Funktionalität, EU-Datenverarbeitung.',
+                performanceReason: 'Vollständiges API Gateway in EU.'
             })
         }
     },
@@ -871,6 +1181,25 @@ const cloudProviders = [
                 control: 85, performance: 75,
                 controlReason: 'Separates Entra ID in DELOS. Kein Federation mit globalem Azure AD. Zusätzliche Konfiguration nötig.',
                 performanceReason: 'Entra-Basis. Eingeschränkte Premium-Features (PIM, CA).'
+            }),
+            // ═══ PaaS / Cloud-native Services ═══
+            static_hosting: svc('Blob Static Web', true, 'production', {
+                consumption: 'very_low', operations: 'low', projectEffort: 'low',
+                control: 85, performance: 70,
+                controlReason: 'Azure Static Hosting in DELOS-Umgebung. Deutsche Treuhänderschaft, volle Souveränität.',
+                performanceReason: 'Standard Azure Static Hosting, aber nur DELOS-Regionen.'
+            }),
+            app_service: svc('App Service', false, 'planned', {
+                consumption: 'medium', operations: 'medium', projectEffort: 'medium',
+                control: 82, performance: 60,
+                controlReason: 'App Service für DELOS geplant. Würde souveränes PaaS ermöglichen.',
+                performanceReason: 'In Planung - eingeschränktes Feature-Set erwartet.'
+            }),
+            api_gateway: svc('API Management', false, 'planned', {
+                consumption: 'medium', operations: 'medium', projectEffort: 'medium',
+                control: 82, performance: 60,
+                controlReason: 'APIM für DELOS geplant. Würde souveränes API-Management ermöglichen.',
+                performanceReason: 'In Planung.'
             })
         }
     },
@@ -997,6 +1326,23 @@ const cloudProviders = [
                 controlReason: 'Kein managed IAM Service.',
                 performanceReason: 'Nicht verfügbar.',
                 selfBuildOption: selfBuildOptions.identity
+            }),
+            // ═══ PaaS / Cloud-native Services ═══
+            static_hosting: svc('S3 Static Website', true, 'production', {
+                consumption: 'very_low', operations: 'very_low', projectEffort: 'very_low',
+                control: 68, performance: 70,
+                controlReason: 'S3-kompatibles Static Hosting. Deutsche Infrastruktur. DSGVO-konform.',
+                performanceReason: 'Einfaches Static Hosting über Object Storage.'
+            }),
+            app_service: svc('-', false, 'none', {
+                control: 0, performance: 0,
+                controlReason: 'Kein managed App Service verfügbar.',
+                performanceReason: 'Nicht verfügbar. Alternative: Container auf K8s.'
+            }),
+            api_gateway: svc('-', false, 'none', {
+                control: 0, performance: 0,
+                controlReason: 'Kein managed API Gateway verfügbar.',
+                performanceReason: 'Nicht verfügbar. Alternative: Kong/Traefik Self-Build.'
             })
         }
     },
@@ -1123,6 +1469,24 @@ const cloudProviders = [
                 control: 55, performance: 58,
                 controlReason: 'IAM unter Telekom-Verwaltung. Basis-Policies.',
                 performanceReason: 'Basis IAM Features. Rollen, Gruppen. Funktional.'
+            }),
+            // ═══ PaaS / Cloud-native Services ═══
+            static_hosting: svc('OBS Static Hosting', true, 'production', {
+                consumption: 'very_low', operations: 'very_low', projectEffort: 'very_low',
+                control: 55, performance: 58,
+                controlReason: 'Object Storage Static Hosting unter Telekom-Betrieb. Deutsche RZ.',
+                performanceReason: 'Einfaches Static Hosting. CDN-Integration möglich.'
+            }),
+            app_service: svc('-', false, 'none', {
+                control: 0, performance: 0,
+                controlReason: 'Kein managed App Service. Alternative: CCE (Container).',
+                performanceReason: 'Nicht verfügbar.'
+            }),
+            api_gateway: svc('APIG', true, 'production', {
+                consumption: 'low', operations: 'low', projectEffort: 'low',
+                control: 52, performance: 60,
+                controlReason: 'API Gateway auf Huawei-Basis. Unter Telekom-Betrieb.',
+                performanceReason: 'Basis-API-Management. Request Routing, Rate Limiting.'
             })
         }
     },
@@ -1249,6 +1613,23 @@ const cloudProviders = [
                 control: 100, performance: 45,
                 controlReason: 'Identity vollständig unter eigener Kontrolle. LDAP-Integration.',
                 performanceReason: 'Basis IAM. Federation möglich. LDAP/AD-Backend.'
+            }),
+            // ═══ PaaS / Cloud-native Services ═══
+            static_hosting: svc('Swift Static Hosting', true, 'production', {
+                consumption: 'very_low', operations: 'medium', projectEffort: 'medium',
+                control: 100, performance: 40,
+                controlReason: 'Static Hosting über Swift. Vollständige Kontrolle. Eigenbetrieb.',
+                performanceReason: 'S3-kompatibel. Kein integriertes CDN. Eigenbetrieb.'
+            }),
+            app_service: svc('-', false, 'none', {
+                control: 0, performance: 0,
+                controlReason: 'Kein PaaS in Standard-OpenStack. Alternative: Kubernetes (Magnum).',
+                performanceReason: 'Nicht verfügbar.'
+            }),
+            api_gateway: svc('-', false, 'none', {
+                control: 0, performance: 0,
+                controlReason: 'Kein API Gateway in Standard-OpenStack. Self-Build: Kong/Traefik.',
+                performanceReason: 'Nicht verfügbar.'
             })
         }
     }
