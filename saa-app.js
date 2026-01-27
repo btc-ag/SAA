@@ -3649,13 +3649,21 @@ class SovereignArchitectureAdvisor {
         return `
             <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('📊', 'utility')} Kostenaufschlüsselung</h4>
 
-            <div class="pricing-info-box" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 12px 16px; margin-bottom: 1rem; display: flex; align-items: center; gap: 12px; font-size: 0.85rem;">
-                <span style="font-size: 1.2rem;">${IconMapper.toFontAwesome('📍', 'utility')}</span>
-                <div>
-                    <strong>Preisbasis:</strong> ${pricingInfo.source || 'Fallback'} |
-                    <strong>Region:</strong> Frankfurt (DE) |
-                    <strong>Währung:</strong> ${pricingInfo.currency || 'EUR'}
-                    ${pricingInfo.lastUpdated ? `| <strong>Stand:</strong> ${pricingInfo.lastUpdated}` : ''}
+            <div class="pricing-info-box" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 12px 16px; margin-bottom: 1rem; font-size: 0.85rem;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <span style="font-size: 1.2rem;">${IconMapper.toFontAwesome('📍', 'utility')}</span>
+                    <div>
+                        <strong>Preisbasis:</strong> ${pricingInfo.source || 'Fallback'} |
+                        <strong>Region:</strong> Frankfurt (DE) |
+                        <strong>Währung:</strong> ${pricingInfo.currency || 'EUR'}
+                        ${pricingInfo.lastUpdated ? `| <strong>Stand:</strong> ${pricingInfo.lastUpdated}` : ''}
+                    </div>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); padding-left: 32px;">
+                    <strong>Quellen:</strong>
+                    <a href="https://calculator.aws/" target="_blank" rel="noopener" style="color: #FF9900; margin-left: 8px;">AWS Pricing</a> |
+                    <a href="https://azure.microsoft.com/pricing/" target="_blank" rel="noopener" style="color: #0078D4; margin-left: 4px;">Azure Pricing</a> |
+                    <a href="https://cloud.google.com/compute/all-pricing" target="_blank" rel="noopener" style="color: #4285F4; margin-left: 4px;">GCP Pricing</a>
                 </div>
             </div>
 

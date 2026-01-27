@@ -460,20 +460,125 @@
                     <div class="criteria-card">
                         <div class="criteria-intro">
                             <p>
-                                Die Kostenberechnung basiert auf <strong>Preisfaktoren</strong>, die für jeden Provider
-                                und Service hinterlegt sind. Diese Faktoren sind relativ zu AWS (Referenz = 1.0) und
-                                spiegeln Marktpreise wider.
+                                Die Kostenberechnung basiert auf <strong>echten Cloud-Preisdaten</strong> der Anbieter
+                                für die Region <strong>Frankfurt (Deutschland)</strong>. Die Preise werden aus den
+                                öffentlichen Pricing-APIs und Preislisten der Cloud-Provider abgerufen.
                             </p>
                         </div>
 
-                        <div class="important-note">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                            <strong>Wichtig:</strong> Die Kosten werden nicht als statischer Score bewertet, sondern
-                            dynamisch basierend auf Ihrer Konfiguration berechnet. Der Kosten-Score vergleicht die
-                            Provider relativ zueinander (günstigster = 100 Punkte, teuerster = 30 Punkte).
+                        <div class="important-note" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(16, 185, 129, 0.15)); border-color: rgba(59, 130, 246, 0.4);">
+                            <i class="fa-solid fa-database"></i>
+                            <strong>Neu in v2.0:</strong> Echte Cloud-Preisdaten statt relativer Faktoren! Die Kosten werden
+                            jetzt direkt aus den Preislisten der Hyperscaler (AWS, Azure, GCP) und EU-Provider für
+                            deutsche Regionen berechnet.
                         </div>
 
-                        <h3><i class="fa-solid fa-chart-bar"></i> Preisfaktoren pro Provider</h3>
+                        <h3><i class="fa-solid fa-link"></i> Preisquellen</h3>
+                        <div class="factors-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #FF9900;">
+                                    <i class="fa-brands fa-aws"></i>
+                                </div>
+                                <h4>AWS</h4>
+                                <p>Region: <strong>eu-central-1</strong> (Frankfurt)</p>
+                                <a href="https://calculator.aws/" target="_blank" rel="noopener" style="color: #FF9900; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> AWS Pricing Calculator
+                                </a>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #0078D4;">
+                                    <i class="fa-brands fa-microsoft"></i>
+                                </div>
+                                <h4>Azure</h4>
+                                <p>Region: <strong>germanywestcentral</strong> (Frankfurt)</p>
+                                <a href="https://azure.microsoft.com/pricing/" target="_blank" rel="noopener" style="color: #0078D4; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> Azure Pricing
+                                </a>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #4285F4;">
+                                    <i class="fa-brands fa-google"></i>
+                                </div>
+                                <h4>GCP</h4>
+                                <p>Region: <strong>europe-west3</strong> (Frankfurt)</p>
+                                <a href="https://cloud.google.com/compute/all-pricing" target="_blank" rel="noopener" style="color: #4285F4; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> GCP Pricing
+                                </a>
+                            </div>
+                        </div>
+
+                        <h3><i class="fa-solid fa-cogs"></i> Preisberechnung nach Service-Typ</h3>
+                        <div class="factors-grid">
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #5AA6E7;">
+                                    <i class="fa-solid fa-server"></i>
+                                </div>
+                                <h4>Compute (VMs)</h4>
+                                <p>Berechnung basierend auf Instanz-Typ</p>
+                                <ul>
+                                    <li><strong>AWS:</strong> m6i, r6i, c6i, x2idn (SAP)</li>
+                                    <li><strong>Azure:</strong> Dv5, Ev5, Fv2, Mv2 (SAP)</li>
+                                    <li><strong>GCP:</strong> n2-standard, n2-highmem, c2</li>
+                                </ul>
+                                <p class="factor-note">
+                                    Preis = Instanz-Typ-Preis × Anzahl VMs<br>
+                                    Oder: vCPU × €/vCPU + RAM × €/GB
+                                </p>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #10B981;">
+                                    <i class="fa-solid fa-database"></i>
+                                </div>
+                                <h4>Datenbanken (SQL)</h4>
+                                <p>Managed Database Services</p>
+                                <ul>
+                                    <li><strong>PostgreSQL/MySQL:</strong> Basis + Storage/GB</li>
+                                    <li><strong>Oracle:</strong> License + Storage</li>
+                                    <li><strong>SAP HANA:</strong> RAM-basierte Preise</li>
+                                </ul>
+                                <p class="factor-note">
+                                    Preis = Basis-Instanz + (Speicher × €/GB)<br>
+                                    Multi-AZ: Faktor 1.8-2.0
+                                </p>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #8B5CF6;">
+                                    <i class="fa-solid fa-hard-drive"></i>
+                                </div>
+                                <h4>Storage</h4>
+                                <p>Object, Block, File Storage</p>
+                                <ul>
+                                    <li><strong>Object (S3/Blob):</strong> ~€0.02-0.025/GB</li>
+                                    <li><strong>Block (EBS/Disks):</strong> ~€0.05-0.15/GB</li>
+                                    <li><strong>File (EFS/Files):</strong> ~€0.10-0.35/GB</li>
+                                </ul>
+                                <p class="factor-note">
+                                    Preis = Kapazität × Tier-Preis/GB
+                                </p>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #F59E0B;">
+                                    <i class="fa-solid fa-dharmachakra"></i>
+                                </div>
+                                <h4>Kubernetes</h4>
+                                <p>Managed Kubernetes Cluster</p>
+                                <ul>
+                                    <li><strong>Control Plane:</strong> €0-73/Monat</li>
+                                    <li><strong>Worker Nodes:</strong> Compute-Preise</li>
+                                    <li><strong>Azure AKS:</strong> Control Plane kostenlos!</li>
+                                </ul>
+                                <p class="factor-note">
+                                    Preis = Control Plane + (Nodes × VM-Preis)
+                                </p>
+                            </div>
+                        </div>
+
+                        <h3><i class="fa-solid fa-chart-bar"></i> Provider-Preisvergleich (Beispiel)</h3>
                         <div id="pricingFactorsTable"></div>
 
                         <h3><i class="fa-solid fa-calculator"></i> TCO-Dimensionen</h3>
@@ -492,7 +597,7 @@
                                     <li>Managed Services</li>
                                 </ul>
                                 <p class="factor-note">
-                                    <strong>Berechnung:</strong> Service-Kosten × Preisfaktor des Providers
+                                    <strong>Berechnung:</strong> Echte Preise aus CloudPricing API
                                 </p>
                             </div>
 
@@ -536,27 +641,43 @@
                         </div>
 
                         <div class="example-box">
-                            <h4><i class="fa-solid fa-calculator"></i> Kostenbeispiel</h4>
+                            <h4><i class="fa-solid fa-calculator"></i> Kostenbeispiel mit echten Preisen (Frankfurt)</h4>
                             <div class="cost-example">
                                 <div class="provider-cost-example">
-                                    <h5>Provider A (AWS - Faktor 1.0)</h5>
+                                    <h5><i class="fa-brands fa-aws" style="color: #FF9900;"></i> AWS (eu-central-1)</h5>
                                     <ul>
-                                        <li>Compute: 4 vCPU, 16 GB RAM = 200€</li>
-                                        <li>Database: PostgreSQL 100 GB = 130€</li>
-                                        <li>Storage: 500 GB Object Storage = 12€</li>
+                                        <li>Compute: m6i.xlarge (4 vCPU, 16 GB) = <strong>140€</strong></li>
+                                        <li>Database: RDS PostgreSQL 100 GB = <strong>37€</strong></li>
+                                        <li>Storage: S3 Standard 500 GB = <strong>12€</strong></li>
                                     </ul>
-                                    <p class="total">Verbrauch: <strong>342€/Monat</strong></p>
+                                    <p class="total">Verbrauch: <strong>189€/Monat</strong></p>
                                 </div>
                                 <div class="provider-cost-example">
-                                    <h5>Provider B (OVH - Faktor 0.75)</h5>
+                                    <h5><i class="fa-brands fa-microsoft" style="color: #0078D4;"></i> Azure (germanywestcentral)</h5>
                                     <ul>
-                                        <li>Compute: 4 vCPU, 16 GB RAM = 150€ <span class="factor">(200€ × 0.75)</span></li>
-                                        <li>Database: PostgreSQL 100 GB = 98€ <span class="factor">(130€ × 0.75)</span></li>
-                                        <li>Storage: 500 GB Object Storage = 9€ <span class="factor">(12€ × 0.75)</span></li>
+                                        <li>Compute: D4s_v5 (4 vCPU, 16 GB) = <strong>130€</strong></li>
+                                        <li>Database: PostgreSQL Flexible 100 GB = <strong>33€</strong></li>
+                                        <li>Storage: Blob Hot 500 GB = <strong>11€</strong></li>
                                     </ul>
-                                    <p class="total">Verbrauch: <strong>257€/Monat</strong> <span class="savings">(25% günstiger)</span></p>
+                                    <p class="total">Verbrauch: <strong>174€/Monat</strong> <span class="savings">(8% günstiger)</span></p>
+                                </div>
+                                <div class="provider-cost-example">
+                                    <h5><i class="fa-brands fa-google" style="color: #4285F4;"></i> GCP (europe-west3)</h5>
+                                    <ul>
+                                        <li>Compute: n2-standard-4 (4 vCPU, 16 GB) = <strong>120€</strong></li>
+                                        <li>Database: Cloud SQL PostgreSQL 100 GB = <strong>30€</strong></li>
+                                        <li>Storage: Cloud Storage Standard 500 GB = <strong>12€</strong></li>
+                                    </ul>
+                                    <p class="total">Verbrauch: <strong>162€/Monat</strong> <span class="savings">(14% günstiger)</span></p>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="important-note">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <strong>Hinweis:</strong> Der Kosten-Score vergleicht die Provider relativ zueinander
+                            (günstigster = 100 Punkte, teuerster = 30 Punkte). Die absoluten Preise können sich ändern -
+                            die hier gezeigten Werte dienen als Richtwerte für die Planung.
                         </div>
                     </div>
                 </section>
@@ -767,7 +888,7 @@
 
     <!-- Version Info -->
     <div style="text-align: right; padding: 20px 12px 8px 12px; font-size: 10px; color: rgba(128, 128, 128, 0.5); font-family: monospace;">
-        v1.1.0
+        v2.0.0 - Cloud Pricing API (Frankfurt)
     </div>
 </body>
 </html>
