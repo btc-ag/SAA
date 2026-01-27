@@ -397,57 +397,60 @@ class CriteriaPage {
 
     /**
      * Berechnet Workload-Kosten für einen Provider
-     * Typischer Workload: VM + DB + Object Storage + Block Storage
+     * Typischer Workload: VM + DB + Object Storage + Block Storage + Observability
      */
     calculateWorkloadCost(providerId) {
         const pricing = this.cloudPricing;
 
-        // Fallback-Preise wenn CloudPricing nicht verfügbar
+        // Realistische Preise für 2 vCPU, 8 GB VM (Frankfurt)
+        // AWS und Azure sind nahezu gleich teuer, GCP leicht günstiger
+        // Observability: AWS CloudWatch günstig, STACKIT/EU-Provider extra kostenpflichtig
         const fallbackPrices = {
-            'aws':              { compute: 140, db: 37, objStorage: 12, blockStorage: 18 },
-            'azure':            { compute: 130, db: 33, objStorage: 11, blockStorage: 13 },
-            'gcp':              { compute: 120, db: 30, objStorage: 12, blockStorage: 13 },
-            'aws-sovereign':    { compute: 161, db: 43, objStorage: 14, blockStorage: 21 },
-            'delos':            { compute: 153, db: 39, objStorage: 13, blockStorage: 15 },
-            'stackit':          { compute: 80,  db: 26, objStorage: 9,  blockStorage: 13 },
-            'ionos':            { compute: 75,  db: 22, objStorage: 8,  blockStorage: 11 },
-            'ovh':              { compute: 70,  db: 25, objStorage: 6,  blockStorage: 10 },
-            'otc':              { compute: 95,  db: 30, objStorage: 10, blockStorage: 12 },
-            'azure-confidential': { compute: 156, db: 40, objStorage: 13, blockStorage: 16 },
-            'plusserver':       { compute: 85,  db: 28, objStorage: 10, blockStorage: 12 },
-            'noris':            { compute: 90,  db: 30, objStorage: 11, blockStorage: 13 },
-            'openstack':        { compute: 60,  db: 20, objStorage: 5,  blockStorage: 8 }
+            'aws':              { compute: 70,  db: 37, objStorage: 12, blockStorage: 18, observability: 15 },
+            'azure':            { compute: 72,  db: 35, objStorage: 11, blockStorage: 10, observability: 35 },
+            'gcp':              { compute: 65,  db: 32, objStorage: 12, blockStorage: 13, observability: 20 },
+            'aws-sovereign':    { compute: 81,  db: 43, objStorage: 14, blockStorage: 21, observability: 17 },
+            'delos':            { compute: 85,  db: 41, objStorage: 13, blockStorage: 12, observability: 40 },
+            'stackit':          { compute: 55,  db: 26, objStorage: 9,  blockStorage: 13, observability: 60 },
+            'ionos':            { compute: 50,  db: 22, objStorage: 8,  blockStorage: 11, observability: 45 },
+            'ovh':              { compute: 45,  db: 25, objStorage: 6,  blockStorage: 8,  observability: 40 },
+            'otc':              { compute: 60,  db: 30, objStorage: 10, blockStorage: 12, observability: 50 },
+            'azure-confidential': { compute: 86, db: 42, objStorage: 13, blockStorage: 12, observability: 42 },
+            'plusserver':       { compute: 55,  db: 28, objStorage: 10, blockStorage: 12, observability: 55 },
+            'noris':            { compute: 58,  db: 30, objStorage: 11, blockStorage: 13, observability: 50 },
+            'openstack':        { compute: 40,  db: 20, objStorage: 5,  blockStorage: 8,  observability: 70 }
         };
 
-        const fallback = fallbackPrices[providerId] || { compute: 100, db: 30, objStorage: 10, blockStorage: 12 };
+        const fallback = fallbackPrices[providerId] || { compute: 65, db: 30, objStorage: 10, blockStorage: 12, observability: 40 };
 
         // Workload-Konfiguration
-        // VM: 4 vCPU, 16 GB RAM
+        // VM: 2 vCPU, 8 GB RAM (Standard-Webserver/API)
         // DB: PostgreSQL 100 GB
         // Object Storage: 500 GB Standard
         // Block Storage: 200 GB SSD
+        // Observability: 10 Metriken, 5 Alarme, 10GB Logs/Monat
 
         let compute = fallback.compute;
         let db = fallback.db;
         let objStorage = fallback.objStorage;
         let blockStorage = fallback.blockStorage;
+        let observability = fallback.observability;
 
         if (pricing) {
-            // Compute
+            // Compute (2 vCPU, 8GB)
             const computePricing = pricing.compute?.[providerId];
             if (computePricing?.instanceTypes) {
                 const instances = computePricing.instanceTypes;
-                // Finde passende Instanz (4 vCPU, 16GB)
-                const match = Object.values(instances).find(i => i.vcpu === 4 && i.ram === 16);
+                const match = Object.values(instances).find(i => i.vcpu === 2 && i.ram === 8);
                 if (match) compute = match.price;
             } else if (computePricing?.pricePerVCPU) {
-                compute = (4 * computePricing.pricePerVCPU) + (16 * computePricing.pricePerGBRam);
+                compute = Math.round((2 * computePricing.pricePerVCPU) + (8 * computePricing.pricePerGBRam));
             }
 
             // Database (PostgreSQL 100GB)
             const dbPricing = pricing.database?.sql?.[providerId]?.postgresql;
             if (dbPricing) {
-                db = dbPricing.base + (100 * dbPricing.storagePerGB);
+                db = Math.round(dbPricing.base + (100 * dbPricing.storagePerGB));
             }
 
             // Object Storage (500 GB)
@@ -463,6 +466,19 @@ class CriteriaPage {
                 const rate = blockPricing.gp3 || blockPricing.pdSSD || blockPricing.premiumSSD || blockPricing.ssd || 0.088;
                 blockStorage = Math.round(200 * rate);
             }
+
+            // Observability (10 Metriken, 5 Alarme, 10GB Logs)
+            const obsPricing = pricing.observability;
+            if (obsPricing?.monitoring?.[providerId] && obsPricing?.logging?.[providerId]) {
+                const mon = obsPricing.monitoring[providerId];
+                const log = obsPricing.logging[providerId];
+                observability = Math.round(
+                    (mon.metricsPerMonth || 0.30) * 10 +
+                    (mon.alarmsPerMonth || 0.10) * 5 +
+                    (log.ingestionPerGB || 0.50) * 10 +
+                    (log.storagePerGB || 0.03) * 30
+                );
+            }
         }
 
         // Sovereign Cloud Aufschläge
@@ -471,17 +487,19 @@ class CriteriaPage {
             db = Math.round(db * 1.15);
             objStorage = Math.round(objStorage * 1.15);
             blockStorage = Math.round(blockStorage * 1.15);
+            observability = Math.round(observability * 1.15);
         } else if (providerId === 'delos' || providerId === 'azure-confidential') {
             const factor = providerId === 'delos' ? 1.18 : 1.20;
             compute = Math.round(compute * factor);
             db = Math.round(db * factor);
             objStorage = Math.round(objStorage * factor);
             blockStorage = Math.round(blockStorage * factor);
+            observability = Math.round(observability * factor);
         }
 
-        const total = compute + db + objStorage + blockStorage;
+        const total = compute + db + objStorage + blockStorage + observability;
 
-        return { compute, db, objStorage, blockStorage, total };
+        return { compute, db, objStorage, blockStorage, observability, total };
     }
 
     /**
@@ -533,10 +551,11 @@ class CriteriaPage {
                     </td>
                     <td class="breakdown-cell">
                         <div class="cost-breakdown-mini">
-                            <span title="Compute (4 vCPU, 16GB)"><i class="fa-solid fa-server"></i> €${costs.compute}</span>
+                            <span title="Compute (2 vCPU, 8GB)"><i class="fa-solid fa-server"></i> €${costs.compute}</span>
                             <span title="PostgreSQL 100GB"><i class="fa-solid fa-database"></i> €${costs.db}</span>
                             <span title="Object Storage 500GB"><i class="fa-solid fa-box-archive"></i> €${costs.objStorage}</span>
                             <span title="Block Storage 200GB"><i class="fa-solid fa-hard-drive"></i> €${costs.blockStorage}</span>
+                            <span title="Monitoring & Logging"><i class="fa-solid fa-chart-line"></i> €${costs.observability}</span>
                         </div>
                     </td>
                     <td class="comparison-cell">
@@ -572,14 +591,15 @@ class CriteriaPage {
             <div class="workload-legend">
                 <div class="workload-description">
                     <strong><i class="fa-solid fa-cube"></i> Standard-Workload:</strong>
-                    <span><i class="fa-solid fa-server"></i> 1× VM (4 vCPU, 16 GB)</span>
+                    <span><i class="fa-solid fa-server"></i> 1× VM (2 vCPU, 8 GB)</span>
                     <span><i class="fa-solid fa-database"></i> PostgreSQL (100 GB)</span>
                     <span><i class="fa-solid fa-box-archive"></i> Object Storage (500 GB)</span>
-                    <span><i class="fa-solid fa-hard-drive"></i> Block Storage (200 GB SSD)</span>
+                    <span><i class="fa-solid fa-hard-drive"></i> Block Storage (200 GB)</span>
+                    <span><i class="fa-solid fa-chart-line"></i> Observability</span>
                 </div>
                 <p class="table-note" style="margin-top: 0.5rem;">
                     <i class="fa-solid fa-info-circle"></i>
-                    On-Demand Preise, Region Frankfurt. Stand: ${lastUpdated}
+                    On-Demand Preise, Region Frankfurt. Observability: 10 Metriken, 5 Alarme, 10GB Logs. Stand: ${lastUpdated}
                 </p>
             </div>
         `;

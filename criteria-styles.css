@@ -599,6 +599,7 @@
 .cost-breakdown-mini span:nth-child(2) i { color: #10B981; }
 .cost-breakdown-mini span:nth-child(3) i { color: #8B5CF6; }
 .cost-breakdown-mini span:nth-child(4) i { color: #F59E0B; }
+.cost-breakdown-mini span:nth-child(5) i { color: #EC4899; }
 
 .price-badge.total-price {
     font-size: 1rem;
@@ -641,6 +642,7 @@
 .workload-description span:nth-child(3) i { color: #10B981; }
 .workload-description span:nth-child(4) i { color: #8B5CF6; }
 .workload-description span:nth-child(5) i { color: #F59E0B; }
+.workload-description span:nth-child(6) i { color: #EC4899; }
 
 /* Mobile responsiveness for workload table */
 @media (max-width: 768px) {

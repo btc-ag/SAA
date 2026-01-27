@@ -39,19 +39,15 @@ const CloudPricing = {
     compute: {
         // AWS EC2 - eu-central-1 (Frankfurt)
         // Quelle: AWS Pricing Calculator, EC2 On-Demand Pricing
+        // Stand: Januar 2026 - m6i.large ~$0.096/h
         aws: {
             region: 'eu-central-1',
-            // Preis pro vCPU pro Monat (basierend auf m6i.large: 2 vCPU, 8GB RAM)
-            // m6i.large: $0.096/h = ~€0.088/h = ~€64/Monat für 2 vCPU
-            pricePerVCPU: 32,  // €/vCPU/Monat
-            // Preis pro GB RAM pro Monat
-            // m6i.large: €64/Monat für 8GB = €8/GB
-            pricePerGBRam: 8,
-            // Minimum VM Preis
+            pricePerVCPU: 35,  // €/vCPU/Monat
+            pricePerGBRam: 8.75,
             minPrice: 35,
             // Instance-Typen mit spezifischen Preisen (€/Monat)
             instanceTypes: {
-                // General Purpose (m6i)
+                // General Purpose (m6i) - AWS Preise sehr nah an Azure
                 'm6i.large':     { vcpu: 2,  ram: 8,   price: 70 },
                 'm6i.xlarge':    { vcpu: 4,  ram: 16,  price: 140 },
                 'm6i.2xlarge':   { vcpu: 8,  ram: 32,  price: 280 },
@@ -79,15 +75,16 @@ const CloudPricing = {
 
         // Azure VMs - germanywestcentral (Frankfurt)
         // Quelle: Azure Pricing Calculator, Retail Prices API
+        // Stand: Januar 2026 - D2s_v5 ~$0.096/h (sehr nah an AWS)
         azure: {
             region: 'germanywestcentral',
-            pricePerVCPU: 30,
-            pricePerGBRam: 7.5,
-            minPrice: 32,
+            pricePerVCPU: 36,  // Leicht teurer als AWS
+            pricePerGBRam: 9,
+            minPrice: 33,
             instanceTypes: {
-                // General Purpose (Dv5)
-                'D2s_v5':   { vcpu: 2,  ram: 8,   price: 65 },
-                'D4s_v5':   { vcpu: 4,  ram: 16,  price: 130 },
+                // General Purpose (Dv5) - Azure leicht teurer als AWS
+                'D2s_v5':   { vcpu: 2,  ram: 8,   price: 72 },
+                'D4s_v5':   { vcpu: 4,  ram: 16,  price: 144 },
                 'D8s_v5':   { vcpu: 8,  ram: 32,  price: 260 },
                 'D16s_v5':  { vcpu: 16, ram: 64,  price: 520 },
                 'D32s_v5':  { vcpu: 32, ram: 128, price: 1040 },
@@ -110,15 +107,16 @@ const CloudPricing = {
 
         // GCP Compute Engine - europe-west3 (Frankfurt)
         // Quelle: GCP Pricing Calculator
+        // Stand: Januar 2026 - n2-standard-2 ~$0.088/h (günstiger durch Sustained Use Discount)
         gcp: {
             region: 'europe-west3',
-            pricePerVCPU: 28,
-            pricePerGBRam: 7,
-            minPrice: 30,
+            pricePerVCPU: 32,  // Günstiger als AWS/Azure (Sustained Use Discount)
+            pricePerGBRam: 8,
+            minPrice: 28,
             instanceTypes: {
-                // General Purpose (n2)
-                'n2-standard-2':  { vcpu: 2,  ram: 8,   price: 60 },
-                'n2-standard-4':  { vcpu: 4,  ram: 16,  price: 120 },
+                // General Purpose (n2) - GCP leicht günstiger (Sustained Use Discount eingerechnet)
+                'n2-standard-2':  { vcpu: 2,  ram: 8,   price: 65 },
+                'n2-standard-4':  { vcpu: 4,  ram: 16,  price: 130 },
                 'n2-standard-8':  { vcpu: 8,  ram: 32,  price: 240 },
                 'n2-standard-16': { vcpu: 16, ram: 64,  price: 480 },
                 'n2-standard-32': { vcpu: 32, ram: 128, price: 960 },
