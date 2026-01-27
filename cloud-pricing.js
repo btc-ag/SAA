@@ -885,37 +885,89 @@ const CloudPricing = {
      * ═══════════════════════════════════════════════════════════════════════════
      */
     observability: {
+        // Hinweis: EU-Provider verkaufen Observability oft als separates Produkt
+        // mit Fixkosten, nicht nach Verbrauch wie Hyperscaler
         monitoring: {
             aws: {
+                // CloudWatch - sehr günstig, pay-per-use
                 metricsPerMonth: 0.30,           // €/Metrik
                 alarmsPerMonth: 0.10,
                 dashboardsPerMonth: 3.00,
                 customMetricsPerMonth: 0.30
             },
             azure: {
+                // Azure Monitor - teurer als AWS
                 metricsPerMonth: 0.10,
                 logsQueryPerGB: 2.76,
                 alertRulesPerMonth: 0.10
             },
             gcp: {
+                // Cloud Monitoring - mittleres Preisniveau
                 monitoringDataPerMB: 0.26,
                 metricsPerMonth: 0.10
+            },
+            // EU Provider - Observability als separates Add-on
+            stackit: {
+                // STACKIT Observability Stack (MSP-Angebot)
+                // Quelle: stackit.de/produkte/observability
+                baseMonthly: 50,                 // Fixpreis/Monat
+                metricsPerMonth: 0.50,
+                alarmsPerMonth: 0.20
+            },
+            ionos: {
+                // IONOS Monitoring
+                baseMonthly: 35,
+                metricsPerMonth: 0.40,
+                alarmsPerMonth: 0.15
+            },
+            ovh: {
+                // OVH Logs Data Platform + Metrics
+                baseMonthly: 30,
+                metricsPerMonth: 0.35,
+                alarmsPerMonth: 0.10
+            },
+            otc: {
+                // Open Telekom Cloud AOM/LTS
+                baseMonthly: 40,
+                metricsPerMonth: 0.45,
+                alarmsPerMonth: 0.15
             }
         },
         logging: {
             aws: {
+                // CloudWatch Logs - günstig
                 ingestionPerGB: 0.57,
                 storagePerGB: 0.03,
                 queryScannedPerGB: 0.006
             },
             azure: {
+                // Log Analytics - teurer
                 ingestionPerGB: 2.76,
                 retentionPerGB: 0.12,
                 queryPerGB: 0.006
             },
             gcp: {
+                // Cloud Logging
                 ingestionPerGB: 0.50,
                 storagePerGB: 0.01
+            },
+            // EU Provider Logging
+            stackit: {
+                // In Observability Stack enthalten
+                ingestionPerGB: 0.80,
+                storagePerGB: 0.05
+            },
+            ionos: {
+                ingestionPerGB: 0.70,
+                storagePerGB: 0.04
+            },
+            ovh: {
+                ingestionPerGB: 0.60,
+                storagePerGB: 0.03
+            },
+            otc: {
+                ingestionPerGB: 0.75,
+                storagePerGB: 0.04
             }
         }
     },
@@ -1238,6 +1290,158 @@ const CloudPricing = {
         };
 
         return regionMap[providerId] || { id: 'de', name: 'Deutschland', country: 'DE' };
+    },
+
+    /**
+     * Berechnet Observability-Kosten (Monitoring + Logging)
+     * @param {string} providerId - Provider ID
+     * @param {number} metrics - Anzahl Custom Metriken
+     * @param {number} alarms - Anzahl Alarme
+     * @param {number} logsGB - Log-Ingestion pro Monat in GB
+     * @param {number} retentionGB - Log-Retention in GB
+     * @returns {Object} - { price, breakdown }
+     */
+    calculateObservabilityCost(providerId, metrics = 10, alarms = 5, logsGB = 10, retentionGB = 30) {
+        const mon = this.observability?.monitoring?.[providerId];
+        const log = this.observability?.logging?.[providerId];
+
+        // Provider-Typ für Fallback-Schätzung
+        const isEuProvider = ['stackit', 'ionos', 'ovh', 'otc', 'plusserver', 'noris'].includes(providerId);
+        const isOpenStack = providerId === 'openstack';
+
+        if (!mon || !log) {
+            // Fallback basierend auf Provider-Typ
+            if (isOpenStack) {
+                return { price: 70, breakdown: 'Self-hosted Observability Stack (geschätzt)' };
+            } else if (isEuProvider) {
+                return { price: 50, breakdown: 'Observability Add-on (geschätzt)' };
+            } else {
+                return { price: 20, breakdown: 'Cloud-native Observability (geschätzt)' };
+            }
+        }
+
+        let cost = 0;
+        const breakdown = [];
+
+        // EU-Provider haben oft Fixkosten
+        if (mon.baseMonthly) {
+            cost += mon.baseMonthly;
+            breakdown.push(`Basis: €${mon.baseMonthly}`);
+        }
+
+        // Metriken und Alarme
+        const metricsCost = (mon.metricsPerMonth || 0.30) * metrics;
+        const alarmsCost = (mon.alarmsPerMonth || 0.10) * alarms;
+        cost += metricsCost + alarmsCost;
+
+        // Logging
+        const ingestionCost = (log.ingestionPerGB || 0.50) * logsGB;
+        const storageCost = (log.storagePerGB || 0.03) * retentionGB;
+        cost += ingestionCost + storageCost;
+
+        breakdown.push(`${metrics} Metriken, ${alarms} Alarme, ${logsGB}GB Logs`);
+
+        return {
+            price: Math.round(cost),
+            breakdown: breakdown.join(', ')
+        };
+    },
+
+    /**
+     * Berechnet Standard-Workload-Kosten für einen Provider
+     * Single Source of Truth für alle Workload-Berechnungen
+     *
+     * Standard-Workload:
+     * - VM: 2 vCPU, 8 GB RAM
+     * - Database: PostgreSQL 100 GB
+     * - Object Storage: 500 GB
+     * - Block Storage: 200 GB SSD
+     * - Observability: 10 Metriken, 5 Alarme, 10GB Logs
+     *
+     * @param {string} providerId - Provider ID
+     * @param {Object} config - Optionale Konfiguration
+     * @returns {Object} - { total, compute, db, objStorage, blockStorage, observability, breakdown }
+     */
+    calculateStandardWorkload(providerId, config = {}) {
+        // Standard-Konfiguration
+        const cfg = {
+            vcpu: config.vcpu || 2,
+            ram: config.ram || 8,
+            dbSize: config.dbSize || 100,
+            objStorageSize: config.objStorageSize || 500,
+            blockStorageSize: config.blockStorageSize || 200,
+            metrics: config.metrics || 10,
+            alarms: config.alarms || 5,
+            logsGB: config.logsGB || 10,
+            retentionGB: config.retentionGB || 30
+        };
+
+        // Sovereign Cloud Handling
+        const sovereignMapping = {
+            'aws-sovereign': { base: 'aws', factor: 1.15 },
+            'delos': { base: 'azure', factor: 1.18 },
+            'azure-confidential': { base: 'azure', factor: 1.20 }
+        };
+
+        const sovereign = sovereignMapping[providerId];
+        const sourceId = sovereign ? sovereign.base : providerId;
+        const premiumFactor = sovereign ? sovereign.factor : 1.0;
+
+        // Berechne Einzelkosten
+        const computeResult = this.calculateComputeCost(sourceId, cfg.vcpu, cfg.ram);
+        const dbResult = this.calculateDatabaseCost(sourceId, 'postgresql', cfg.dbSize);
+        const objStorageResult = this.calculateStorageCost(sourceId, 'object', cfg.objStorageSize);
+        const blockStorageResult = this.calculateStorageCost(sourceId, 'block', cfg.blockStorageSize, 'gp3');
+        const obsResult = this.calculateObservabilityCost(sourceId, cfg.metrics, cfg.alarms, cfg.logsGB, cfg.retentionGB);
+
+        // Einzelpreise (mit Aufschlag für Sovereign Clouds)
+        const compute = Math.round(computeResult.price * premiumFactor);
+        const db = Math.round(dbResult.price * premiumFactor);
+        const objStorage = Math.round(objStorageResult.price * premiumFactor);
+        const blockStorage = Math.round(blockStorageResult.price * premiumFactor);
+        const observability = Math.round(obsResult.price * premiumFactor);
+
+        const total = compute + db + objStorage + blockStorage + observability;
+
+        return {
+            total,
+            compute,
+            db,
+            objStorage,
+            blockStorage,
+            observability,
+            premiumFactor,
+            breakdown: {
+                compute: computeResult.breakdown,
+                db: dbResult.breakdown,
+                objStorage: objStorageResult.breakdown,
+                blockStorage: blockStorageResult.breakdown,
+                observability: obsResult.breakdown
+            },
+            config: cfg
+        };
+    },
+
+    /**
+     * Vergleicht Standard-Workload-Kosten über alle Provider
+     * @param {Object} config - Optionale Konfiguration
+     * @returns {Array} - Sortierte Liste der Provider mit Kosten
+     */
+    compareStandardWorkload(config = {}) {
+        const providerIds = [
+            'aws', 'azure', 'gcp',
+            'aws-sovereign', 'delos', 'azure-confidential',
+            'stackit', 'ionos', 'ovh', 'otc',
+            'plusserver', 'noris', 'openstack'
+        ];
+
+        const results = providerIds.map(providerId => ({
+            providerId,
+            region: this.getRegion(providerId),
+            ...this.calculateStandardWorkload(providerId, config)
+        }));
+
+        return results.sort((a, b) => a.total - b.total);
     }
 };
 

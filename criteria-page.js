@@ -397,109 +397,25 @@ class CriteriaPage {
 
     /**
      * Berechnet Workload-Kosten für einen Provider
-     * Typischer Workload: VM + DB + Object Storage + Block Storage + Observability
+     * Nutzt CloudPricing.calculateStandardWorkload() als Single Source of Truth
      */
     calculateWorkloadCost(providerId) {
         const pricing = this.cloudPricing;
 
-        // Realistische Preise für 2 vCPU, 8 GB VM (Frankfurt)
-        // AWS und Azure sind nahezu gleich teuer, GCP leicht günstiger
-        // Observability: AWS CloudWatch günstig, STACKIT/EU-Provider extra kostenpflichtig
-        const fallbackPrices = {
-            'aws':              { compute: 70,  db: 37, objStorage: 12, blockStorage: 18, observability: 15 },
-            'azure':            { compute: 72,  db: 35, objStorage: 11, blockStorage: 10, observability: 35 },
-            'gcp':              { compute: 65,  db: 32, objStorage: 12, blockStorage: 13, observability: 20 },
-            'aws-sovereign':    { compute: 81,  db: 43, objStorage: 14, blockStorage: 21, observability: 17 },
-            'delos':            { compute: 85,  db: 41, objStorage: 13, blockStorage: 12, observability: 40 },
-            'stackit':          { compute: 55,  db: 26, objStorage: 9,  blockStorage: 13, observability: 60 },
-            'ionos':            { compute: 50,  db: 22, objStorage: 8,  blockStorage: 11, observability: 45 },
-            'ovh':              { compute: 45,  db: 25, objStorage: 6,  blockStorage: 8,  observability: 40 },
-            'otc':              { compute: 60,  db: 30, objStorage: 10, blockStorage: 12, observability: 50 },
-            'azure-confidential': { compute: 86, db: 42, objStorage: 13, blockStorage: 12, observability: 42 },
-            'plusserver':       { compute: 55,  db: 28, objStorage: 10, blockStorage: 12, observability: 55 },
-            'noris':            { compute: 58,  db: 30, objStorage: 11, blockStorage: 13, observability: 50 },
-            'openstack':        { compute: 40,  db: 20, objStorage: 5,  blockStorage: 8,  observability: 70 }
+        // Nutze zentrale Berechnung aus CloudPricing
+        if (pricing && typeof pricing.calculateStandardWorkload === 'function') {
+            return pricing.calculateStandardWorkload(providerId);
+        }
+
+        // Fallback wenn CloudPricing nicht verfügbar (sollte nicht vorkommen)
+        return {
+            compute: 70,
+            db: 37,
+            objStorage: 12,
+            blockStorage: 18,
+            observability: 20,
+            total: 157
         };
-
-        const fallback = fallbackPrices[providerId] || { compute: 65, db: 30, objStorage: 10, blockStorage: 12, observability: 40 };
-
-        // Workload-Konfiguration
-        // VM: 2 vCPU, 8 GB RAM (Standard-Webserver/API)
-        // DB: PostgreSQL 100 GB
-        // Object Storage: 500 GB Standard
-        // Block Storage: 200 GB SSD
-        // Observability: 10 Metriken, 5 Alarme, 10GB Logs/Monat
-
-        let compute = fallback.compute;
-        let db = fallback.db;
-        let objStorage = fallback.objStorage;
-        let blockStorage = fallback.blockStorage;
-        let observability = fallback.observability;
-
-        if (pricing) {
-            // Compute (2 vCPU, 8GB)
-            const computePricing = pricing.compute?.[providerId];
-            if (computePricing?.instanceTypes) {
-                const instances = computePricing.instanceTypes;
-                const match = Object.values(instances).find(i => i.vcpu === 2 && i.ram === 8);
-                if (match) compute = match.price;
-            } else if (computePricing?.pricePerVCPU) {
-                compute = Math.round((2 * computePricing.pricePerVCPU) + (8 * computePricing.pricePerGBRam));
-            }
-
-            // Database (PostgreSQL 100GB)
-            const dbPricing = pricing.database?.sql?.[providerId]?.postgresql;
-            if (dbPricing) {
-                db = Math.round(dbPricing.base + (100 * dbPricing.storagePerGB));
-            }
-
-            // Object Storage (500 GB)
-            const objPricing = pricing.storage?.object?.[providerId];
-            if (objPricing) {
-                const rate = objPricing.standard || objPricing.hot || 0.024;
-                objStorage = Math.round(500 * rate);
-            }
-
-            // Block Storage (200 GB SSD)
-            const blockPricing = pricing.storage?.block?.[providerId];
-            if (blockPricing) {
-                const rate = blockPricing.gp3 || blockPricing.pdSSD || blockPricing.premiumSSD || blockPricing.ssd || 0.088;
-                blockStorage = Math.round(200 * rate);
-            }
-
-            // Observability (10 Metriken, 5 Alarme, 10GB Logs)
-            const obsPricing = pricing.observability;
-            if (obsPricing?.monitoring?.[providerId] && obsPricing?.logging?.[providerId]) {
-                const mon = obsPricing.monitoring[providerId];
-                const log = obsPricing.logging[providerId];
-                observability = Math.round(
-                    (mon.metricsPerMonth || 0.30) * 10 +
-                    (mon.alarmsPerMonth || 0.10) * 5 +
-                    (log.ingestionPerGB || 0.50) * 10 +
-                    (log.storagePerGB || 0.03) * 30
-                );
-            }
-        }
-
-        // Sovereign Cloud Aufschläge
-        if (providerId === 'aws-sovereign') {
-            compute = Math.round(compute * 1.15);
-            db = Math.round(db * 1.15);
-            objStorage = Math.round(objStorage * 1.15);
-            blockStorage = Math.round(blockStorage * 1.15);
-            observability = Math.round(observability * 1.15);
-        } else if (providerId === 'delos' || providerId === 'azure-confidential') {
-            const factor = providerId === 'delos' ? 1.18 : 1.20;
-            compute = Math.round(compute * factor);
-            db = Math.round(db * factor);
-            objStorage = Math.round(objStorage * factor);
-            blockStorage = Math.round(blockStorage * factor);
-            observability = Math.round(observability * factor);
-        }
-
-        const total = compute + db + objStorage + blockStorage + observability;
-
-        return { compute, db, objStorage, blockStorage, observability, total };
     }
 
     /**
