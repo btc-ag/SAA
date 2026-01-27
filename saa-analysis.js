@@ -920,10 +920,20 @@ class CloudAnalyzer {
     getBaseServicePrice(serviceId, providerId) {
         if (!this.cloudPricing) return null;
 
-        // Mapping von Service-IDs zu CloudPricing-Daten
+        // Sovereign Cloud Handling: Nutze Basis-Provider-Preise + Premium
+        const sovereignMapping = {
+            'aws-sovereign': { base: 'aws', factor: 1.15 },
+            'delos': { base: 'azure', factor: 1.18 },
+            'azure-confidential': { base: 'azure', factor: 1.20 }
+        };
+        const sovereign = sovereignMapping[providerId];
+        const sourceId = sovereign ? sovereign.base : providerId;
+        const premiumFactor = sovereign ? sovereign.factor : 1.0;
+
+        // Mapping von Service-IDs zu CloudPricing-Daten (verwendet sourceId für Lookup)
         const serviceMapping = {
             'compute': () => {
-                const pricing = this.cloudPricing.compute[providerId];
+                const pricing = this.cloudPricing.compute[sourceId];
                 if (pricing?.instanceTypes) {
                     // Durchschnittspreis der mittleren Instanzen
                     const instances = Object.values(pricing.instanceTypes);
@@ -935,8 +945,8 @@ class CloudAnalyzer {
                 return pricing?.minPrice ? pricing.minPrice * 3 : 200;
             },
             'kubernetes': () => {
-                const k8s = this.cloudPricing.kubernetes[providerId];
-                const compute = this.cloudPricing.compute[providerId];
+                const k8s = this.cloudPricing.kubernetes[sourceId];
+                const compute = this.cloudPricing.compute[sourceId];
                 if (k8s && compute) {
                     // Control Plane + 3 kleine Nodes
                     const controlPlane = k8s.controlPlane || 70;
@@ -949,7 +959,7 @@ class CloudAnalyzer {
                 return 80; // Serverless ist nutzungsbasiert
             },
             'database_sql': () => {
-                const sql = this.cloudPricing.database?.sql?.[providerId];
+                const sql = this.cloudPricing.database?.sql?.[sourceId];
                 if (sql?.postgresql) {
                     return sql.postgresql.base + (100 * sql.postgresql.storagePerGB);
                 }
@@ -959,14 +969,14 @@ class CloudAnalyzer {
                 return 180;
             },
             'storage_object': () => {
-                const storage = this.cloudPricing.storage?.object?.[providerId];
+                const storage = this.cloudPricing.storage?.object?.[sourceId];
                 if (storage?.standard) {
                     return 500 * storage.standard; // 500 GB Standard
                 }
                 return 40;
             },
             'storage_block': () => {
-                const storage = this.cloudPricing.storage?.block?.[providerId];
+                const storage = this.cloudPricing.storage?.block?.[sourceId];
                 if (storage) {
                     const ssdPrice = storage.gp3 || storage.pdSSD || storage.premiumSSD || 0.10;
                     return 200 * ssdPrice;
@@ -974,16 +984,16 @@ class CloudAnalyzer {
                 return 60;
             },
             'storage_file': () => {
-                const storage = this.cloudPricing.storage?.file?.[providerId];
+                const storage = this.cloudPricing.storage?.file?.[sourceId];
                 if (storage?.standard || storage?.basic) {
                     return 100 * (storage.standard || storage.basic);
                 }
                 return 100;
             },
             'loadbalancer': () => {
-                const lb = this.cloudPricing.networking?.loadbalancer?.[providerId];
-                if (lb?.alb) {
-                    return lb.alb.perHour * 730; // Monatlich
+                const lb = this.cloudPricing.networking?.loadbalancer?.[sourceId];
+                if (lb?.alb || lb?.standard) {
+                    return (lb.alb?.perHour || lb.standard?.perHour || 0.025) * 730; // Monatlich
                 }
                 return 40;
             },
@@ -991,14 +1001,14 @@ class CloudAnalyzer {
                 return 30; // CDN ist traffikbasiert
             },
             'dns': () => {
-                const dns = this.cloudPricing.networking?.dns?.[providerId];
-                return dns?.hostedZonePerMonth || 8;
+                const dns = this.cloudPricing.networking?.dns?.[sourceId];
+                return dns?.hostedZonePerMonth || dns?.zonePerMonth || 8;
             },
             'messaging': () => {
                 return 50;
             },
             'cache': () => {
-                const cache = this.cloudPricing.cache?.[providerId];
+                const cache = this.cloudPricing.cache?.[sourceId];
                 if (cache?.redis?.pricePerGB) {
                     return cache.redis.pricePerGB * 8; // 8 GB Redis
                 }
@@ -1013,7 +1023,10 @@ class CloudAnalyzer {
         };
 
         const priceGetter = serviceMapping[serviceId];
-        return priceGetter ? priceGetter() : null;
+        const basePrice = priceGetter ? priceGetter() : null;
+
+        // Premium-Faktor für Sovereign Clouds anwenden
+        return basePrice !== null ? Math.round(basePrice * premiumFactor) : null;
     }
 
     /**
