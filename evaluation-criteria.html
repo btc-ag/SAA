@@ -679,7 +679,64 @@
                         <h3><i class="fa-solid fa-chart-bar"></i> Provider-Preisvergleich (Beispiel)</h3>
                         <div id="pricingFactorsTable"></div>
 
-                        <h3><i class="fa-solid fa-calculator"></i> TCO-Dimensionen</h3>
+                        <div class="example-box">
+                            <h4><i class="fa-solid fa-calculator"></i> Kostenbeispiel mit echten Preisen (Frankfurt)</h4>
+                            <p style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);">
+                                Standard-Workload: 2 vCPU / 8 GB VM, PostgreSQL 100 GB, 500 GB Object Storage, 200 GB Block Storage, Observability
+                            </p>
+                            <div class="cost-example">
+                                <div class="provider-cost-example">
+                                    <h5><i class="fa-brands fa-aws" style="color: #FF9900;"></i> AWS (eu-central-1)</h5>
+                                    <ul>
+                                        <li>Compute: m6i.large (2 vCPU, 8 GB) = <strong>70€</strong></li>
+                                        <li>Database: RDS PostgreSQL 100 GB = <strong>37€</strong></li>
+                                        <li>Storage: S3 500 GB + EBS 200 GB = <strong>30€</strong></li>
+                                        <li>Observability: CloudWatch = <strong>10€</strong></li>
+                                    </ul>
+                                    <p class="total">Gesamt: <strong>~147€/Monat</strong></p>
+                                </div>
+                                <div class="provider-cost-example">
+                                    <h5><i class="fa-brands fa-microsoft" style="color: #0078D4;"></i> Azure (germanywestcentral)</h5>
+                                    <ul>
+                                        <li>Compute: D2s_v5 (2 vCPU, 8 GB) = <strong>72€</strong></li>
+                                        <li>Database: PostgreSQL Flexible 100 GB = <strong>35€</strong></li>
+                                        <li>Storage: Blob 500 GB + Disk 200 GB = <strong>24€</strong></li>
+                                        <li>Observability: Azure Monitor = <strong>32€</strong></li>
+                                    </ul>
+                                    <p class="total">Gesamt: <strong>~163€/Monat</strong> <span class="premium-text">(+11%)</span></p>
+                                </div>
+                                <div class="provider-cost-example">
+                                    <h5><i class="fa-solid fa-cloud" style="color: #00B4A0;"></i> STACKIT (de-fra)</h5>
+                                    <ul>
+                                        <li>Compute: c1.2 (2 vCPU, 8 GB) = <strong>55€</strong></li>
+                                        <li>Database: PostgreSQL 100 GB = <strong>26€</strong></li>
+                                        <li>Storage: Object 500 GB + Block 200 GB = <strong>22€</strong></li>
+                                        <li>Observability: Stack Add-on = <strong>60€</strong></li>
+                                    </ul>
+                                    <p class="total">Gesamt: <strong>~163€/Monat</strong> <span class="premium-text">(+11%)</span></p>
+                                </div>
+                                <div class="provider-cost-example">
+                                    <h5><i class="fa-solid fa-server" style="color: #6B7280;"></i> Private Cloud (OpenStack)</h5>
+                                    <ul>
+                                        <li>Compute: 2 vCPU, 8 GB = <strong>40€</strong></li>
+                                        <li>Database: PostgreSQL 100 GB = <strong>20€</strong></li>
+                                        <li>Storage: Ceph 500 GB + SSD 200 GB = <strong>13€</strong></li>
+                                        <li>Observability: Prometheus/Grafana = <strong>70€</strong></li>
+                                    </ul>
+                                    <p class="total">Gesamt: <strong>~143€/Monat</strong> <span class="savings">(-3%)</span></p>
+                                </div>
+                            </div>
+                            <p class="table-note" style="margin-top: 1rem;">
+                                <i class="fa-solid fa-lightbulb"></i>
+                                <strong>Erkenntnis:</strong> Hyperscaler haben günstige integrierte Observability (CloudWatch ~10€).
+                                Bei EU-Providern und Private Cloud ist Monitoring oft ein separates Add-on mit Fixkosten (~50-70€).
+                            </p>
+                        </div>
+
+                        <h3><i class="fa-solid fa-coins"></i> TCO-Dimensionen</h3>
+                        <p style="margin-bottom: 1rem;">
+                            Die Total Cost of Ownership (TCO) umfasst mehr als nur Infrastrukturkosten:
+                        </p>
                         <div class="factors-grid">
                             <div class="factor-card">
                                 <div class="factor-icon" style="background: #5AA6E7;">
@@ -695,7 +752,7 @@
                                     <li>Managed Services</li>
                                 </ul>
                                 <p class="factor-note">
-                                    <strong>Berechnung:</strong> Echte Preise aus CloudPricing API
+                                    <strong>Berechnung:</strong> Echte Preise aus Cloud Pricing APIs
                                 </p>
                             </div>
 
@@ -735,39 +792,6 @@
                                     <strong>Schätzung:</strong> ~800€ pro Personentag<br>
                                     Self-Build Services erhöhen Projektaufwand erheblich
                                 </p>
-                            </div>
-                        </div>
-
-                        <div class="example-box">
-                            <h4><i class="fa-solid fa-calculator"></i> Kostenbeispiel mit echten Preisen (Frankfurt)</h4>
-                            <div class="cost-example">
-                                <div class="provider-cost-example">
-                                    <h5><i class="fa-brands fa-aws" style="color: #FF9900;"></i> AWS (eu-central-1)</h5>
-                                    <ul>
-                                        <li>Compute: m6i.xlarge (4 vCPU, 16 GB) = <strong>140€</strong></li>
-                                        <li>Database: RDS PostgreSQL 100 GB = <strong>37€</strong></li>
-                                        <li>Storage: S3 Standard 500 GB = <strong>12€</strong></li>
-                                    </ul>
-                                    <p class="total">Verbrauch: <strong>189€/Monat</strong></p>
-                                </div>
-                                <div class="provider-cost-example">
-                                    <h5><i class="fa-brands fa-microsoft" style="color: #0078D4;"></i> Azure (germanywestcentral)</h5>
-                                    <ul>
-                                        <li>Compute: D4s_v5 (4 vCPU, 16 GB) = <strong>130€</strong></li>
-                                        <li>Database: PostgreSQL Flexible 100 GB = <strong>33€</strong></li>
-                                        <li>Storage: Blob Hot 500 GB = <strong>11€</strong></li>
-                                    </ul>
-                                    <p class="total">Verbrauch: <strong>174€/Monat</strong> <span class="savings">(8% günstiger)</span></p>
-                                </div>
-                                <div class="provider-cost-example">
-                                    <h5><i class="fa-brands fa-google" style="color: #4285F4;"></i> GCP (europe-west3)</h5>
-                                    <ul>
-                                        <li>Compute: n2-standard-4 (4 vCPU, 16 GB) = <strong>120€</strong></li>
-                                        <li>Database: Cloud SQL PostgreSQL 100 GB = <strong>30€</strong></li>
-                                        <li>Storage: Cloud Storage Standard 500 GB = <strong>12€</strong></li>
-                                    </ul>
-                                    <p class="total">Verbrauch: <strong>162€/Monat</strong> <span class="savings">(14% günstiger)</span></p>
-                                </div>
                             </div>
                         </div>
 
