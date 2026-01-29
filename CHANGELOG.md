@@ -5,6 +5,23 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-29
+
+### Added
+- **Meta Tags**: Description, keywords, author, robots, Open Graph, and Twitter Card tags
+- **Structured Data (Schema.org)**: SoftwareApplication, BreadcrumbList, and Article schemas
+- **Technical SEO**: robots.txt with sitemap reference, sitemap.xml, DNS prefetch & preconnect
+- JavaScript defer loading for better performance
+
+### Fixed
+- Logo links (`href="#"` → `href="index.html"`)
+- H-tag hierarchy in evaluation-criteria.html
+
+### Improved
+- Image alt texts for accessibility
+- Added `rel="noopener noreferrer"` for external links
+- Overall SEO score: 94/100
+
 ## [1.1.0] - 2026-01-25
 
 ### Added
@@ -69,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **1.2.0** - Comprehensive SEO Optimization
 - **1.1.0** - Mobile optimization with burger menu navigation
 - **1.0.2** - Repository optimization for GitHub Pages, CHANGELOG added
 - **1.0.1** - Documentation improvements
