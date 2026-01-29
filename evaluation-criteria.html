@@ -3,17 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bewertungskriterien - Sovereign Architecture Advisor</title>
+    <title>Cloud-Provider Bewertungskriterien & TCO-Analyse | SAA | BTC AG</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Detaillierte Bewertungskriterien des Sovereign Architecture Advisors: Kontrolle, Leistung, Verfügbarkeit und Kosten. Transparente Darstellung der Cloud-Provider Bewertungsmethodik.">
+    <meta name="keywords" content="Cloud-Bewertungskriterien, Cloud-Provider Vergleich, Souveränität, DSGVO, Cloud-Kosten, TCO, Cloud-Leistung">
+    <meta name="author" content="BTC AG">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://btc-ag.github.io/SAA/evaluation-criteria.html">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Bewertungskriterien & Methodik - Sovereign Architecture Advisor">
+    <meta property="og:description" content="Transparente Darstellung der Cloud-Provider Bewertungen: Kontrolle, Leistung, Verfügbarkeit und Kostenanalyse.">
+    <meta property="og:url" content="https://btc-ag.github.io/SAA/evaluation-criteria.html">
+    <meta property="og:image" content="https://btc-ag.github.io/SAA/btc-logo.png">
+    <meta property="og:site_name" content="BTC AG Sovereign Architecture Advisor">
+    <meta property="og:locale" content="de_DE">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Cloud-Provider Bewertungskriterien | BTC AG">
+    <meta name="twitter:description" content="Transparente Darstellung der Cloud-Provider Bewertungen nach Kontrolle, Leistung und Kosten.">
+    <meta name="twitter:image" content="https://btc-ag.github.io/SAA/btc-logo.png">
+
+    <!-- Additional SEO -->
+    <meta name="theme-color" content="#5AA6E7">
+
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <!-- DNS Prefetch & Preconnect -->
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="//btc-ag.github.io">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Base Styles from SCC -->
+    <link rel="preload" href="https://btc-ag.github.io/SCC/styles.css" as="style">
     <link rel="stylesheet" href="https://btc-ag.github.io/SCC/styles.css">
     <!-- SAA-specific Styles -->
     <link rel="stylesheet" href="saa-styles.css">
     <!-- Criteria Page Styles -->
     <link rel="stylesheet" href="criteria-styles.css">
+
+    <!-- Structured Data: Article -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "Bewertungskriterien & Methodik für Cloud-Provider",
+        "description": "Transparente Darstellung der Cloud-Provider Bewertungen nach Kontrolle, Leistung, Verfügbarkeit und Kosten.",
+        "author": {
+            "@type": "Organization",
+            "name": "BTC AG"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "BTC AG",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://btc-ag.github.io/SAA/btc-logo.png"
+            }
+        },
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https://btc-ag.github.io/SAA/evaluation-criteria.html"
+        },
+        "inLanguage": "de-DE"
+    }
+    </script>
+
+    <!-- Structured Data: BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "BTC AG",
+                "item": "https://www.btc-ag.com"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Sovereign Architecture Advisor",
+                "item": "https://btc-ag.github.io/SAA/"
+            },
+            {
+                "@type": "ListItem",
+                "position": 3,
+                "name": "Bewertungskriterien",
+                "item": "https://btc-ag.github.io/SAA/evaluation-criteria.html"
+            }
+        ]
+    }
+    </script>
 </head>
 <body>
     <!-- Mobile Navigation Overlay -->
@@ -80,8 +168,8 @@
         <header class="header">
             <div class="container">
                 <nav class="header-nav">
-                    <a href="#" class="logo">
-                        <img src="btc-logo.png" alt="BTC AG Logo" class="logo-img">
+                    <a href="index.html" class="logo" title="Zurück zur Startseite">
+                        <img src="btc-logo.png" alt="BTC AG - Ihr Partner für souveräne Cloud-Transformation" class="logo-img">
                     </a>
                     <div class="header-actions">
                         <!-- Desktop Navigation -->
@@ -93,7 +181,7 @@
                             <a href="https://btc-ag.github.io/SCC/" class="btn btn-secondary">
                                 Cloud Compass
                             </a>
-                            <a href="https://outlook.office.com/book/BTCAGManagedCloudServices@btcag.onmicrosoft.com/s/U1HPjhE9b0qdW-uTHThOSw2?ismsaljsauthenabled" target="_blank" class="btn btn-primary">
+                            <a href="https://outlook.office.com/book/BTCAGManagedCloudServices@btcag.onmicrosoft.com/s/U1HPjhE9b0qdW-uTHThOSw2?ismsaljsauthenabled" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
                                 Beratung
                             </a>
                         </div>
@@ -162,7 +250,7 @@
                             einen Score zwischen 0 und 100 Punkten.
                         </p>
                         <div class="formula-box">
-                            <h4>Berechnungsformel</h4>
+                            <h3>Berechnungsformel</h3>
                             <code class="formula">
                                 Gesamt-Score = (Kontrolle × Gewicht₁) +<br>
                                                (Leistung × Gewicht₂) +<br>
@@ -589,6 +677,11 @@
             </div>
         </footer>
 
+        <!-- Version Info -->
+        <div style="text-align: right; padding: 20px 12px 8px 12px; font-size: 10px; color: rgba(128, 128, 128, 0.5); font-family: monospace;">
+            v1.2.0
+        </div>
+
         <!-- Edit Provider Modal -->
         <div class="edit-modal-overlay" id="editModalOverlay">
             <div class="edit-modal">
@@ -761,13 +854,13 @@
     </script>
 
     <!-- Data Module -->
-    <script src="saa-data.js"></script>
+    <script src="saa-data.js" defer></script>
     <!-- Criteria Page Logic -->
-    <script src="criteria-page.js"></script>
+    <script src="criteria-page.js" defer></script>
 
     <!-- Version Info -->
     <div style="text-align: right; padding: 20px 12px 8px 12px; font-size: 10px; color: rgba(128, 128, 128, 0.5); font-family: monospace;">
-        v1.1.0
+        v1.2.0
     </div>
 </body>
 </html>

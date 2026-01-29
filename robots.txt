@@ -1,0 +1,15 @@
+# Robots.txt für Sovereign Architecture Advisor
+# https://btc-ag.github.io/SAA/
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://btc-ag.github.io/SAA/sitemap.xml
+
+# Crawl-Delay
+User-agent: Googlebot
+Crawl-delay: 0
+
+User-agent: Bingbot
+Crawl-delay: 1
