@@ -7,3 +7,6 @@ Archive/
 # Backup files
 *.backup-*
 *.bak
+
+# SEO Reports (local only)
+SEO-*.md

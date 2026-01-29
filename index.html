@@ -3,15 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sovereign Architecture Advisor - BTC AG</title>
+    <title>Sovereign Architecture Advisor - Cloud-Architektur Beratung | BTC AG</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Analysieren Sie Ihre Cloud-Architektur und finden Sie die optimale souveräne Cloud-Lösung. Der Sovereign Architecture Advisor von BTC AG bewertet Cloud-Anbieter nach Kontrolle, Leistung, Verfügbarkeit und Kosten.">
+    <meta name="keywords" content="Cloud-Architektur, Sovereign Cloud, Digital Sovereignty, Cloud-Beratung, BTC AG, Cloud-Advisor, DSGVO-konforme Cloud, Cloud-Provider Vergleich, IaaS, PaaS">
+    <meta name="author" content="BTC AG">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://btc-ag.github.io/SAA/">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Sovereign Architecture Advisor - BTC AG Cloud Compass">
+    <meta property="og:description" content="Finden Sie die optimale Cloud-Lösung für Ihre Anwendungsarchitektur. Analysieren Sie Cloud-Anbieter nach Souveränität, Leistung und Kosten.">
+    <meta property="og:url" content="https://btc-ag.github.io/SAA/">
+    <meta property="og:image" content="https://btc-ag.github.io/SAA/btc-logo.png">
+    <meta property="og:site_name" content="BTC AG Sovereign Architecture Advisor">
+    <meta property="og:locale" content="de_DE">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Sovereign Architecture Advisor - BTC AG">
+    <meta name="twitter:description" content="Analysieren Sie Ihre Cloud-Architektur und finden Sie die optimale souveräne Cloud-Lösung.">
+    <meta name="twitter:image" content="https://btc-ag.github.io/SAA/btc-logo.png">
+
+    <!-- Additional SEO -->
+    <meta name="theme-color" content="#5AA6E7">
+    <meta name="application-name" content="Sovereign Architecture Advisor">
+
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <!-- DNS Prefetch & Preconnect -->
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="//btc-ag.github.io">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Base Styles from SCC -->
+    <link rel="preload" href="https://btc-ag.github.io/SCC/styles.css" as="style">
     <link rel="stylesheet" href="https://btc-ag.github.io/SCC/styles.css">
     <!-- SAA-specific Styles -->
     <link rel="stylesheet" href="saa-styles.css">
+
+    <!-- Structured Data: SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Sovereign Architecture Advisor",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "EUR"
+        },
+        "provider": {
+            "@type": "Organization",
+            "name": "BTC AG",
+            "url": "https://www.btc-ag.com",
+            "logo": "https://btc-ag.github.io/SAA/btc-logo.png"
+        },
+        "description": "Analysieren Sie Ihre Anwendungsarchitektur und finden Sie die optimale Cloud-Lösung basierend auf Souveränität, Leistung, Verfügbarkeit und Kosten.",
+        "featureList": [
+            "Cloud-Anbieter Vergleich (IaaS/PaaS)",
+            "Souveränitäts-Bewertung",
+            "TCO-Berechnung",
+            "Architektur-Komponenten Analyse"
+        ],
+        "inLanguage": "de-DE",
+        "url": "https://btc-ag.github.io/SAA/"
+    }
+    </script>
+
+    <!-- Structured Data: BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "BTC AG",
+                "item": "https://www.btc-ag.com"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Cloud Compass",
+                "item": "https://btc-ag.github.io/SCC/"
+            },
+            {
+                "@type": "ListItem",
+                "position": 3,
+                "name": "Sovereign Architecture Advisor",
+                "item": "https://btc-ag.github.io/SAA/"
+            }
+        ]
+    }
+    </script>
 </head>
 <body>
     <!-- Mobile Navigation Overlay -->
@@ -63,8 +156,8 @@
         <header class="header">
             <div class="container">
                 <nav class="header-nav">
-                    <a href="#" class="logo">
-                        <img src="btc-logo.png" alt="BTC AG Logo" class="logo-img">
+                    <a href="index.html" class="logo" title="Zurück zur Startseite">
+                        <img src="btc-logo.png" alt="BTC AG - Ihr Partner für souveräne Cloud-Transformation" class="logo-img">
                     </a>
                     <div class="header-actions">
                         <!-- Desktop Navigation -->
@@ -342,6 +435,11 @@
                 </p>
             </div>
         </footer>
+
+        <!-- Version Info -->
+        <div style="text-align: right; padding: 20px 12px 8px 12px; font-size: 10px; color: rgba(128, 128, 128, 0.5); font-family: monospace;">
+            v1.2.0
+        </div>
     </div>
 
     <!-- Loading Overlay -->
@@ -712,13 +810,13 @@
     </script>
 
     <!-- Data Module -->
-    <script src="saa-data.js"></script>
+    <script src="saa-data.js" defer></script>
     <!-- Cloud Pricing Module (Real prices for German regions) -->
-    <script src="cloud-pricing.js"></script>
+    <script src="cloud-pricing.js" defer></script>
     <!-- Analysis Engine -->
-    <script src="saa-analysis.js"></script>
+    <script src="saa-analysis.js" defer></script>
     <!-- Main Application -->
-    <script src="saa-app.js"></script>
+    <script src="saa-app.js" defer></script>
 
     <!-- Version Info -->
     <div style="text-align: right; padding: 20px 12px 8px 12px; font-size: 10px; color: rgba(128, 128, 128, 0.5); font-family: monospace;">
