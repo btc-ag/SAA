@@ -5,6 +5,11 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-02-18 - Bugfix: Container Registry Label
+
+### Fixed
+- Service-Verfügbarkeit-Tabelle: Container Registry wurde fälschlicherweise als "Kubernetes Cluster" bezeichnet, da die Suche nach `requiredServices.includes()` statt nach `id` matchte
+
 ## [1.2.0] - 2026-01-29 - Comprehensive SEO Optimization
 
 ### Added
