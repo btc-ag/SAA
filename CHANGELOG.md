@@ -5,6 +5,12 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-02-18 - Bugfix: Kubernetes-Komponente in Multi-App
+
+### Fixed
+- Multi-App: `kubernetes`-Komponente wurde bei Templates ohne `controlPlane`/`workers`-Struktur (z.B. `kubernetes-cluster`, `kubernetes-app`) aus den `selectedComponents` entfernt und stattdessen fälschlicherweise `compute` hinzugefügt
+- Fix: `compute`-Config wird nur noch erstellt wenn `compute` tatsächlich in den Komponenten ist; Kubernetes-Fallback liest Node-Anzahl aus `sysReq.nodes` und Worker-Specs aus `sysReq.compute`
+
 ## [1.2.1] - 2026-02-18 - Bugfix: Container Registry Label
 
 ### Fixed
