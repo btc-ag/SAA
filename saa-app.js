@@ -4916,8 +4916,9 @@ class SovereignArchitectureAdvisor {
         `;
 
         requiredServices.forEach(serviceId => {
-            const comp = architectureComponents.find(c => c.requiredServices?.includes(serviceId));
-            const serviceName = comp ? comp.name : serviceId;
+            const serviceLabels = { container_registry: 'Container Registry', ai_ml: 'AI/ML' };
+            const comp = architectureComponents.find(c => c.id === serviceId);
+            const serviceName = comp ? comp.name : (serviceLabels[serviceId] || serviceId);
 
             html += `<tr><td>${serviceName}</td>`;
 
@@ -5034,8 +5035,9 @@ class SovereignArchitectureAdvisor {
         `;
 
         requiredServices.forEach(serviceId => {
-            const comp = architectureComponents.find(c => c.requiredServices?.includes(serviceId));
-            const serviceName = comp ? comp.name : serviceId;
+            const serviceLabels = { container_registry: 'Container Registry', ai_ml: 'AI/ML' };
+            const comp = architectureComponents.find(c => c.id === serviceId);
+            const serviceName = comp ? comp.name : (serviceLabels[serviceId] || serviceId);
 
             html += `<tr><td>${serviceName}</td>`;
 
