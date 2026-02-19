@@ -2,7 +2,7 @@
 // Komponenten-Auswahl, Config-Panels, VM/DB/Storage-Konfiguration
 
 import { architectureComponents, detectDeploymentPattern } from '../saa-data.js';
-import { knownApplications } from '../saa-apps-data.js';
+import { knownApplications, componentCategories } from '../saa-apps-data.js';
 import { IconMapper } from './saa-utils.js';
 
 export const SAAComponents = {
