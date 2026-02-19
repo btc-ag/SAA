@@ -1044,9 +1044,8 @@ const cloudProviders = [
         color: '#3b82f6',
         description: 'Deutsche Treuhänder-Cloud für Verwaltung und Kritische Infrastruktur. Separate Umgebung mit eigenem Support.',
         services: {
-            // Azure: operations: low → DELOS: medium (eine Stufe höher)
             compute: svc('Virtual Machines', true, 'production', {
-                consumption: 'high', operations: 'medium', projectEffort: 'low',
+                consumption: 'high', operations: 'low', projectEffort: 'low',
                 control: 85, performance: 70,
                 controlReason: 'Betrieb durch DELOS (SAP/Arvato). Kein Microsoft-Direktzugriff. Deutsche Treuhänder.',
                 performanceReason: 'Azure-Technologie, aber eingeschränktes Instanzportfolio. Weniger SKUs.'
@@ -1501,7 +1500,7 @@ const cloudProviders = [
         description: 'Maximale Kontrolle durch Open-Source Private Cloud.',
         services: {
             compute: svc('Nova', true, 'production', {
-                consumption: 'low', operations: 'high', projectEffort: 'high',
+                consumption: 'low', operations: 'medium', projectEffort: 'high',
                 control: 100, performance: 40,
                 controlReason: 'Volle Kontrolle. Eigene Hardware. Open-Source. Keine externe Abhängigkeit.',
                 performanceReason: 'Bewährt aber Eigenbetrieb. Weniger automatisiert als Public Cloud.'
