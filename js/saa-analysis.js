@@ -5,13 +5,15 @@
  * Version 2.0 - Mit echten Cloud-Preisdaten für deutsche Regionen
  */
 
+import { selfBuildOptions } from './saa-data.js';
+import { CloudPricing } from './cloud-pricing.js';
+
 class CloudAnalyzer {
     constructor(providers, components) {
         this.providers = providers;
         this.components = components;
         this.customScores = this.loadCustomScores();
-        // Cloud Pricing Module laden (wenn verfügbar)
-        this.cloudPricing = typeof CloudPricing !== 'undefined' ? CloudPricing : null;
+        this.cloudPricing = CloudPricing;
     }
 
     /**

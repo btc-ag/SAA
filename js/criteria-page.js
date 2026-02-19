@@ -3,12 +3,15 @@
  * Zeigt globale Provider-Bewertungen unabhängig von aktueller Analyse
  */
 
+import { cloudProviders } from './saa-data.js';
+import { CloudPricing } from './cloud-pricing.js';
+
 class CriteriaPage {
     constructor() {
         this.providers = cloudProviders;
         this.customScores = this.loadCustomScores();
         this.editingProvider = null;
-        this.cloudPricing = typeof CloudPricing !== 'undefined' ? CloudPricing : null;
+        this.cloudPricing = CloudPricing;
         this.init();
     }
 
@@ -908,8 +911,7 @@ class CriteriaPage {
     }
 }
 
-// Initialize on DOMContentLoaded
-let criteriaPage;
+// Initialize on DOMContentLoaded (window.criteriaPage für HTML onclick-Handler)
 document.addEventListener('DOMContentLoaded', () => {
-    criteriaPage = new CriteriaPage();
+    window.criteriaPage = new CriteriaPage();
 });

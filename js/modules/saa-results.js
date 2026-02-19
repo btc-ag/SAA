@@ -1919,12 +1919,6 @@ export const SAAResults = {
                         ${pricingInfo.lastUpdated ? `| <strong>Stand:</strong> ${pricingInfo.lastUpdated}` : ''}
                     </div>
                 </div>
-                <div style="font-size: 0.75rem; color: var(--text-secondary); padding-left: 32px;">
-                    <strong>Quellen:</strong>
-                    <a href="https://calculator.aws/" target="_blank" rel="noopener" style="color: #FF9900; margin-left: 8px;">AWS Pricing</a> |
-                    <a href="https://azure.microsoft.com/pricing/" target="_blank" rel="noopener" style="color: #0078D4; margin-left: 4px;">Azure Pricing</a> |
-                    <a href="https://cloud.google.com/compute/all-pricing" target="_blank" rel="noopener" style="color: #4285F4; margin-left: 4px;">GCP Pricing</a>
-                </div>
             </div>
 
             <div class="cost-breakdown-section">
