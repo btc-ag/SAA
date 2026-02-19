@@ -154,8 +154,7 @@ class CloudAnalyzer {
                 requiredServices,
                 systemConfig,
                 operations,
-                projectEffort,
-                architectureInfo?.transformation?.operationsFactor || 1.0 // Operations-Faktor für PaaS
+                projectEffort
             );
             return { provider, serviceAnalysis, tcoEstimate };
         });
@@ -460,9 +459,8 @@ class CloudAnalyzer {
      * @param {Object} systemConfig - Optionale System-Konfiguration für realistische Kostenberechnung
      * @param {Object} operationsSettings - Einstellungen für Betriebsaufwand
      * @param {Object} projectEffortSettings - Einstellungen für Projektaufwand
-     * @param {number} architectureOperationsFactor - Faktor für Betriebsaufwand aus Architektur-Modus (1.0 = normal, 0.5 = 50% weniger)
      */
-    calculateTCO(provider, serviceAnalysis, requiredServices, systemConfig = null, operationsSettings = null, projectEffortSettings = null, architectureOperationsFactor = 1.0) {
+    calculateTCO(provider, serviceAnalysis, requiredServices, systemConfig = null, operationsSettings = null, projectEffortSettings = null) {
         const allServices = [...serviceAnalysis.available, ...serviceAnalysis.preview];
         const missingServices = serviceAnalysis.missing;
 
@@ -475,10 +473,9 @@ class CloudAnalyzer {
         // Consumption Costs (Verbrauchskosten) - jetzt mit systemConfig
         const consumptionCosts = this.calculateConsumptionCosts(allServices, requiredServices, systemConfig, provider);
 
-        // Operations Costs (Betriebsaufwand) - mit systemConfig für Skalierung und Architektur-Faktor
-        const operationsCosts = this.calculateOperationsCosts(allServices, missingServices, systemConfig, architectureOperationsFactor);
+        // Operations Costs (Betriebsaufwand) — Differenz zwischen Modi kommt aus service-level operations-Rating
+        const operationsCosts = this.calculateOperationsCosts(allServices, missingServices, systemConfig);
         operationsCosts.includedInCosts = opSettings.includeInCosts;
-        operationsCosts.architectureFactor = architectureOperationsFactor; // Speichere für Anzeige
 
         // Project Effort (Projektaufwand) - mit systemConfig für Skalierung
         const projectEffortCalc = this.calculateProjectEffort(allServices, missingServices, systemConfig);
@@ -1133,13 +1130,11 @@ class CloudAnalyzer {
     }
 
     /**
-     * Berechnet Betriebsaufwand (Operations)
-     * @param {Array} services - Liste der Services
-     * @param {Array} missingServices - Liste der fehlenden Services
-     * @param {Object} systemConfig - System-Konfiguration
-     * @param {number} architectureOperationsFactor - Faktor für Cloud-native Architektur (1.0 = normal, 0.3 = 70% weniger)
+     * Berechnet Betriebsaufwand (Operations).
+     * Die Differenz zwischen Cloud-native und Klassisch ergibt sich aus den service-level operations-Ratings
+     * (serverless = low, compute = medium) — kein separater Architektur-Faktor nötig.
      */
-    calculateOperationsCosts(services, missingServices, systemConfig = null, architectureOperationsFactor = 1.0) {
+    calculateOperationsCosts(services, missingServices, systemConfig = null) {
         const levelMap = { low: 1, medium: 2, high: 3 };
         let totalLevel = 0;
         let details = [];
@@ -1181,22 +1176,14 @@ class CloudAnalyzer {
         const overallLevel = avgLevel <= 1.5 ? 'low' : avgLevel <= 2.5 ? 'medium' : 'high';
 
         // FTE-Schätzung (Full Time Equivalent)
-        let totalFTE = details.reduce((sum, d) => sum + d.fteEstimate, 0);
-
-        // Architektur-Faktor anwenden (Cloud-native reduziert Betriebsaufwand)
-        const adjustedFTE = totalFTE * architectureOperationsFactor;
-        const fteSavings = totalFTE - adjustedFTE;
+        const totalFTE = details.reduce((sum, d) => sum + d.fteEstimate, 0);
 
         return {
             level: overallLevel,
             avgScore: Math.round(avgLevel * 10) / 10,
             details,
-            baseFTE: Math.round(totalFTE * 10) / 10, // FTE ohne Architektur-Faktor
-            totalFTE: Math.round(adjustedFTE * 10) / 10, // FTE mit Architektur-Faktor
-            fteSavings: Math.round(fteSavings * 100) / 100, // Einsparung durch Cloud-native
-            monthlyPersonnelCost: Math.round(adjustedFTE * 8000), // ~8000€/Monat pro FTE
-            basePersonnelCost: Math.round(totalFTE * 8000), // Kosten ohne Einsparung
-            monthlySavings: Math.round(fteSavings * 8000) // Monatliche Einsparung
+            totalFTE: Math.round(totalFTE * 10) / 10,
+            monthlyPersonnelCost: Math.round(totalFTE * 8000) // ~8000€/Monat pro FTE
         };
     }
 

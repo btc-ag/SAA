@@ -80,37 +80,6 @@ export const SAAResults = {
                 ` : ''}
                 ${archInfo.transformation?.applied ? `
                     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
-                        ${archInfo.operationsFactor < 1 ? `
-                            <span style="
-                                display: inline-flex;
-                                align-items: center;
-                                gap: 0.25rem;
-                                padding: 0.35rem 0.75rem;
-                                background: var(--success-color-light, rgba(16, 185, 129, 0.1));
-                                color: var(--success-color);
-                                border-radius: 6px;
-                                font-size: 0.8rem;
-                                font-weight: 500;
-                            ">
-                                <i class="fa-solid fa-arrow-down"></i>
-                                ~${Math.round((1 - archInfo.operationsFactor) * 100)}% weniger Betriebsaufwand
-                            </span>
-                        ` : archInfo.operationsFactor > 1 ? `
-                            <span style="
-                                display: inline-flex;
-                                align-items: center;
-                                gap: 0.25rem;
-                                padding: 0.35rem 0.75rem;
-                                background: rgba(245, 158, 11, 0.1);
-                                color: var(--warning-color, #f59e0b);
-                                border-radius: 6px;
-                                font-size: 0.8rem;
-                                font-weight: 500;
-                            ">
-                                <i class="fa-solid fa-arrow-up"></i>
-                                ~${Math.round((archInfo.operationsFactor - 1) * 100)}% mehr Betriebsaufwand
-                            </span>
-                        ` : ''}
                         ${archInfo.transformation.reason ? `
                             <span style="
                                 display: inline-flex;

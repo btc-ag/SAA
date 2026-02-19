@@ -183,7 +183,6 @@ export const SAAComponents = {
                         </div>
                         <div style="font-size: 0.8rem; color: var(--text-secondary);">
                             ${this.detectedPattern.cloudNative?.description || ''}
-                            ${this.detectedPattern.cloudNative?.operationsFactor < 1 ? `<br><span style="color: var(--success-color);">→ ~${Math.round((1 - this.detectedPattern.cloudNative.operationsFactor) * 100)}% weniger Betriebsaufwand</span>` : ''}
                         </div>
                     </div>
                 ` : ''}
