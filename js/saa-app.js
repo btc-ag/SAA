@@ -4275,9 +4275,6 @@ class SovereignArchitectureAdvisor {
             this.strategyWeight
         );
 
-        // System-Konfiguration Zusammenfassung
-        const systemConfigHtml = this.renderSystemConfigSummary();
-
         let html = `
             <!-- Ausgewählte Komponenten -->
             <div class="analysis-section">
@@ -4289,7 +4286,6 @@ class SovereignArchitectureAdvisor {
                 <div class="selected-components">
                     ${selectedComps.map(c => `<span class="selected-component-tag">${IconMapper.toFontAwesome(c.icon, 'component')} ${c.name}</span>`).join('')}
                 </div>
-                ${systemConfigHtml}
             </div>
 
             <!-- Algorithm Profile Info -->
@@ -5433,7 +5429,7 @@ class SovereignArchitectureAdvisor {
     }
 
     reset() {
-        this.currentStep = 1;
+        this.currentStep = 0;
         this.selectedComponents.clear();
         this.componentConfigs = {};
         this.applicationData = null;
