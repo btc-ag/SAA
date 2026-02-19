@@ -43,8 +43,8 @@ Ein interaktiver Wizard zur Bewertung und Empfehlung souveräner Cloud-Architekt
 ### 2. Komponenten-Konfiguration
 - Auswahl relevanter Infrastruktur-Komponenten, kategorisiert nach Compute, Storage, Netzwerk, Datenbanken etc.
 - Kubernetes = Managed Control Plane; Worker Nodes über Compute-Komponente konfigurierbar
-- **Architektur-Modus** (Cloud-native / Klassisch): transformiert die Komponenten-Auswahl live
-  - Cloud-native: `compute` → `PaaS / Serverless` bei Web-Apps; Kubernetes-Apps bleiben unverändert
+- **Architektur-Modus** (Cloud-native / Klassisch): Steuert, ob eine Anwendung auf verwalteten Plattform-Diensten (PaaS) oder klassischen VMs betrieben wird — mit direktem Einfluss auf Betriebsaufwand und TCO. Die Komponenten-Auswahl passt sich beim Modus-Wechsel live an.
+  - Cloud-native: `compute` → `PaaS / Serverless` bei Web-/CMS-Apps; Kubernetes- und Enterprise-Apps bleiben konservativ
   - Klassisch: `serverless`/`kubernetes` → `compute` + `loadbalancer`
   - Manuelle Änderungen bleiben erhalten (Delta-System), Reset-Button bringt den Originalzustand zurück
   - Empfohlener Modus wird pro App vorausgewählt (`recommendedArchitecture`)
