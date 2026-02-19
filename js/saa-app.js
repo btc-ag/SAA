@@ -208,7 +208,26 @@ class SovereignArchitectureAdvisor {
                 this.isMultiAppMode = state.isMultiAppMode || false;
 
                 if (state.isMultiAppMode) {
-                    this.applications = state.applications || [];
+                    // Multi-App State - selectedComponents müssen als Set wiederhergestellt werden
+                    this.applications = (state.applications || []).map(app => {
+                        // Stelle sicher, dass selectedComponents ein Set ist
+                        if (app.selectedComponents) {
+                            if (app.selectedComponents instanceof Set) {
+                                // Bereits ein Set - nichts tun
+                            } else if (Array.isArray(app.selectedComponents)) {
+                                // Array -> Set
+                                app.selectedComponents = new Set(app.selectedComponents);
+                            } else if (typeof app.selectedComponents === 'object') {
+                                // Objekt (z.B. von JSON) -> Values als Set
+                                app.selectedComponents = new Set(Object.values(app.selectedComponents));
+                            } else {
+                                app.selectedComponents = new Set();
+                            }
+                        } else {
+                            app.selectedComponents = new Set();
+                        }
+                        return app;
+                    });
                     this.currentAppIndex = state.currentAppIndex || 0;
                     this.aggregatedResults = state.aggregatedResults || null;
                 } else {
@@ -440,6 +459,7 @@ class SovereignArchitectureAdvisor {
             searchBtn.addEventListener('click', () => this.searchApplication());
         }
 
+
         // Search Input Enter + Dropdown
         const searchInput = document.getElementById('appSearchInput');
         if (searchInput) {
@@ -467,6 +487,10 @@ class SovereignArchitectureAdvisor {
         document.querySelectorAll('.quick-suggestion').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const app = e.target.dataset.app;
+                const template = e.target.dataset.template;
+
+                // Neuer App-Start → State vollständig zurücksetzen
+                if (app) this.hardReset();
 
                 if (app === 'custom') {
                     // Benutzerdefinierte App: Direkt zur manuellen Auswahl
@@ -474,9 +498,51 @@ class SovereignArchitectureAdvisor {
                     document.getElementById('researchResult').style.display = 'none';
                     document.getElementById('appSearchInput').value = 'Benutzerdefinierte Anwendung';
                     this.nextStep();
-                } else {
-                    document.getElementById('appSearchInput').value = app;
-                    this.searchApplication();
+                } else if (app) {
+                    // Bekannte App → direkt laden, Sizing-Auswahl auf Step 0 anzeigen
+                    const knownApp = knownApplications[app];
+                    if (knownApp) {
+                        document.getElementById('appSearchInput').value = knownApp.name;
+                        this.applicationData = knownApp;
+                        this.selectedComponents.clear();
+                        knownApp.components.forEach(c => this.selectedComponents.add(c));
+                        if (knownApp.systemRequirements) {
+                            const defaultSize = knownApp.systemRequirements[this.selectedSizing]
+                                ? this.selectedSizing
+                                : (knownApp.systemRequirements.medium ? 'medium' :
+                                   knownApp.systemRequirements.small ? 'small' : 'large');
+                            this.selectedSizing = defaultSize;
+                            this.systemConfig = {
+                                sizing: defaultSize,
+                                config: knownApp.systemRequirements[defaultSize],
+                                application: knownApp.name
+                            };
+                            try { this.initComponentConfigsFromSystemRequirements(); } catch (e) {}
+                        }
+                        // Sizing-Auswahl anzeigen (ohne Recherche-Delay)
+                        const sysReqHtml = this.renderSystemRequirements(knownApp);
+                        const resultDiv = document.getElementById('researchResult');
+                        resultDiv.innerHTML = `
+                            <div class="research-result">
+                                <div class="research-result-header">
+                                    <span class="research-result-title">${knownApp.name}</span>
+                                </div>
+                                <p class="research-result-description">${knownApp.description || ''}</p>
+                                ${sysReqHtml}
+                                <div style="margin-top: 1rem;">
+                                    <button class="nav-button primary" onclick="app.nextStep()">
+                                        Weiter mit ${knownApp.components.length} Komponenten →
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        resultDiv.style.display = 'block';
+                        this.bindSizingEvents();
+                    } else {
+                        // Unbekannte App → Fallback auf Suche
+                        document.getElementById('appSearchInput').value = app;
+                        this.searchApplication();
+                    }
                 }
             });
         });
@@ -1222,9 +1288,11 @@ class SovereignArchitectureAdvisor {
         const k8sInstances = collectInstances('kubernetes');
         let kubernetesConfig = null;
         if (k8sInstances.length > 0) {
+            const anyControlPlaneOnly = k8sInstances.some(k => k.controlPlaneOnly);
             kubernetesConfig = {
+                controlPlaneOnly: anyControlPlaneOnly,
                 clusters: k8sInstances.map(k8s => ({
-                    nodes: parseInt(k8s.nodes) || 3,
+                    nodes: parseInt(k8s.nodes) ?? 3,
                     cpuPerNode: parseInt(k8s.cpuPerNode) || 4,
                     ramPerNode: parseInt(k8s.ramPerNode) || 16
                 }))
@@ -1479,6 +1547,18 @@ class SovereignArchitectureAdvisor {
         if (!component.configFields) return '';
 
         const config = this.componentConfigs[componentId] || {};
+
+        // Kubernetes im Control-Plane-Only-Modus: keine Worker-Felder zeigen
+        if (componentId === 'kubernetes' && config.controlPlaneOnly) {
+            return `
+                <div class="component-config-panel" onclick="event.stopPropagation()">
+                    <div class="component-config-field" style="color: var(--text-muted); font-size: 0.85rem; padding: 0.25rem 0;">
+                        <i class="fa-solid fa-circle-info" style="margin-right: 0.4rem;"></i>
+                        Managed Control Plane – Worker Nodes werden über die Compute-Komponente konfiguriert.
+                    </div>
+                </div>
+            `;
+        }
         const fields = component.configFields.map(field => {
             const value = config[field.id] !== undefined ? config[field.id] : field.default;
 
@@ -3643,8 +3723,29 @@ class SovereignArchitectureAdvisor {
             `;
         }
 
+        // Pricing Info vom Analyzer holen
+        const pricingInfo = this.analyzer?.getPricingInfo?.() || { source: 'Fallback', currency: 'EUR' };
+
         return `
             <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('📊', 'utility')} Kostenaufschlüsselung</h4>
+
+            <div class="pricing-info-box" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 12px 16px; margin-bottom: 1rem; font-size: 0.85rem;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <span style="font-size: 1.2rem;">${IconMapper.toFontAwesome('📍', 'utility')}</span>
+                    <div>
+                        <strong>Preisbasis:</strong> ${pricingInfo.source || 'Fallback'} |
+                        <strong>Region:</strong> Frankfurt (DE) |
+                        <strong>Währung:</strong> ${pricingInfo.currency || 'EUR'}
+                        ${pricingInfo.lastUpdated ? `| <strong>Stand:</strong> ${pricingInfo.lastUpdated}` : ''}
+                    </div>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); padding-left: 32px;">
+                    <strong>Quellen:</strong>
+                    <a href="https://calculator.aws/" target="_blank" rel="noopener" style="color: #FF9900; margin-left: 8px;">AWS Pricing</a> |
+                    <a href="https://azure.microsoft.com/pricing/" target="_blank" rel="noopener" style="color: #0078D4; margin-left: 4px;">Azure Pricing</a> |
+                    <a href="https://cloud.google.com/compute/all-pricing" target="_blank" rel="noopener" style="color: #4285F4; margin-left: 4px;">GCP Pricing</a>
+                </div>
+            </div>
 
             <div class="cost-breakdown-section">
                 <h5 class="cost-breakdown-title">${IconMapper.toFontAwesome('☁️', 'component')} Verbrauchskosten (~${tco.consumption.monthlyEstimate.toLocaleString('de-DE')}€/Monat)</h5>
@@ -4192,9 +4293,6 @@ class SovereignArchitectureAdvisor {
             this.strategyWeight
         );
 
-        // System-Konfiguration Zusammenfassung
-        const systemConfigHtml = this.renderSystemConfigSummary();
-
         let html = `
             <!-- Ausgewählte Komponenten -->
             <div class="analysis-section">
@@ -4206,7 +4304,6 @@ class SovereignArchitectureAdvisor {
                 <div class="selected-components">
                     ${selectedComps.map(c => `<span class="selected-component-tag">${IconMapper.toFontAwesome(c.icon, 'component')} ${c.name}</span>`).join('')}
                 </div>
-                ${systemConfigHtml}
             </div>
 
             <!-- Algorithm Profile Info -->
@@ -5350,8 +5447,9 @@ class SovereignArchitectureAdvisor {
     }
 
     reset() {
-        this.currentStep = 1;
+        this.currentStep = 0;
         this.selectedComponents.clear();
+        this.componentConfigs = {};
         this.applicationData = null;
         this.analysisResults = null;
         this.strategyWeight = 50;
@@ -5362,6 +5460,11 @@ class SovereignArchitectureAdvisor {
         document.getElementById('researchResult').style.display = 'none';
 
         this.updateStepDisplay();
+    }
+
+    hardReset() {
+        sessionStorage.removeItem('saa_session_state');
+        this.reset();
     }
 
     /**
@@ -6637,12 +6740,20 @@ GitLab klein`
 
                 } else {
                     // Single-VM (WordPress etc.)
+                    let instanceCount = sysReq.compute.nodes || 1;
+
+                    // Wenn kubernetes auch gewählt: compute-Specs = Worker Nodes → node count aus sysReq.nodes
+                    if (this.selectedComponents.has('kubernetes') && sysReq.nodes) {
+                        const nodeMatch = sysReq.nodes.toString().match(/(\d+)/);
+                        if (nodeMatch) instanceCount = parseInt(nodeMatch[1]);
+                    }
+
                     this.componentConfigs['compute'].cpu = sysReq.compute.cpu;
                     this.componentConfigs['compute'].ram = sysReq.compute.ram;
-                    this.componentConfigs['compute'].instances = sysReq.compute.nodes || 1;
+                    this.componentConfigs['compute'].instances = instanceCount;
 
-                    // Apply HA configuration if present (overrides nodes)
-                    if (sysReq.ha) {
+                    // Apply HA configuration if present (overrides nodes, but not kubernetes worker count)
+                    if (sysReq.ha && !this.selectedComponents.has('kubernetes')) {
                         const haConfig = this.extractHAConfig(sysReq.ha);
                         if (haConfig && haConfig.nodeCount > 1) {
                             this.componentConfigs['compute'].instances = haConfig.nodeCount;
@@ -6841,7 +6952,14 @@ GitLab klein`
                 }
             }
 
-            // Weitere Konfigurationen...
+            // Kubernetes: immer nur Control Plane; Worker Nodes = compute
+            if (this.selectedComponents.has('kubernetes')) {
+                if (!this.componentConfigs['kubernetes']) {
+                    this.initComponentConfig('kubernetes');
+                }
+                this.componentConfigs['kubernetes'].controlPlaneOnly = this.selectedComponents.has('compute');
+            }
+
             return;
         }
 
@@ -7038,6 +7156,12 @@ GitLab klein`
                     let instanceCount = sysReq.compute.nodes || 1;
                     let haType = null;
 
+                    // Wenn kubernetes auch gewählt: compute-Specs = Worker Nodes → node count aus sysReq.nodes
+                    if (appInstance.selectedComponents.has('kubernetes') && sysReq.nodes) {
+                        const nodeMatch = sysReq.nodes.toString().match(/(\d+)/);
+                        if (nodeMatch) instanceCount = parseInt(nodeMatch[1]);
+                    }
+
                     if (sysReq.ha) {
                         const haConfig = this.extractHAConfig(sysReq.ha);
                         if (haConfig && haConfig.nodeCount > 1) {
@@ -7051,7 +7175,6 @@ GitLab klein`
                         ram: sysReq.compute.ram,
                         instances: instanceCount
                     };
-
                     if (haType) {
                         configs.compute._haType = haType;
                     }
@@ -7242,19 +7365,11 @@ GitLab klein`
             };
         }
         // Kubernetes: Falls kubernetes in selectedComponents, aber noch keine Config gesetzt
-        // (z.B. kubernetes-cluster mit flacher compute-Struktur, oder kubernetes-app)
+        // Design: kubernetes = immer nur Control Plane; Worker Nodes = immer compute
         if (appInstance.selectedComponents.has('kubernetes') && !configs.kubernetes) {
-            let nodeCount = 3;
-            if (sysReq.nodes) {
-                const nodeMatch = sysReq.nodes.toString().match(/(\d+)/);
-                if (nodeMatch) nodeCount = parseInt(nodeMatch[1]);
-            }
-            // Wenn compute kein eigener Component ist, beschreiben sysReq.compute-Specs die Worker Nodes
-            const useComputeAsNodes = !appInstance.selectedComponents.has('compute') && sysReq.compute;
+            const computeHandlesWorkers = appInstance.selectedComponents.has('compute');
             configs.kubernetes = {
-                nodes: nodeCount,
-                cpuPerNode: useComputeAsNodes ? (sysReq.compute.cpu || 4) : 4,
-                ramPerNode: useComputeAsNodes ? (sysReq.compute.ram || 16) : 16
+                controlPlaneOnly: computeHandlesWorkers
             };
         }
 
@@ -7418,8 +7533,9 @@ GitLab klein`
         // Kubernetes
         if (configs.kubernetes) {
             converted.kubernetes = {
+                controlPlaneOnly: configs.kubernetes.controlPlaneOnly || false,
                 clusters: [{
-                    nodes: configs.kubernetes.nodes || 3,
+                    nodes: configs.kubernetes.nodes ?? 3,
                     cpuPerNode: configs.kubernetes.cpuPerNode || 4,
                     ramPerNode: configs.kubernetes.ramPerNode || 16
                 }]

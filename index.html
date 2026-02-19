@@ -32,7 +32,7 @@
     <meta name="application-name" content="Sovereign Architecture Advisor">
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 
     <!-- DNS Prefetch & Preconnect -->
     <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
@@ -45,7 +45,7 @@
     <link rel="preload" href="https://btc-ag.github.io/SCC/styles.css" as="style">
     <link rel="stylesheet" href="https://btc-ag.github.io/SCC/styles.css">
     <!-- SAA-specific Styles -->
-    <link rel="stylesheet" href="saa-styles.css">
+    <link rel="stylesheet" href="css/saa-styles.css">
 
     <!-- Structured Data: SoftwareApplication -->
     <script type="application/ld+json">
@@ -113,7 +113,7 @@
     <!-- Mobile Navigation Drawer -->
     <nav class="mobile-nav-drawer" id="mobileNavDrawer">
         <div class="drawer-header">
-            <img src="btc-logo.png" alt="BTC AG Logo" class="drawer-logo">
+            <img src="assets/btc-logo.png" alt="BTC AG Logo" class="drawer-logo">
             <div class="drawer-header-actions">
                 <div class="theme-toggle" onclick="toggleTheme()" role="button" aria-label="Toggle dark mode"></div>
                 <button class="drawer-close" onclick="closeMobileNav()" aria-label="Menü schließen">
@@ -157,7 +157,7 @@
             <div class="container">
                 <nav class="header-nav">
                     <a href="index.html" class="logo" title="Zurück zur Startseite">
-                        <img src="btc-logo.png" alt="BTC AG - Ihr Partner für souveräne Cloud-Transformation" class="logo-img">
+                        <img src="assets/btc-logo.png" alt="BTC AG - Ihr Partner für souveräne Cloud-Transformation" class="logo-img">
                     </a>
                     <div class="header-actions">
                         <!-- Desktop Navigation -->
@@ -265,9 +265,8 @@
                                     <button class="quick-suggestion" data-app="sap">SAP S/4HANA</button>
                                     <button class="quick-suggestion" data-app="gitlab">GitLab</button>
                                     <button class="quick-suggestion" data-app="wordpress">WordPress</button>
-                                    <button class="quick-suggestion" data-app="kubernetes-app">Kubernetes App</button>
+                                    <button class="quick-suggestion" data-app="kubernetes-cluster">Kubernetes Cluster</button>
                                     <button class="quick-suggestion" data-app="nextcloud">Nextcloud</button>
-                                    <button class="quick-suggestion" data-app="jira">Jira</button>
                                     <button class="quick-suggestion" data-app="custom">Benutzerdefiniert</button>
                                 </div>
 
@@ -427,7 +426,7 @@
         <!-- Footer -->
         <footer class="footer">
             <div class="container">
-                <img src="btc-logo.png" alt="BTC AG Logo" class="footer-logo">
+                <img src="assets/btc-logo.png" alt="BTC AG Logo" class="footer-logo">
                 <p class="footer-text">
                     Ihr Partner für souveräne Cloud-Transformation |
                     <a href="https://www.btc-ag.com/digital-sovereignty" class="footer-link">Mehr über Go Sovereign!</a> |
@@ -438,7 +437,7 @@
 
         <!-- Version Info -->
         <div style="text-align: right; padding: 20px 12px 8px 12px; font-size: 10px; color: rgba(128, 128, 128, 0.5); font-family: monospace;">
-            v1.2.2
+            <a href="https://github.com/btc-ag/SAA/blob/main/CHANGELOG.md" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;">v2.0.0</a>
         </div>
     </div>
 
@@ -810,10 +809,13 @@
     </script>
 
     <!-- Data Module -->
-    <script src="saa-data.js" defer></script>
+    <script src="js/saa-data.js" defer></script>
+    <!-- Cloud Pricing Module (Real prices for German regions) -->
+    <script src="js/cloud-pricing.js" defer></script>
     <!-- Analysis Engine -->
-    <script src="saa-analysis.js" defer></script>
+    <script src="js/saa-analysis.js" defer></script>
     <!-- Main Application -->
-    <script src="saa-app.js" defer></script>
+    <script src="js/saa-app.js" defer></script>
+
 </body>
 </html>

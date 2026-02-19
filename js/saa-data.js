@@ -1294,7 +1294,7 @@ const architectureComponents = [
             { id: 'nodes', label: 'Worker Nodes', type: 'number', default: 3, min: 1, max: 100, unit: '' },
             { id: 'nodeRam', label: 'RAM/Node', type: 'number', default: 16, min: 4, max: 256, unit: 'GB' }
         ],
-        configSummary: (c) => `${c.nodes} Nodes, ${c.nodeRam} GB/Node`
+        configSummary: (c) => c.controlPlaneOnly ? 'Managed Control Plane' : `${c.nodes} Nodes, ${c.nodeRam} GB/Node`
     },
     {
         id: 'serverless', name: 'Serverless Functions', category: 'compute', icon: '⚡',
@@ -1599,8 +1599,8 @@ const knownApplications = {
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
             small: { users: 'bis 1.000', compute: { cpu: 8, ram: 16 }, database: { type: 'PostgreSQL 14+', size: '50GB' }, storage: { type: 'SSD', size: '100GB' }, cache: 'Redis 6+', os: ['Ubuntu 22.04', 'Debian 12', 'RHEL 8/9'] },
-            medium: { users: 'bis 2.000', compute: { cpu: 33, ram: 52 }, database: { type: 'PostgreSQL 14+ (HA)', size: '100GB' }, storage: { type: 'SSD', size: '500GB' }, cache: 'Redis 6+ (HA)', architecture: 'Multi-Node' },
-            large: { users: 'bis 10.000', compute: { cpu: 100, ram: 200 }, database: { type: 'PostgreSQL 14+ (HA Cluster)', size: '500GB+' }, storage: { type: 'NVMe SSD', size: '2TB+' }, cache: 'Redis Cluster', architecture: 'Full HA with Gitaly Cluster', ha: { nodes: 3, type: 'Gitaly Cluster + PostgreSQL Streaming Replication + Redis Cluster' } }
+            medium: { users: 'bis 2.000', nodes: 3, compute: { cpu: 11, ram: 18 }, database: { type: 'PostgreSQL 14+ (HA)', size: '100GB' }, storage: { type: 'SSD', size: '500GB' }, cache: 'Redis 6+ (HA)', architecture: 'Multi-Node (3 Worker Nodes)' },
+            large: { users: 'bis 10.000', nodes: 5, compute: { cpu: 20, ram: 40 }, database: { type: 'PostgreSQL 14+ (HA Cluster)', size: '500GB+' }, storage: { type: 'NVMe SSD', size: '2TB+' }, cache: 'Redis Cluster', architecture: 'Full HA with Gitaly Cluster (5 Worker Nodes)', ha: { nodes: 3, type: 'Gitaly Cluster + PostgreSQL Streaming Replication + Redis Cluster' } }
         },
         sizing: { source: 'https://docs.gitlab.com/administration/reference_architectures/' }
     },
@@ -2310,22 +2310,22 @@ const knownApplications = {
         description: 'Generische containerisierte Anwendung die auf einem Kubernetes-Cluster deployed wird. Inkl. Kubernetes-Cluster-Management (Managed K8s wie AKS/EKS/GKE) plus App-Ressourcen.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity', 'container_registry'],
         systemRequirements: {
-            small: { workload: 'Dev/Test', compute: { cpu: 2, ram: 4 }, storage: { type: 'SSD', size: '50GB' }, kubernetes: 'Managed K8s (3 Nodes)', note: 'Single App auf Cluster' },
-            medium: { workload: 'Production', compute: { cpu: 4, ram: 8 }, storage: { type: 'SSD', size: '100GB' }, kubernetes: 'Managed K8s (5 Nodes)', replicas: '2-3 Pods', note: 'Multi-Pod Deployment mit Auto-Scaling' },
-            large: { workload: 'High-Availability', compute: { cpu: 8, ram: 16 }, storage: { type: 'SSD', size: '200GB' }, kubernetes: 'Managed K8s (7+ Nodes, Multi-AZ)', replicas: '5+ Pods', note: 'HA-Setup mit HPA, Multi-AZ, Monitoring-Stack' }
+            small: { workload: 'Dev/Test', nodes: 3, compute: { cpu: 2, ram: 4 }, storage: { type: 'SSD', size: '50GB' }, kubernetes: 'Managed K8s (3 Nodes)', note: 'Single App auf Cluster' },
+            medium: { workload: 'Production', nodes: 5, compute: { cpu: 4, ram: 8 }, storage: { type: 'SSD', size: '100GB' }, kubernetes: 'Managed K8s (5 Nodes)', replicas: '2-3 Pods', note: 'Multi-Pod Deployment mit Auto-Scaling' },
+            large: { workload: 'High-Availability', nodes: 7, compute: { cpu: 8, ram: 16 }, storage: { type: 'SSD', size: '200GB' }, kubernetes: 'Managed K8s (7+ Nodes, Multi-AZ)', replicas: '5+ Pods', note: 'HA-Setup mit HPA, Multi-AZ, Monitoring-Stack' }
         },
         sizing: { note: 'Kosten umfassen Managed Kubernetes + App-Workload. Managed K8s kostet ~70-150€/Monat zusätzlich zu Worker Nodes.' }
     },
     'kubernetes-cluster': {
         name: 'Kubernetes Cluster',
         description: 'Managed Kubernetes Cluster (AKS/EKS/GKE) als Plattform für Container-Workloads. Ohne spezifische Anwendung - nur der Cluster selbst.',
-        components: ['kubernetes', 'container_registry', 'loadbalancer', 'dns', 'storage_block', 'monitoring', 'logging', 'secrets', 'identity'],
+        components: ['compute', 'kubernetes', 'container_registry', 'loadbalancer', 'dns', 'storage_block', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
-            small: { workload: 'Dev/Test', nodes: '3 Worker Nodes', compute: { cpu: 6, ram: 12 }, storage: { type: 'SSD', size: '100GB' }, note: 'Managed K8s Control Plane + 3x Standard Worker Nodes' },
-            medium: { workload: 'Production', nodes: '5 Worker Nodes', compute: { cpu: 10, ram: 20 }, storage: { type: 'SSD', size: '250GB' }, note: 'Multi-AZ Setup, Auto-Scaling aktiviert' },
-            large: { workload: 'Enterprise', nodes: '10+ Worker Nodes', compute: { cpu: 20, ram: 40 }, storage: { type: 'SSD', size: '500GB' }, note: 'Multi-AZ HA-Setup, Cluster Autoscaler, Monitoring-Stack' }
+            small: { workload: 'Dev/Test', nodes: 3, compute: { cpu: 2, ram: 4 }, storage: { type: 'SSD', size: '100GB' }, note: 'Managed K8s Control Plane + 3x Worker Nodes (2 vCPU / 4 GB)' },
+            medium: { workload: 'Production', nodes: 5, compute: { cpu: 4, ram: 8 }, storage: { type: 'SSD', size: '250GB' }, note: 'Multi-AZ Setup, 5x Worker Nodes (4 vCPU / 8 GB), Auto-Scaling aktiviert' },
+            large: { workload: 'Enterprise', nodes: 10, compute: { cpu: 4, ram: 16 }, storage: { type: 'SSD', size: '500GB' }, note: 'Multi-AZ HA-Setup, 10x Worker Nodes (4 vCPU / 16 GB), Cluster Autoscaler' }
         },
-        sizing: { note: 'Control Plane ist managed (kostenlos oder ~70-150€/Monat). Kosten für Worker Nodes separat.' }
+        sizing: { note: 'Control Plane ist managed (kostenlos oder ~70-150€/Monat). Worker Nodes werden als Compute-VMs abgerechnet.' }
     },
     'spring-boot': {
         name: 'Spring Boot Application',

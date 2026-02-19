@@ -8,6 +8,7 @@ class CriteriaPage {
         this.providers = cloudProviders;
         this.customScores = this.loadCustomScores();
         this.editingProvider = null;
+        this.cloudPricing = typeof CloudPricing !== 'undefined' ? CloudPricing : null;
         this.init();
     }
 
@@ -395,44 +396,55 @@ class CriteriaPage {
     }
 
     /**
-     * Rendert Preisfaktoren Tabelle
+     * Berechnet Workload-Kosten für einen Provider
+     * Nutzt CloudPricing.calculateStandardWorkload() als Single Source of Truth
+     */
+    calculateWorkloadCost(providerId) {
+        const pricing = this.cloudPricing;
+
+        // Nutze zentrale Berechnung aus CloudPricing
+        if (pricing && typeof pricing.calculateStandardWorkload === 'function') {
+            return pricing.calculateStandardWorkload(providerId);
+        }
+
+        // Fallback wenn CloudPricing nicht verfügbar (sollte nicht vorkommen)
+        return {
+            compute: 70,
+            db: 37,
+            objStorage: 12,
+            blockStorage: 18,
+            observability: 20,
+            total: 157
+        };
+    }
+
+    /**
+     * Rendert Preisvergleich-Tabelle mit typischem Workload (alle Services)
      */
     renderPricingFactorsTable() {
         const container = document.getElementById('pricingFactorsTable');
         if (!container) return;
 
-        // Preisfaktoren (aus saa-analysis.js)
-        const providerFactors = {
-            'aws': { factor: 1.0, note: 'Referenz-Pricing' },
-            'azure': { factor: 1.0, note: 'Vergleichbar mit AWS' },
-            'gcp': { factor: 0.95, note: 'Leicht günstiger' },
-            'aws-sovereign': { factor: 1.15, note: 'Premium für Souveränität' },
-            'delos': { factor: 1.18, note: 'Premium Sovereign Cloud' },
-            'stackit': { factor: 0.85, note: 'Günstiger als Hyperscaler' },
-            'ionos': { factor: 0.80, note: 'Günstige EU-Alternative' },
-            'ovh': { factor: 0.75, note: 'Sehr günstig' },
-            'otc': { factor: 0.90, note: 'Mittelfeld' },
-            'azure-confidential': { factor: 1.2, note: 'Premium Confidential' },
-            'plusserver': { factor: 0.90, note: 'Mittelfeld' },
-            'noris': { factor: 0.95, note: 'Mittelfeld' },
-            'openstack': { factor: 0.70, note: 'Nur Infrastruktur' }
-        };
+        const pricing = this.cloudPricing;
 
-        // Nach Faktor sortieren (günstigster zuerst, mit Custom Faktoren)
-        const sorted = this.providers
-            .map(p => ({
-                provider: p,
-                factor: this.getEffectivePriceFactor(p.id),
-                note: providerFactors[p.id]?.note || 'Standard',
-                isCustom: this.hasCustomScores(p.id) && this.customScores[p.id].priceFactor !== undefined
-            }))
-            .sort((a, b) => a.factor - b.factor);
+        // Berechne Workload-Kosten für alle Provider
+        const providerCosts = this.providers.map(p => ({
+            provider: p,
+            costs: this.calculateWorkloadCost(p.id),
+            isCustom: this.hasCustomScores(p.id)
+        }));
 
-        const rows = sorted.map((item, index) => {
-            const { provider, factor, note, isCustom } = item;
+        // Nach Gesamtpreis sortieren (günstigster zuerst)
+        providerCosts.sort((a, b) => a.costs.total - b.costs.total);
+
+        // Referenzpreis (AWS als Basis)
+        const awsCosts = this.calculateWorkloadCost('aws');
+        const awsTotal = awsCosts.total;
+
+        const rows = providerCosts.map((item, index) => {
+            const { provider, costs, isCustom } = item;
             const isLowest = index === 0;
-            const savings = ((1 - factor) * 100).toFixed(0);
-            const premium = ((factor - 1) * 100).toFixed(0);
+            const diffPercent = ((costs.total - awsTotal) / awsTotal * 100).toFixed(0);
 
             return `
                 <tr class="${isLowest ? 'lowest-price' : ''} ${isCustom ? 'custom-row' : ''}">
@@ -448,39 +460,43 @@ class CriteriaPage {
                             ${isCustom ? '<span class="custom-indicator" title="Angepasste Bewertung"><i class="fa-solid fa-pen-to-square"></i></span>' : ''}
                         </div>
                     </td>
-                    <td class="factor-cell">
-                        <span class="factor-badge ${factor < 1 ? 'discount' : factor > 1 ? 'premium' : 'standard'}">
-                            ${factor.toFixed(2)}×
+                    <td class="price-cell">
+                        <span class="price-badge total-price">
+                            €${costs.total}/Mo
                         </span>
                     </td>
-                    <td class="comparison-cell">
-                        ${factor < 1
-                            ? `<span class="savings">~${Math.abs(savings)}% günstiger als AWS</span>`
-                            : factor > 1
-                            ? `<span class="premium-text">~${premium}% teurer als AWS</span>`
-                            : '<span class="standard-text">≈ AWS-Niveau</span>'
-                        }
+                    <td class="breakdown-cell">
+                        <div class="cost-breakdown-mini">
+                            <span title="Compute (2 vCPU, 8GB)"><i class="fa-solid fa-server"></i> €${costs.compute}</span>
+                            <span title="PostgreSQL 100GB"><i class="fa-solid fa-database"></i> €${costs.db}</span>
+                            <span title="Object Storage 500GB"><i class="fa-solid fa-box-archive"></i> €${costs.objStorage}</span>
+                            <span title="Block Storage 200GB"><i class="fa-solid fa-hard-drive"></i> €${costs.blockStorage}</span>
+                            <span title="Monitoring & Logging"><i class="fa-solid fa-chart-line"></i> €${costs.observability}</span>
+                        </div>
                     </td>
-                    <td class="note-cell">${note}</td>
-                    <td class="action-cell">
-                        <button class="edit-btn" onclick="criteriaPage.openEditModal('${provider.id}')" title="Bewertung bearbeiten">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
+                    <td class="comparison-cell">
+                        ${diffPercent < 0
+                            ? `<span class="savings">${diffPercent}%</span>`
+                            : diffPercent > 0
+                            ? `<span class="premium-text">+${diffPercent}%</span>`
+                            : '<span class="standard-text">Basis</span>'
+                        }
                     </td>
                 </tr>
             `;
         }).join('');
 
+        const lastUpdated = pricing?.lastUpdated || '2026-01-27';
+
         container.innerHTML = `
             <div class="provider-table-wrapper">
-                <table class="provider-scores-table pricing-table">
+                <table class="provider-scores-table pricing-table workload-table">
                     <thead>
                         <tr>
-                            <th style="width: 27%;">Provider</th>
-                            <th style="width: 13%;">Preisfaktor</th>
-                            <th style="width: 25%;">Vergleich zu AWS</th>
-                            <th style="width: 23%;">Hinweis</th>
-                            <th style="width: 10%;"></th>
+                            <th style="width: 22%;">Provider</th>
+                            <th style="width: 14%;">Gesamt</th>
+                            <th style="width: 46%;">Aufschlüsselung</th>
+                            <th style="width: 14%;">vs AWS</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -488,11 +504,20 @@ class CriteriaPage {
                     </tbody>
                 </table>
             </div>
-            <p class="table-note">
-                <i class="fa-solid fa-info-circle"></i>
-                <strong>Hinweis:</strong> Preisfaktoren sind Durchschnittswerte basierend auf öffentlichen Preisrechnern
-                und können je nach Service und Region variieren.
-            </p>
+            <div class="workload-legend">
+                <div class="workload-description">
+                    <strong><i class="fa-solid fa-cube"></i> Standard-Workload:</strong>
+                    <span><i class="fa-solid fa-server"></i> 1× VM (2 vCPU, 8 GB)</span>
+                    <span><i class="fa-solid fa-database"></i> PostgreSQL (100 GB)</span>
+                    <span><i class="fa-solid fa-box-archive"></i> Object Storage (500 GB)</span>
+                    <span><i class="fa-solid fa-hard-drive"></i> Block Storage (200 GB)</span>
+                    <span><i class="fa-solid fa-chart-line"></i> Observability</span>
+                </div>
+                <p class="table-note" style="margin-top: 0.5rem;">
+                    <i class="fa-solid fa-info-circle"></i>
+                    On-Demand Preise, Region Frankfurt. Observability: 10 Metriken, 5 Alarme, 10GB Logs. Stand: ${lastUpdated}
+                </p>
+            </div>
         `;
     }
 

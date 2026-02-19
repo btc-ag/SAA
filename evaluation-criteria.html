@@ -31,7 +31,7 @@
     <meta name="theme-color" content="#5AA6E7">
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 
     <!-- DNS Prefetch & Preconnect -->
     <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
@@ -44,9 +44,9 @@
     <link rel="preload" href="https://btc-ag.github.io/SCC/styles.css" as="style">
     <link rel="stylesheet" href="https://btc-ag.github.io/SCC/styles.css">
     <!-- SAA-specific Styles -->
-    <link rel="stylesheet" href="saa-styles.css">
+    <link rel="stylesheet" href="css/saa-styles.css">
     <!-- Criteria Page Styles -->
-    <link rel="stylesheet" href="criteria-styles.css">
+    <link rel="stylesheet" href="css/criteria-styles.css">
 
     <!-- Structured Data: Article -->
     <script type="application/ld+json">
@@ -110,7 +110,7 @@
     <!-- Mobile Navigation Drawer -->
     <nav class="mobile-nav-drawer" id="mobileNavDrawer">
         <div class="drawer-header">
-            <img src="btc-logo.png" alt="BTC AG Logo" class="drawer-logo">
+            <img src="assets/btc-logo.png" alt="BTC AG Logo" class="drawer-logo">
             <div class="drawer-header-actions">
                 <div class="theme-toggle" onclick="toggleTheme()" role="button" aria-label="Toggle dark mode"></div>
                 <button class="drawer-close" onclick="closeMobileNav()" aria-label="Menü schließen">
@@ -169,7 +169,7 @@
             <div class="container">
                 <nav class="header-nav">
                     <a href="index.html" class="logo" title="Zurück zur Startseite">
-                        <img src="btc-logo.png" alt="BTC AG - Ihr Partner für souveräne Cloud-Transformation" class="logo-img">
+                        <img src="assets/btc-logo.png" alt="BTC AG - Ihr Partner für souveräne Cloud-Transformation" class="logo-img">
                     </a>
                     <div class="header-actions">
                         <!-- Desktop Navigation -->
@@ -548,23 +548,283 @@
                     <div class="criteria-card">
                         <div class="criteria-intro">
                             <p>
-                                Die Kostenberechnung basiert auf <strong>Preisfaktoren</strong>, die für jeden Provider
-                                und Service hinterlegt sind. Diese Faktoren sind relativ zu AWS (Referenz = 1.0) und
-                                spiegeln Marktpreise wider.
+                                Die Kostenberechnung basiert auf <strong>echten Cloud-Preisdaten</strong> der Anbieter
+                                für die Region <strong>Frankfurt (Deutschland)</strong>. Die Preise werden aus den
+                                öffentlichen Pricing-APIs und Preislisten der Cloud-Provider abgerufen.
                             </p>
                         </div>
 
-                        <div class="important-note">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                            <strong>Wichtig:</strong> Die Kosten werden nicht als statischer Score bewertet, sondern
-                            dynamisch basierend auf Ihrer Konfiguration berechnet. Der Kosten-Score vergleicht die
-                            Provider relativ zueinander (günstigster = 100 Punkte, teuerster = 30 Punkte).
+                        <div class="important-note" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(16, 185, 129, 0.15)); border-color: rgba(59, 130, 246, 0.4);">
+                            <i class="fa-solid fa-database"></i>
+                            <strong>Neu in v2.0:</strong> Echte Cloud-Preisdaten statt relativer Faktoren! Die Kosten werden
+                            jetzt direkt aus den Preislisten der Hyperscaler (AWS, Azure, GCP) und EU-Provider für
+                            deutsche Regionen berechnet.
                         </div>
 
-                        <h3><i class="fa-solid fa-chart-bar"></i> Preisfaktoren pro Provider</h3>
+                        <h3><i class="fa-solid fa-link"></i> Preisquellen - Hyperscaler</h3>
+                        <div class="factors-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #FF9900;">
+                                    <i class="fa-brands fa-aws"></i>
+                                </div>
+                                <h4>AWS</h4>
+                                <p>Region: <strong>eu-central-1</strong> (Frankfurt)</p>
+                                <a href="https://calculator.aws/" target="_blank" rel="noopener" style="color: #FF9900; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> AWS Pricing Calculator
+                                </a><br>
+                                <a href="https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/price-changes.html" target="_blank" rel="noopener" style="color: #FF9900; font-size: 0.75rem;">
+                                    <i class="fa-solid fa-code"></i> Price List API
+                                </a>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #0078D4;">
+                                    <i class="fa-brands fa-microsoft"></i>
+                                </div>
+                                <h4>Azure</h4>
+                                <p>Region: <strong>germanywestcentral</strong> (Frankfurt)</p>
+                                <a href="https://azure.microsoft.com/pricing/" target="_blank" rel="noopener" style="color: #0078D4; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> Azure Pricing
+                                </a><br>
+                                <a href="https://learn.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices" target="_blank" rel="noopener" style="color: #0078D4; font-size: 0.75rem;">
+                                    <i class="fa-solid fa-code"></i> Retail Prices API
+                                </a>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #4285F4;">
+                                    <i class="fa-brands fa-google"></i>
+                                </div>
+                                <h4>GCP</h4>
+                                <p>Region: <strong>europe-west3</strong> (Frankfurt)</p>
+                                <a href="https://cloud.google.com/compute/all-pricing" target="_blank" rel="noopener" style="color: #4285F4; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> GCP Pricing
+                                </a><br>
+                                <a href="https://cloud.google.com/billing/docs/reference/catalog" target="_blank" rel="noopener" style="color: #4285F4; font-size: 0.75rem;">
+                                    <i class="fa-solid fa-code"></i> Cloud Billing API
+                                </a>
+                            </div>
+                        </div>
+
+                        <h3><i class="fa-solid fa-flag-eu"></i> Preisquellen - EU-Provider</h3>
+                        <div class="factors-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #E20074;">
+                                    <i class="fa-solid fa-cloud"></i>
+                                </div>
+                                <h4>STACKIT</h4>
+                                <p>Region: <strong>de-fra</strong> (Frankfurt)</p>
+                                <a href="https://www.stackit.de/de/preise" target="_blank" rel="noopener" style="color: #E20074; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> STACKIT Preise
+                                </a>
+                                <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">Öffentliche Preisliste</p>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #003D8F;">
+                                    <i class="fa-solid fa-cloud"></i>
+                                </div>
+                                <h4>IONOS</h4>
+                                <p>Region: <strong>de/fra</strong> (Frankfurt)</p>
+                                <a href="https://www.ionos.de/cloud" target="_blank" rel="noopener" style="color: #003D8F; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> IONOS Cloud
+                                </a>
+                                <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">Öffentliche Preisliste</p>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #123456;">
+                                    <i class="fa-solid fa-cloud"></i>
+                                </div>
+                                <h4>OVHcloud</h4>
+                                <p>Region: <strong>de-fra</strong> (Frankfurt)</p>
+                                <a href="https://www.ovhcloud.com/de/public-cloud/prices/" target="_blank" rel="noopener" style="color: #123456; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> OVH Preise
+                                </a>
+                                <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">Öffentliche Preisliste</p>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #E20074;">
+                                    <i class="fa-solid fa-cloud"></i>
+                                </div>
+                                <h4>Open Telekom Cloud</h4>
+                                <p>Region: <strong>eu-de</strong> (Deutschland)</p>
+                                <a href="https://open-telekom-cloud.com/de/preise" target="_blank" rel="noopener" style="color: #E20074; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> OTC Preise
+                                </a>
+                                <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">Öffentliche Preisliste</p>
+                            </div>
+                        </div>
+
+                        <h3><i class="fa-solid fa-shield-halved"></i> Preisquellen - Sovereign Clouds</h3>
+                        <div class="factors-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: linear-gradient(135deg, #FF9900, #232F3E);">
+                                    <i class="fa-solid fa-shield"></i>
+                                </div>
+                                <h4>AWS European Sovereign Cloud</h4>
+                                <p>Region: <strong>eu-central-1-sovereign</strong></p>
+                                <a href="https://aws.eu/" target="_blank" rel="noopener" style="color: #FF9900; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> AWS ESC Info
+                                </a>
+                                <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">
+                                    <i class="fa-solid fa-calculator"></i> Geschätzt: AWS + 15-18% Aufschlag
+                                </p>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: linear-gradient(135deg, #0078D4, #00BCF2);">
+                                    <i class="fa-solid fa-shield"></i>
+                                </div>
+                                <h4>DELOS Cloud</h4>
+                                <p>Region: <strong>de-delos</strong> (Deutschland)</p>
+                                <a href="https://www.deloscloud.de/" target="_blank" rel="noopener" style="color: #0078D4; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-external-link"></i> DELOS Info
+                                </a>
+                                <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">
+                                    <i class="fa-solid fa-calculator"></i> Geschätzt: Azure + 18-20% Aufschlag
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="important-note" style="margin-top: 1.5rem;">
+                            <i class="fa-solid fa-info-circle"></i>
+                            <strong>Hinweis zu Preisquellen:</strong> Die Hyperscaler (AWS, Azure, GCP) bieten öffentliche Pricing-APIs.
+                            Für EU-Provider und Sovereign Clouds werden die öffentlichen Preislisten verwendet. Sovereign Cloud Preise
+                            sind teilweise geschätzt, da diese noch nicht vollständig öffentlich verfügbar sind.
+                        </div>
+
+                        <h3><i class="fa-solid fa-cogs"></i> Preisberechnung nach Service-Typ</h3>
+                        <div class="factors-grid">
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #5AA6E7;">
+                                    <i class="fa-solid fa-server"></i>
+                                </div>
+                                <h4>Compute (VMs)</h4>
+                                <p>Berechnung basierend auf Instanz-Typ</p>
+                                <ul>
+                                    <li><strong>AWS:</strong> m6i, r6i, c6i, x2idn (SAP)</li>
+                                    <li><strong>Azure:</strong> Dv5, Ev5, Fv2, Mv2 (SAP)</li>
+                                    <li><strong>GCP:</strong> n2-standard, n2-highmem, c2</li>
+                                </ul>
+                                <p class="factor-note">
+                                    Preis = Instanz-Typ-Preis × Anzahl VMs<br>
+                                    Oder: vCPU × €/vCPU + RAM × €/GB
+                                </p>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #10B981;">
+                                    <i class="fa-solid fa-database"></i>
+                                </div>
+                                <h4>Datenbanken (SQL)</h4>
+                                <p>Managed Database Services</p>
+                                <ul>
+                                    <li><strong>PostgreSQL/MySQL:</strong> Basis + Storage/GB</li>
+                                    <li><strong>Oracle:</strong> License + Storage</li>
+                                    <li><strong>SAP HANA:</strong> RAM-basierte Preise</li>
+                                </ul>
+                                <p class="factor-note">
+                                    Preis = Basis-Instanz + (Speicher × €/GB)<br>
+                                    Multi-AZ: Faktor 1.8-2.0
+                                </p>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #8B5CF6;">
+                                    <i class="fa-solid fa-hard-drive"></i>
+                                </div>
+                                <h4>Storage</h4>
+                                <p>Object, Block, File Storage</p>
+                                <ul>
+                                    <li><strong>Object (S3/Blob):</strong> ~€0.02-0.025/GB</li>
+                                    <li><strong>Block (EBS/Disks):</strong> ~€0.05-0.15/GB</li>
+                                    <li><strong>File (EFS/Files):</strong> ~€0.10-0.35/GB</li>
+                                </ul>
+                                <p class="factor-note">
+                                    Preis = Kapazität × Tier-Preis/GB
+                                </p>
+                            </div>
+
+                            <div class="factor-card">
+                                <div class="factor-icon" style="background: #F59E0B;">
+                                    <i class="fa-solid fa-dharmachakra"></i>
+                                </div>
+                                <h4>Kubernetes</h4>
+                                <p>Managed Kubernetes Cluster</p>
+                                <ul>
+                                    <li><strong>Control Plane:</strong> €0-73/Monat</li>
+                                    <li><strong>Worker Nodes:</strong> Compute-Preise</li>
+                                    <li><strong>Azure AKS:</strong> Control Plane kostenlos!</li>
+                                </ul>
+                                <p class="factor-note">
+                                    Preis = Control Plane + (Nodes × VM-Preis)
+                                </p>
+                            </div>
+                        </div>
+
+                        <h3><i class="fa-solid fa-chart-bar"></i> Provider-Preisvergleich (Beispiel)</h3>
                         <div id="pricingFactorsTable"></div>
 
-                        <h3><i class="fa-solid fa-calculator"></i> TCO-Dimensionen</h3>
+                        <div class="example-box">
+                            <h4><i class="fa-solid fa-calculator"></i> Kostenbeispiel mit echten Preisen (Frankfurt)</h4>
+                            <p style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);">
+                                Standard-Workload: 2 vCPU / 8 GB VM, PostgreSQL 100 GB, 500 GB Object Storage, 200 GB Block Storage, Observability
+                            </p>
+                            <div class="cost-example">
+                                <div class="provider-cost-example">
+                                    <h5><i class="fa-brands fa-aws" style="color: #FF9900;"></i> AWS (eu-central-1)</h5>
+                                    <ul>
+                                        <li>Compute: m6i.large (2 vCPU, 8 GB) = <strong>70€</strong></li>
+                                        <li>Database: RDS PostgreSQL 100 GB = <strong>37€</strong></li>
+                                        <li>Storage: S3 500 GB + EBS 200 GB = <strong>30€</strong></li>
+                                        <li>Observability: CloudWatch = <strong>10€</strong></li>
+                                    </ul>
+                                    <p class="total">Gesamt: <strong>~147€/Monat</strong></p>
+                                </div>
+                                <div class="provider-cost-example">
+                                    <h5><i class="fa-brands fa-microsoft" style="color: #0078D4;"></i> Azure (germanywestcentral)</h5>
+                                    <ul>
+                                        <li>Compute: D2s_v5 (2 vCPU, 8 GB) = <strong>72€</strong></li>
+                                        <li>Database: PostgreSQL Flexible 100 GB = <strong>35€</strong></li>
+                                        <li>Storage: Blob 500 GB + Disk 200 GB = <strong>24€</strong></li>
+                                        <li>Observability: Azure Monitor = <strong>32€</strong></li>
+                                    </ul>
+                                    <p class="total">Gesamt: <strong>~163€/Monat</strong> <span class="premium-text">(+11%)</span></p>
+                                </div>
+                                <div class="provider-cost-example">
+                                    <h5><i class="fa-solid fa-cloud" style="color: #00B4A0;"></i> STACKIT (de-fra)</h5>
+                                    <ul>
+                                        <li>Compute: c1.2 (2 vCPU, 8 GB) = <strong>55€</strong></li>
+                                        <li>Database: PostgreSQL 100 GB = <strong>26€</strong></li>
+                                        <li>Storage: Object 500 GB + Block 200 GB = <strong>22€</strong></li>
+                                        <li>Observability: Stack Add-on = <strong>60€</strong></li>
+                                    </ul>
+                                    <p class="total">Gesamt: <strong>~163€/Monat</strong> <span class="premium-text">(+11%)</span></p>
+                                </div>
+                                <div class="provider-cost-example">
+                                    <h5><i class="fa-solid fa-server" style="color: #6B7280;"></i> Private Cloud (OpenStack)</h5>
+                                    <ul>
+                                        <li>Compute: 2 vCPU, 8 GB = <strong>40€</strong></li>
+                                        <li>Database: PostgreSQL 100 GB = <strong>20€</strong></li>
+                                        <li>Storage: Ceph 500 GB + SSD 200 GB = <strong>13€</strong></li>
+                                        <li>Observability: Prometheus/Grafana = <strong>70€</strong></li>
+                                    </ul>
+                                    <p class="total">Gesamt: <strong>~143€/Monat</strong> <span class="savings">(-3%)</span></p>
+                                </div>
+                            </div>
+                            <p class="table-note" style="margin-top: 1rem;">
+                                <i class="fa-solid fa-lightbulb"></i>
+                                <strong>Erkenntnis:</strong> Hyperscaler haben günstige integrierte Observability (CloudWatch ~10€).
+                                Bei EU-Providern und Private Cloud ist Monitoring oft ein separates Add-on mit Fixkosten (~50-70€).
+                            </p>
+                        </div>
+
+                        <h3><i class="fa-solid fa-coins"></i> TCO-Dimensionen</h3>
+                        <p style="margin-bottom: 1rem;">
+                            Die Total Cost of Ownership (TCO) umfasst mehr als nur Infrastrukturkosten:
+                        </p>
                         <div class="factors-grid">
                             <div class="factor-card">
                                 <div class="factor-icon" style="background: #5AA6E7;">
@@ -580,7 +840,7 @@
                                     <li>Managed Services</li>
                                 </ul>
                                 <p class="factor-note">
-                                    <strong>Berechnung:</strong> Service-Kosten × Preisfaktor des Providers
+                                    <strong>Berechnung:</strong> Echte Preise aus Cloud Pricing APIs
                                 </p>
                             </div>
 
@@ -623,29 +883,6 @@
                             </div>
                         </div>
 
-                        <div class="example-box">
-                            <h4><i class="fa-solid fa-calculator"></i> Kostenbeispiel</h4>
-                            <div class="cost-example">
-                                <div class="provider-cost-example">
-                                    <h5>Provider A (AWS - Faktor 1.0)</h5>
-                                    <ul>
-                                        <li>Compute: 4 vCPU, 16 GB RAM = 200€</li>
-                                        <li>Database: PostgreSQL 100 GB = 130€</li>
-                                        <li>Storage: 500 GB Object Storage = 12€</li>
-                                    </ul>
-                                    <p class="total">Verbrauch: <strong>342€/Monat</strong></p>
-                                </div>
-                                <div class="provider-cost-example">
-                                    <h5>Provider B (OVH - Faktor 0.75)</h5>
-                                    <ul>
-                                        <li>Compute: 4 vCPU, 16 GB RAM = 150€ <span class="factor">(200€ × 0.75)</span></li>
-                                        <li>Database: PostgreSQL 100 GB = 98€ <span class="factor">(130€ × 0.75)</span></li>
-                                        <li>Storage: 500 GB Object Storage = 9€ <span class="factor">(12€ × 0.75)</span></li>
-                                    </ul>
-                                    <p class="total">Verbrauch: <strong>257€/Monat</strong> <span class="savings">(25% günstiger)</span></p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </section>
 
@@ -668,7 +905,7 @@
         <!-- Footer -->
         <footer class="footer">
             <div class="container">
-                <img src="btc-logo.png" alt="BTC AG Logo" class="footer-logo">
+                <img src="assets/btc-logo.png" alt="BTC AG Logo" class="footer-logo">
                 <p class="footer-text">
                     Ihr Partner für souveräne Cloud-Transformation |
                     <a href="https://www.btc-ag.com/digital-sovereignty" class="footer-link">Mehr über Go Sovereign!</a> |
@@ -679,7 +916,7 @@
 
         <!-- Version Info -->
         <div style="text-align: right; padding: 20px 12px 8px 12px; font-size: 10px; color: rgba(128, 128, 128, 0.5); font-family: monospace;">
-            v1.2.2
+            <a href="https://github.com/btc-ag/SAA/blob/main/CHANGELOG.md" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;">v2.0.0</a>
         </div>
 
         <!-- Edit Provider Modal -->
@@ -854,8 +1091,11 @@
     </script>
 
     <!-- Data Module -->
-    <script src="saa-data.js" defer></script>
+    <script src="js/saa-data.js" defer></script>
+    <!-- Cloud Pricing Data -->
+    <script src="js/cloud-pricing.js" defer></script>
     <!-- Criteria Page Logic -->
-    <script src="criteria-page.js" defer></script>
+    <script src="js/criteria-page.js" defer></script>
+
 </body>
 </html>
