@@ -7078,6 +7078,12 @@ GitLab klein`
                     let instanceCount = sysReq.compute.nodes || 1;
                     let haType = null;
 
+                    // Wenn kubernetes auch gewählt: compute-Specs = Worker Nodes → node count aus sysReq.nodes
+                    if (appInstance.selectedComponents.has('kubernetes') && sysReq.nodes) {
+                        const nodeMatch = sysReq.nodes.toString().match(/(\d+)/);
+                        if (nodeMatch) instanceCount = parseInt(nodeMatch[1]);
+                    }
+
                     if (sysReq.ha) {
                         const haConfig = this.extractHAConfig(sysReq.ha);
                         if (haConfig && haConfig.nodeCount > 1) {
@@ -7086,14 +7092,24 @@ GitLab klein`
                         }
                     }
 
-                    configs.compute = {
-                        cpu: sysReq.compute.cpu,
-                        ram: sysReq.compute.ram,
-                        instances: instanceCount
-                    };
-
-                    if (haType) {
-                        configs.compute._haType = haType;
+                    if (appInstance.selectedComponents.has('kubernetes')) {
+                        // Worker Nodes als vmGroups damit saa-analysis.js korrekt multipliziert
+                        configs.compute = {
+                            vmGroups: [{
+                                cpu: sysReq.compute.cpu,
+                                ram: sysReq.compute.ram,
+                                count: instanceCount
+                            }]
+                        };
+                    } else {
+                        configs.compute = {
+                            cpu: sysReq.compute.cpu,
+                            ram: sysReq.compute.ram,
+                            instances: instanceCount
+                        };
+                        if (haType) {
+                            configs.compute._haType = haType;
+                        }
                     }
                 }
             }
@@ -7289,10 +7305,13 @@ GitLab klein`
                 const nodeMatch = sysReq.nodes.toString().match(/(\d+)/);
                 if (nodeMatch) nodeCount = parseInt(nodeMatch[1]);
             }
-            // Wenn compute kein eigener Component ist, beschreiben sysReq.compute-Specs die Worker Nodes
-            const useComputeAsNodes = !appInstance.selectedComponents.has('compute') && sysReq.compute;
+            const computeHandlesWorkers = appInstance.selectedComponents.has('compute');
+            // Wenn compute gewählt: VMs = Worker Nodes → kubernetes berechnet nur Control Plane
+            // Wenn kein compute: kubernetes berechnet Control Plane + Worker Nodes selbst
+            const useComputeAsNodes = !computeHandlesWorkers && sysReq.compute;
             configs.kubernetes = {
-                nodes: nodeCount,
+                controlPlaneOnly: computeHandlesWorkers,
+                nodes: computeHandlesWorkers ? 0 : nodeCount,
                 cpuPerNode: useComputeAsNodes ? (sysReq.compute.cpu || 4) : 4,
                 ramPerNode: useComputeAsNodes ? (sysReq.compute.ram || 16) : 16
             };

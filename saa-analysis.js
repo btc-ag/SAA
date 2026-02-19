@@ -767,6 +767,20 @@ class CloudAnalyzer {
                 break;
 
             case 'kubernetes':
+                // Control-Plane-Only: Worker Nodes werden via compute-Komponente abgerechnet
+                if (config.kubernetes?.controlPlaneOnly) {
+                    if (useRealPricing) {
+                        const k8sResult = this.cloudPricing.calculateKubernetesCost(providerId, 0);
+                        cost = k8sResult.price;
+                        breakdown = 'Managed Control Plane (Worker Nodes via Compute)';
+                        if (region) breakdown += ` [${region.name}]`;
+                        source = 'CloudPricing API';
+                    } else {
+                        cost = 70;
+                        breakdown = 'Managed Control Plane';
+                    }
+                    break;
+                }
                 // Kubernetes mit echten Preisen
                 if (config.kubernetes?.clusters && Array.isArray(config.kubernetes.clusters)) {
                     let totalCost = 0;

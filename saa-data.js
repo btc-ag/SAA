@@ -2310,9 +2310,9 @@ const knownApplications = {
         description: 'Generische containerisierte Anwendung die auf einem Kubernetes-Cluster deployed wird. Inkl. Kubernetes-Cluster-Management (Managed K8s wie AKS/EKS/GKE) plus App-Ressourcen.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity', 'container_registry'],
         systemRequirements: {
-            small: { workload: 'Dev/Test', compute: { cpu: 2, ram: 4 }, storage: { type: 'SSD', size: '50GB' }, kubernetes: 'Managed K8s (3 Nodes)', note: 'Single App auf Cluster' },
-            medium: { workload: 'Production', compute: { cpu: 4, ram: 8 }, storage: { type: 'SSD', size: '100GB' }, kubernetes: 'Managed K8s (5 Nodes)', replicas: '2-3 Pods', note: 'Multi-Pod Deployment mit Auto-Scaling' },
-            large: { workload: 'High-Availability', compute: { cpu: 8, ram: 16 }, storage: { type: 'SSD', size: '200GB' }, kubernetes: 'Managed K8s (7+ Nodes, Multi-AZ)', replicas: '5+ Pods', note: 'HA-Setup mit HPA, Multi-AZ, Monitoring-Stack' }
+            small: { workload: 'Dev/Test', nodes: 3, compute: { cpu: 2, ram: 4 }, storage: { type: 'SSD', size: '50GB' }, kubernetes: 'Managed K8s (3 Nodes)', note: 'Single App auf Cluster' },
+            medium: { workload: 'Production', nodes: 5, compute: { cpu: 4, ram: 8 }, storage: { type: 'SSD', size: '100GB' }, kubernetes: 'Managed K8s (5 Nodes)', replicas: '2-3 Pods', note: 'Multi-Pod Deployment mit Auto-Scaling' },
+            large: { workload: 'High-Availability', nodes: 7, compute: { cpu: 8, ram: 16 }, storage: { type: 'SSD', size: '200GB' }, kubernetes: 'Managed K8s (7+ Nodes, Multi-AZ)', replicas: '5+ Pods', note: 'HA-Setup mit HPA, Multi-AZ, Monitoring-Stack' }
         },
         sizing: { note: 'Kosten umfassen Managed Kubernetes + App-Workload. Managed K8s kostet ~70-150€/Monat zusätzlich zu Worker Nodes.' }
     },
