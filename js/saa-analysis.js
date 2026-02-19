@@ -767,63 +767,16 @@ class CloudAnalyzer {
                 break;
 
             case 'kubernetes':
-                // Control-Plane-Only: Worker Nodes werden via compute-Komponente abgerechnet
-                if (config.kubernetes?.controlPlaneOnly) {
-                    if (useRealPricing) {
-                        const k8sResult = this.cloudPricing.calculateKubernetesCost(providerId, 0);
-                        cost = k8sResult.price;
-                        breakdown = 'Managed Control Plane (Worker Nodes via Compute)';
-                        if (region) breakdown += ` [${region.name}]`;
-                        source = 'CloudPricing API';
-                    } else {
-                        cost = 70;
-                        breakdown = 'Managed Control Plane';
-                    }
-                    break;
-                }
-                // Kubernetes mit echten Preisen
-                if (config.kubernetes?.clusters && Array.isArray(config.kubernetes.clusters)) {
-                    let totalCost = 0;
-                    const breakdownParts = [];
-
-                    config.kubernetes.clusters.forEach((cluster, idx) => {
-                        const nodes = cluster.nodes || 3;
-                        const cpuPerNode = cluster.cpuPerNode || 4;
-                        const ramPerNode = cluster.ramPerNode || 16;
-
-                        if (useRealPricing) {
-                            const k8sResult = this.cloudPricing.calculateKubernetesCost(providerId, nodes, cpuPerNode, ramPerNode);
-                            totalCost += k8sResult.price;
-                            breakdownParts.push(k8sResult.breakdown);
-                            source = 'CloudPricing API';
-                        } else {
-                            const clusterCost = 70 + (nodes * ramPerNode * 8);
-                            totalCost += clusterCost;
-                            breakdownParts.push(`${nodes} Nodes (${ramPerNode}GB RAM)`);
-                        }
-                    });
-
-                    cost = totalCost;
-                    breakdown = config.kubernetes.clusters.length > 1
-                        ? `${config.kubernetes.clusters.length}× Clusters: ${breakdownParts.join(', ')}`
-                        : breakdownParts[0];
+                // Kubernetes = immer nur Managed Control Plane; Worker Nodes = compute-Komponente
+                if (useRealPricing) {
+                    const k8sResult = this.cloudPricing.calculateKubernetesCost(providerId, 0);
+                    cost = k8sResult.price;
+                    breakdown = 'Managed Control Plane';
                     if (region) breakdown += ` [${region.name}]`;
+                    source = 'CloudPricing API';
                 } else {
-                    // Legacy/Fallback
-                    const users = parseInt(config.users) || 100;
-                    const estimatedNodes = Math.max(3, Math.ceil(users / 50));
-                    const nodeRam = config.compute?.ram ? Math.ceil(config.compute.ram / estimatedNodes) : 16;
-
-                    if (useRealPricing) {
-                        const k8sResult = this.cloudPricing.calculateKubernetesCost(providerId, estimatedNodes, 4, nodeRam);
-                        cost = k8sResult.price;
-                        breakdown = k8sResult.breakdown;
-                        if (region) breakdown += ` [${region.name}]`;
-                        source = 'CloudPricing API';
-                    } else {
-                        cost = 70 + (estimatedNodes * nodeRam * 8);
-                        breakdown = `~${estimatedNodes} Worker-Nodes (je ~${nodeRam} GB RAM)`;
-                    }
+                    cost = 70;
+                    breakdown = 'Managed Control Plane';
                 }
                 break;
 

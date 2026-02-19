@@ -2319,13 +2319,13 @@ const knownApplications = {
     'kubernetes-cluster': {
         name: 'Kubernetes Cluster',
         description: 'Managed Kubernetes Cluster (AKS/EKS/GKE) als Plattform für Container-Workloads. Ohne spezifische Anwendung - nur der Cluster selbst.',
-        components: ['kubernetes', 'container_registry', 'loadbalancer', 'dns', 'storage_block', 'monitoring', 'logging', 'secrets', 'identity'],
+        components: ['compute', 'kubernetes', 'container_registry', 'loadbalancer', 'dns', 'storage_block', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
-            small: { workload: 'Dev/Test', nodes: '3 Worker Nodes', compute: { cpu: 6, ram: 12 }, storage: { type: 'SSD', size: '100GB' }, note: 'Managed K8s Control Plane + 3x Standard Worker Nodes' },
-            medium: { workload: 'Production', nodes: '5 Worker Nodes', compute: { cpu: 10, ram: 20 }, storage: { type: 'SSD', size: '250GB' }, note: 'Multi-AZ Setup, Auto-Scaling aktiviert' },
-            large: { workload: 'Enterprise', nodes: '10+ Worker Nodes', compute: { cpu: 20, ram: 40 }, storage: { type: 'SSD', size: '500GB' }, note: 'Multi-AZ HA-Setup, Cluster Autoscaler, Monitoring-Stack' }
+            small: { workload: 'Dev/Test', nodes: 3, compute: { cpu: 2, ram: 4 }, storage: { type: 'SSD', size: '100GB' }, note: 'Managed K8s Control Plane + 3x Worker Nodes (2 vCPU / 4 GB)' },
+            medium: { workload: 'Production', nodes: 5, compute: { cpu: 4, ram: 8 }, storage: { type: 'SSD', size: '250GB' }, note: 'Multi-AZ Setup, 5x Worker Nodes (4 vCPU / 8 GB), Auto-Scaling aktiviert' },
+            large: { workload: 'Enterprise', nodes: 10, compute: { cpu: 4, ram: 16 }, storage: { type: 'SSD', size: '500GB' }, note: 'Multi-AZ HA-Setup, 10x Worker Nodes (4 vCPU / 16 GB), Cluster Autoscaler' }
         },
-        sizing: { note: 'Control Plane ist managed (kostenlos oder ~70-150€/Monat). Kosten für Worker Nodes separat.' }
+        sizing: { note: 'Control Plane ist managed (kostenlos oder ~70-150€/Monat). Worker Nodes werden als Compute-VMs abgerechnet.' }
     },
     'spring-boot': {
         name: 'Spring Boot Application',

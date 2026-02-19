@@ -6903,14 +6903,12 @@ GitLab klein`
                 }
             }
 
-            // Kubernetes-Konfiguration
+            // Kubernetes: immer nur Control Plane; Worker Nodes = compute
             if (this.selectedComponents.has('kubernetes')) {
                 if (!this.componentConfigs['kubernetes']) {
                     this.initComponentConfig('kubernetes');
                 }
-                const computeHandlesWorkers = this.selectedComponents.has('compute');
-                this.componentConfigs['kubernetes'].controlPlaneOnly = computeHandlesWorkers;
-                this.componentConfigs['kubernetes'].nodes = computeHandlesWorkers ? 0 : (parseInt(sysReq.nodes) || 3);
+                this.componentConfigs['kubernetes'].controlPlaneOnly = this.selectedComponents.has('compute');
             }
 
             return;
@@ -7318,23 +7316,11 @@ GitLab klein`
             };
         }
         // Kubernetes: Falls kubernetes in selectedComponents, aber noch keine Config gesetzt
-        // (z.B. kubernetes-cluster mit flacher compute-Struktur, oder kubernetes-app)
+        // Design: kubernetes = immer nur Control Plane; Worker Nodes = immer compute
         if (appInstance.selectedComponents.has('kubernetes') && !configs.kubernetes) {
-            let nodeCount = 3;
-            if (sysReq.nodes) {
-                const nodeMatch = sysReq.nodes.toString().match(/(\d+)/);
-                if (nodeMatch) nodeCount = parseInt(nodeMatch[1]);
-            }
             const computeHandlesWorkers = appInstance.selectedComponents.has('compute');
-            // Wenn compute gewählt: VMs = Worker Nodes → kubernetes berechnet nur Control Plane
-            // Wenn kein compute: kubernetes berechnet Control Plane + Worker Nodes selbst
-            // sysReq.compute enthält bei kubernetes-cluster TOTAL-Specs → per-Node = total / nodeCount
-            const useComputeAsNodes = !computeHandlesWorkers && sysReq.compute;
             configs.kubernetes = {
-                controlPlaneOnly: computeHandlesWorkers,
-                nodes: computeHandlesWorkers ? 0 : nodeCount,
-                cpuPerNode: useComputeAsNodes ? Math.ceil((sysReq.compute.cpu || 4) / nodeCount) : 4,
-                ramPerNode: useComputeAsNodes ? Math.ceil((sysReq.compute.ram || 16) / nodeCount) : 16
+                controlPlaneOnly: computeHandlesWorkers
             };
         }
 
