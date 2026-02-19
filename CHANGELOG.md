@@ -18,6 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Kostenberechnung berücksichtigt jetzt den gewählten Architekturmodus
 - Ergebnisseite zeigt Architektur-Informationen und Workload-Pattern an
 
+### Technical
+- **ES-Module-Migration**: Alle JS-Dateien nutzen natives `import`/`export`; `index.html` lädt nur noch einen einzigen `<script type="module">` Entry-Point statt 11 separate Script-Tags – Ladereihenfolge wird vom Browser via Import-Graph aufgelöst
+- **Modul-Refactoring `saa-app.js`**: 8593 → 1253 Zeilen (−85 %); Logik aufgeteilt in `modules/saa-state.js`, `modules/saa-components.js`, `modules/saa-results.js`, `modules/saa-settings.js`, `modules/saa-multiapp.js`, `modules/saa-pdf.js`
+- **`modules/saa-utils.js`** neu: `IconMapper` (Emoji→FontAwesome) als shared Utility ausgelagert (war fälschlicherweise in `saa-app.js`, wird von 3 Modulen genutzt)
+- **Prototype-Mixin** ersetzt `.call(this)`-Delegation: Module-Methoden werden via `Object.assign(SovereignArchitectureAdvisor.prototype, SAAXxx)` direkt auf den Prototypen gemischt – kein Boilerplate mehr, kein verstecktes Kontext-Binding
+- **`getConsumptionEstimate`** in `saa-analysis.js`: 468-Zeilen-Switch aufgeteilt in Dispatcher (66 Z) + 11 private `_estimateXxx(ctx)`-Methoden (je 15–60 Z) nach Single-Responsibility
+
 ## [2.0.0] - 2026-02-19 - Cloud Pricing API, Kubernetes-Redesign & UX
 
 ### Added
