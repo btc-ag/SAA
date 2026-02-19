@@ -5,7 +5,35 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2026-01-25
+## [1.2.2] - 2026-02-18 - Bugfix: Kubernetes-Komponente in Multi-App
+
+### Fixed
+- Multi-App: `kubernetes`-Komponente wurde bei Templates ohne `controlPlane`/`workers`-Struktur (z.B. `kubernetes-cluster`, `kubernetes-app`) aus den `selectedComponents` entfernt und stattdessen fälschlicherweise `compute` hinzugefügt
+- Fix: `compute`-Config wird nur noch erstellt wenn `compute` tatsächlich in den Komponenten ist; Kubernetes-Fallback liest Node-Anzahl aus `sysReq.nodes` und Worker-Specs aus `sysReq.compute`
+
+## [1.2.1] - 2026-02-18 - Bugfix: Container Registry Label
+
+### Fixed
+- Service-Verfügbarkeit-Tabelle: Container Registry wurde fälschlicherweise als "Kubernetes Cluster" bezeichnet, da die Suche nach `requiredServices.includes()` statt nach `id` matchte
+
+## [1.2.0] - 2026-01-29 - Comprehensive SEO Optimization
+
+### Added
+- **Meta Tags**: Description, keywords, author, robots, Open Graph, and Twitter Card tags
+- **Structured Data (Schema.org)**: SoftwareApplication, BreadcrumbList, and Article schemas
+- **Technical SEO**: robots.txt with sitemap reference, sitemap.xml, DNS prefetch & preconnect
+- JavaScript defer loading for better performance
+
+### Fixed
+- Logo links (`href="#"` → `href="index.html"`)
+- H-tag hierarchy in evaluation-criteria.html
+
+### Improved
+- Image alt texts for accessibility
+- Added `rel="noopener noreferrer"` for external links
+- Overall SEO score: 94/100
+
+## [1.1.0] - 2026-01-25 - Mobile optimization with burger menu navigation
 
 ### Added
 - **Mobile Navigation**: Burger menu with slide-out drawer for mobile devices
@@ -25,7 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backdrop blur effects for modern glass-morphism look
 - Cubic-bezier transitions for smooth animations
 
-## [1.0.2] - 2026-01-24
+## [1.0.2] - 2026-01-24 - Repository optimization for GitHub Pages
 
 ### Added
 - CHANGELOG.md to track version history
@@ -39,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - DELOS description in README corrected
 
-## [1.0.1] - 2026-01-23
+## [1.0.1] - 2026-01-23 - Documentation improvements
 
 ### Added
 - System requirements section in README
@@ -49,7 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation clarity and completeness
 - README structure and readability
 
-## [1.0.0] - 2026-01-22
+## [1.0.0] - 2026-01-22 - Initial release
 
 ### Added
 - Initial release of Strategic Application Analysis Tool
@@ -69,6 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **1.2.0** - Comprehensive SEO Optimization
 - **1.1.0** - Mobile optimization with burger menu navigation
 - **1.0.2** - Repository optimization for GitHub Pages, CHANGELOG added
 - **1.0.1** - Documentation improvements

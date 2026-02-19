@@ -4956,8 +4956,9 @@ class SovereignArchitectureAdvisor {
         `;
 
         requiredServices.forEach(serviceId => {
-            const comp = architectureComponents.find(c => c.requiredServices?.includes(serviceId));
-            const serviceName = comp ? comp.name : serviceId;
+            const serviceLabels = { container_registry: 'Container Registry', ai_ml: 'AI/ML' };
+            const comp = architectureComponents.find(c => c.id === serviceId);
+            const serviceName = comp ? comp.name : (serviceLabels[serviceId] || serviceId);
 
             html += `<tr><td>${serviceName}</td>`;
 
@@ -5074,8 +5075,9 @@ class SovereignArchitectureAdvisor {
         `;
 
         requiredServices.forEach(serviceId => {
-            const comp = architectureComponents.find(c => c.requiredServices?.includes(serviceId));
-            const serviceName = comp ? comp.name : serviceId;
+            const serviceLabels = { container_registry: 'Container Registry', ai_ml: 'AI/ML' };
+            const comp = architectureComponents.find(c => c.id === serviceId);
+            const serviceName = comp ? comp.name : (serviceLabels[serviceId] || serviceId);
 
             html += `<tr><td>${serviceName}</td>`;
 
@@ -6911,8 +6913,8 @@ GitLab klein`
                 }
             };
         }
-        // Compute
-        else if (sysReq.compute) {
+        // Compute (nur wenn compute auch wirklich als Komponente gewählt ist)
+        else if (sysReq.compute && appInstance.selectedComponents.has('compute')) {
             // Prüfen ob verschachtelte Struktur (z.B. Apache Airflow oder controlPlane/workers OHNE kubernetes)
             if (sysReq.compute.webserver || sysReq.compute.scheduler ||
                 (sysReq.compute.workers && !appInstance.selectedComponents.has('kubernetes')) ||
@@ -7277,6 +7279,22 @@ GitLab klein`
         if (appInstance.selectedComponents.has('storage_object') && !configs.storage_object) {
             configs.storage_object = {
                 size: 1000
+            };
+        }
+        // Kubernetes: Falls kubernetes in selectedComponents, aber noch keine Config gesetzt
+        // (z.B. kubernetes-cluster mit flacher compute-Struktur, oder kubernetes-app)
+        if (appInstance.selectedComponents.has('kubernetes') && !configs.kubernetes) {
+            let nodeCount = 3;
+            if (sysReq.nodes) {
+                const nodeMatch = sysReq.nodes.toString().match(/(\d+)/);
+                if (nodeMatch) nodeCount = parseInt(nodeMatch[1]);
+            }
+            // Wenn compute kein eigener Component ist, beschreiben sysReq.compute-Specs die Worker Nodes
+            const useComputeAsNodes = !appInstance.selectedComponents.has('compute') && sysReq.compute;
+            configs.kubernetes = {
+                nodes: nodeCount,
+                cpuPerNode: useComputeAsNodes ? (sysReq.compute.cpu || 4) : 4,
+                ramPerNode: useComputeAsNodes ? (sysReq.compute.ram || 16) : 16
             };
         }
 

@@ -1,21 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#5AA6E7;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#3b82f6"/>
     </linearGradient>
   </defs>
-
-  <!-- Background Circle -->
-  <circle cx="50" cy="50" r="45" fill="url(#grad1)"/>
-
-  <!-- Cloud Icon -->
-  <path d="M 30 55 Q 30 45 40 45 Q 40 35 50 35 Q 60 35 60 45 Q 70 45 70 55 Q 70 65 60 65 L 40 65 Q 30 65 30 55 Z"
-        fill="white" opacity="0.95"/>
-
-  <!-- Lock/Shield Symbol -->
-  <path d="M 48 50 L 48 45 Q 48 42 50 42 Q 52 42 52 45 L 52 50 Z"
-        fill="#5AA6E7" stroke="#3B82F6" stroke-width="1"/>
-  <rect x="46" y="50" width="8" height="8" rx="1"
-        fill="#5AA6E7" stroke="#3B82F6" stroke-width="1"/>
+  <rect width="100" height="100" rx="20" fill="url(#grad)"/>
+  <!-- Font Awesome fa-compass-drafting icon -->
+  <g transform="translate(14, 14) scale(0.14)">
+    <path fill="white" d="M352 96c0 14.3-3.1 27.9-8.8 40.2L396 227.4c-23.7 25.3-54.2 44.1-88.5 53.6L256 192c0 0 0 0 0 0s0 0 0 0l-68 117.5c21.5 6.8 44.3 10.5 68.1 10.5c70.7 0 133.8-32.7 174.9-84c11.1-13.8 31.2-16 45-5s16 31.2 5 45C428.1 341.8 347 384 256 384c-35.4 0-69.4-6.4-100.7-18.1L98.7 463.7C94 471.8 87 478.4 78.6 482.6L23.2 510.3c-5 2.5-10.9 2.2-15.6-.7S0 501.5 0 496l0-55.4c0-8.4 2.2-16.7 6.5-24.1l60-103.7C53.7 301.6 41.8 289.3 31.2 276c-11.1-13.8-8.8-33.9 5-45s33.9-8.8 45 5c5.7 7.1 11.8 13.8 18.2 20.1l69.4-119.9c-5.6-12.2-8.8-25.8-8.8-40.2c0-53 43-96 96-96s96 43 96 96zm21 297.9c32.6-12.8 62.5-30.8 88.9-52.9l43.7 75.5c4.2 7.3 6.5 15.6 6.5 24.1l0 55.4c0 5.5-2.9 10.7-7.6 13.6s-10.6 3.2-15.6 .7l-55.4-27.7c-8.4-4.2-15.4-10.8-20.1-18.9L373 393.9zM256 128a32 32 0 1 0 0-64 32 32 0 1 0 0 64z"/>
+  </g>
 </svg>
