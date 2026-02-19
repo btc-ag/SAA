@@ -6,8 +6,9 @@ Ein interaktiver Wizard zur Bewertung und Empfehlung souveräner Cloud-Architekt
 
 - **Sovereign-First**: Fokus auf europäische und souveräne Cloud-Anbieter
 - **Cloud Pricing API**: Echte Frankfurt-Preise für alle Anbieter – keine pauschalen Faktoren
-- **Applikations-Mapping**: Vordefinierte Profile für SAP, GitLab, Kubernetes, Nextcloud und mehr
+- **Applikations-Mapping**: Vordefinierte Profile für 134+ Enterprise-Apps (SAP, GitLab, Kubernetes, Nextcloud u.v.m.)
 - **Schnellauswahl**: Bekannte Apps direkt laden, Sizing S/M/L wählen, sofort zur Konfiguration
+- **Architektur-Modus**: Cloud-native oder Klassisch wählen — Komponenten-Auswahl passt sich live an
 - **Multi-Kriterien-Analyse**: Gewichtung von Kontrolle, Performance, Verfügbarkeit und Kosten
 - **Transparente Bewertung**: Detaillierte Dokumentation der Bewertungskriterien und Scoring-Methodik
 - **TCO-Schätzung**: Kosteneinschätzung auf Basis realer Cloud-Preise (Frankfurt-Region)
@@ -35,14 +36,18 @@ Ein interaktiver Wizard zur Bewertung und Empfehlung souveräner Cloud-Architekt
 ## Funktionen
 
 ### 1. Applikationsauswahl
-- Schnellauswahl für bekannte Apps (SAP, GitLab, WordPress, Kubernetes Cluster, Nextcloud)
+- Schnellauswahl für 134+ bekannte Apps (SAP, GitLab, WordPress, Kubernetes Cluster, Nextcloud u.v.m.)
 - Suche nach beliebigen Applikationen mit automatischer Erkennung benötigter Services
 - Sizing direkt auf der Startseite: Klein / Mittel / Groß mit konkreten Ressourcen-Specs
 
 ### 2. Komponenten-Konfiguration
-- Auswahl relevanter Infrastruktur-Komponenten
-- Kategorisiert nach Compute, Storage, Netzwerk, Datenbanken, etc.
+- Auswahl relevanter Infrastruktur-Komponenten, kategorisiert nach Compute, Storage, Netzwerk, Datenbanken etc.
 - Kubernetes = Managed Control Plane; Worker Nodes über Compute-Komponente konfigurierbar
+- **Architektur-Modus** (Cloud-native / Klassisch): transformiert die Komponenten-Auswahl live
+  - Cloud-native: `compute` → `PaaS / Serverless` bei Web-Apps; Kubernetes-Apps bleiben unverändert
+  - Klassisch: `serverless`/`kubernetes` → `compute` + `loadbalancer`
+  - Manuelle Änderungen bleiben erhalten (Delta-System), Reset-Button bringt den Originalzustand zurück
+  - Empfohlener Modus wird pro App vorausgewählt (`recommendedArchitecture`)
 
 ### 3. Gewichtungsprofile
 - Vordefinierte Profile: Ausgewogen, Compliance-First, Performance-First, Kostenoptimiert
@@ -66,7 +71,7 @@ Ein interaktiver Wizard zur Bewertung und Empfehlung souveräner Cloud-Architekt
 - **Frontend**: Vanilla JavaScript mit nativen ES-Modulen (`import`/`export`) – kein Build-Prozess, kein Bundler
 - **Styling**: CSS3 mit CSS Custom Properties
 - **Architektur**: Single-Page Application, modular aufgeteilt (siehe unten)
-- **Daten**: `js/saa-data.js` (Anbieter, Komponenten) + `js/saa-apps-data.js` (Applikations-Datenbank)
+- **Daten**: `js/saa-data.js` (Anbieter, Komponenten) + `js/saa-apps-data.js` (Applikations-Datenbank mit 134+ Apps)
 - **Preise**: `js/cloud-pricing.js` als zentrale Preisberechnungs-Engine (Frankfurt-Region)
 
 ## Architektur

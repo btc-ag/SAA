@@ -5,18 +5,29 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0] - 2026-02-19 - Moderne Architekturmodelle & intelligente Kostenberechnung
+## [3.0.0] - 2026-02-19 - Architektur-Modus Live-Transformation, Moderne Architekturmodelle & intelligente Kostenberechnung
 
 ### Added
+- **Architektur-Modus transformiert Komponenten live**: Wechsel zwischen Cloud-native und Klassisch ändert die Komponenten-Auswahl sofort auf der Komponenten-Seite – keine versteckte Hintergrundberechnung mehr
+- **Snapshot + Delta-System**: Originalzustand wird beim App-Laden gespeichert; manuelle Nutzeränderungen nach einem Modus-Wechsel bleiben als Delta erhalten und werden on top wieder angewendet
+- **Reset-Button**: Stellt den Originalzustand vor jeder Transformation wieder her
+- **Intelligente komponentenbasierte Architektur-Inferenz**: Erkennt anhand der gewählten Komponenten automatisch den passenden Transformationspfad ohne App-Name-Lookup
+  - Cloud-native: `compute` → `PaaS / Serverless` bei Web-/CMS-Apps; Enterprise-Apps (compute + block + file storage ohne managed DB) bleiben konservativ
+  - Klassisch: `serverless`/`kubernetes` → `compute` + `loadbalancer`
+- **`recommendedArchitecture`** für alle 134 Apps in der Datenbank: Kubernetes/Container-Apps → `cloud_native`, klassische VM-Apps → `classic`; beim App-Laden automatisch vorausgewählt
 - Intelligente Infrastrukturkostenberechnung mit Unterstützung für Cloud-native/PaaS-Architekturmodelle
-- Architektur-Modus-Auswahl: Automatisch, Cloud-native/PaaS, Klassisch/VM-basiert
 - Workload-Typ-Erkennung mit passender Architekturempfehlung
 - System-Konfiguration Zusammenfassung in der Ergebnisansicht
 - Architektur-Modus-Anzeige mit Transformation-Details in den Analyseergebnissen
 
 ### Changed
-- Kostenberechnung berücksichtigt jetzt den gewählten Architekturmodus
+- "Serverless Functions" umbenannt zu **"PaaS / Serverless"** (spiegelt App Service, Cloud Run, Lambda etc. besser wider)
+- Kostenberechnung berücksichtigt den gewählten Architekturmodus
 - Ergebnisseite zeigt Architektur-Informationen und Workload-Pattern an
+
+### Fixed
+- Kubernetes zeigte in Single-App-Modus fälschlicherweise "Worker Nodes"-Konfiguration – `controlPlaneOnly`-Sync-Logik in `toggleComponent()` ergänzt
+- Multi-App-Modus: Setter für `selectedComponents` und `componentConfigs` schrieben immer auf die Hauptinstanz statt auf die aktive `ApplicationInstance` – Architektur-Transformation hatte keinen sichtbaren Effekt; Getter/Setter jetzt symmetrisch
 
 ### Technical (Refactoring-Begründung)
 
@@ -27,6 +38,8 @@ Der ursprüngliche `saa-app.js` war mit 8.593 Zeilen ein unkontrollierbarer Mono
 - **`modules/saa-utils.js`** neu: `IconMapper` (Emoji→FontAwesome) als shared Utility ausgelagert – war fälschlicherweise im Orchestrator `saa-app.js` definiert, obwohl ausschließlich Rendering-Module ihn nutzen (52 Verwendungen in `saa-results.js` allein)
 - **Prototype-Mixin** ersetzt `.call(this)`-Delegation: Statt `SAAResults.renderX.call(this)` pro Methode werden Module via `Object.assign(SovereignArchitectureAdvisor.prototype, SAAResults)` direkt auf den Prototypen gemischt – kein Boilerplate-Forwarding mehr, kein implizites Kontext-Binding
 - **`getConsumptionEstimate`** in `saa-analysis.js`: 468-Zeilen-God-Function (11 verschachtelte Switch-Cases mit je eigenem Pricing-Branch) aufgeteilt in Dispatcher (66 Z) + 11 private `_estimateXxx(ctx)`-Methoden – jede Pricing-Logik ist jetzt separat lesbar, testbar und änderbar
+- **`detectArchitecturePattern()`** (ehemals `transformServicesForArchitectureMode()`): nur noch Pattern-/Factor-Erkennung; Service-Ersetzung findet ausschließlich auf UI-Ebene statt
+- **`_archOriginal` / `_archDelta`** als Getter/Setter-Paar auf Hauptinstanz: proxyen in Multi-App-Modus transparent zur aktuellen `ApplicationInstance`
 
 ## [2.0.0] - 2026-02-19 - Cloud Pricing API, Kubernetes-Redesign & UX
 
@@ -156,6 +169,10 @@ Der ursprüngliche `saa-app.js` war mit 8.593 Zeilen ein unkontrollierbarer Mono
 
 ## Version History Summary
 
+- **3.0.0** - Architektur-Modus Live-Transformation, ES-Module-Migration, Cloud Pricing API, Kostenberechnung
+- **2.0.0** - Cloud Pricing API, Kubernetes-Redesign & UX
+- **1.2.2** - Bugfix: Kubernetes-Komponente in Multi-App
+- **1.2.1** - Bugfix: Container Registry Label
 - **1.2.0** - Comprehensive SEO Optimization
 - **1.1.0** - Mobile optimization with burger menu navigation
 - **1.0.2** - Repository optimization for GitHub Pages, CHANGELOG added
