@@ -5,6 +5,19 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-02-19 - Moderne Architekturmodelle & intelligente Kostenberechnung
+
+### Added
+- Intelligente Infrastrukturkostenberechnung mit Unterstützung für Cloud-native/PaaS-Architekturmodelle
+- Architektur-Modus-Auswahl: Automatisch, Cloud-native/PaaS, Klassisch/VM-basiert
+- Workload-Typ-Erkennung mit passender Architekturempfehlung
+- System-Konfiguration Zusammenfassung in der Ergebnisansicht
+- Architektur-Modus-Anzeige mit Transformation-Details in den Analyseergebnissen
+
+### Changed
+- Kostenberechnung berücksichtigt jetzt den gewählten Architekturmodus
+- Ergebnisseite zeigt Architektur-Informationen und Workload-Pattern an
+
 ## [2.0.0] - 2026-02-19 - Cloud Pricing API, Kubernetes-Redesign & UX
 
 ### Added
