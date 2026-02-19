@@ -8,26 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.0.0] - 2026-02-19 - Architektur-Modus Live-Transformation, Moderne Architekturmodelle & intelligente Kostenberechnung
 
 ### Added
-- **Architektur-Modus transformiert Komponenten live**: Wechsel zwischen Cloud-native und Klassisch ändert die Komponenten-Auswahl sofort auf der Komponenten-Seite – keine versteckte Hintergrundberechnung mehr
+- **Architektur-Modus** (Cloud-native / Klassisch): Neue Komponenten-Seite mit Live-Transformation der Auswahl beim Modus-Wechsel
 - **Snapshot + Delta-System**: Originalzustand wird beim App-Laden gespeichert; manuelle Nutzeränderungen nach einem Modus-Wechsel bleiben als Delta erhalten und werden on top wieder angewendet
 - **Reset-Button**: Stellt den Originalzustand vor jeder Transformation wieder her
 - **Intelligente komponentenbasierte Architektur-Inferenz**: Erkennt anhand der gewählten Komponenten automatisch den passenden Transformationspfad ohne App-Name-Lookup
   - Cloud-native: `compute` → `PaaS / Serverless` bei Web-/CMS-Apps; Enterprise-Apps (compute + block + file storage ohne managed DB) bleiben konservativ
   - Klassisch: `serverless`/`kubernetes` → `compute` + `loadbalancer`
 - **`recommendedArchitecture`** für alle 134 Apps in der Datenbank: Kubernetes/Container-Apps → `cloud_native`, klassische VM-Apps → `classic`; beim App-Laden automatisch vorausgewählt
+- **PaaS / Serverless** als neue Compute-Komponente (App Service, Cloud Run, Lambda und ähnliche Plattform-Dienste)
 - Intelligente Infrastrukturkostenberechnung mit Unterstützung für Cloud-native/PaaS-Architekturmodelle
 - Workload-Typ-Erkennung mit passender Architekturempfehlung
 - System-Konfiguration Zusammenfassung in der Ergebnisansicht
 - Architektur-Modus-Anzeige mit Transformation-Details in den Analyseergebnissen
-
-### Changed
-- "Serverless Functions" umbenannt zu **"PaaS / Serverless"** (spiegelt App Service, Cloud Run, Lambda etc. besser wider)
-- Kostenberechnung berücksichtigt den gewählten Architekturmodus
-- Ergebnisseite zeigt Architektur-Informationen und Workload-Pattern an
-
-### Fixed
-- Kubernetes zeigte in Single-App-Modus fälschlicherweise "Worker Nodes"-Konfiguration – `controlPlaneOnly`-Sync-Logik in `toggleComponent()` ergänzt
-- Multi-App-Modus: Setter für `selectedComponents` und `componentConfigs` schrieben immer auf die Hauptinstanz statt auf die aktive `ApplicationInstance` – Architektur-Transformation hatte keinen sichtbaren Effekt; Getter/Setter jetzt symmetrisch
 
 ### Technical (Refactoring-Begründung)
 
