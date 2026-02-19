@@ -5,6 +5,31 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-02-19 - Cloud Pricing API Integration
+
+### Added
+- Cloud Pricing API Integration mit realen Preisen für die Frankfurt-Region
+- Neue `cloud-pricing.js` als zentrale Preisberechnungs-Engine (Single Source of Truth)
+- Sovereign Cloud Handling mit Base-Provider + Premium-Faktor
+- Observability-Kosten und angepasste VM-Preise für realistische Vergleiche
+- Umfassende Preisquellen-Dokumentation auf der Kriterienseite
+- Block Storage Pricing mit korrektem Tier-Mapping
+- TCO-Sektion mit realem Frankfurt-Kostenbeispiel
+- Neue `criteria-styles.css` für die Kriterienseite
+
+### Changed
+- Preisberechnung vollständig zentralisiert in `CloudPricing`
+- Preistabelle zeigt reale EUR-Preise statt Faktoren
+- Vollständiger Workload-Kostenvergleich in der Preistabelle
+- DELOS-Link auf offizielle Website aktualisiert
+- Sovereign Cloud Links aktualisiert
+
+### Fixed
+- Block Storage Pricing: Künstliches Minimum entfernt, Tier-Mapping korrigiert
+- `getBaseServicePrice` mit Sovereign Cloud Handling ergänzt
+- `selectedComponents` als Set beim Laden des Multi-App-Zustands korrekt wiederhergestellt
+- Nicht-iterierbare `selectedComponents` beim Laden des Zustands abgesichert
+
 ## [1.2.2] - 2026-02-18 - Bugfix: Kubernetes-Komponente in Multi-App
 
 ### Fixed
