@@ -5,10 +5,12 @@ Ein interaktiver Wizard zur Bewertung und Empfehlung souveräner Cloud-Architekt
 ## Highlights
 
 - **Sovereign-First**: Fokus auf europäische und souveräne Cloud-Anbieter
-- **Applikations-Mapping**: Vordefinierte Profile für SAP, Microsoft 365, Custom Apps und mehr
+- **Cloud Pricing API**: Echte Frankfurt-Preise für alle Anbieter – keine pauschalen Faktoren
+- **Applikations-Mapping**: Vordefinierte Profile für SAP, GitLab, Kubernetes, Nextcloud und mehr
+- **Schnellauswahl**: Bekannte Apps direkt laden, Sizing S/M/L wählen, sofort zur Konfiguration
 - **Multi-Kriterien-Analyse**: Gewichtung von Kontrolle, Performance, Verfügbarkeit und Kosten
 - **Transparente Bewertung**: Detaillierte Dokumentation der Bewertungskriterien und Scoring-Methodik
-- **TCO-Schätzung**: Grobe Kosteneinschätzung basierend auf Sizing und Betriebsaufwand
+- **TCO-Schätzung**: Kosteneinschätzung auf Basis realer Cloud-Preise (Frankfurt-Region)
 - **Detailvergleich**: Übersichtliche Tabelle aller Anbieter mit Service-Verfügbarkeit
 - **PDF-Export**: Analyse-Ergebnisse als druckbares Dokument exportieren
 - **Responsive Design**: Vollständig optimiert für Desktop, Tablet und Mobile mit Burger-Menü Navigation
@@ -33,14 +35,14 @@ Ein interaktiver Wizard zur Bewertung und Empfehlung souveräner Cloud-Architekt
 ## Funktionen
 
 ### 1. Applikationsauswahl
-- Suche nach bekannten Applikationen (SAP S/4HANA, Microsoft 365, etc.)
-- Automatische Erkennung benötigter Cloud-Services
-- Dropdown mit allen verfügbaren Applikationsprofilen
+- Schnellauswahl für bekannte Apps (SAP, GitLab, WordPress, Kubernetes Cluster, Nextcloud)
+- Suche nach beliebigen Applikationen mit automatischer Erkennung benötigter Services
+- Sizing direkt auf der Startseite: Klein / Mittel / Groß mit konkreten Ressourcen-Specs
 
 ### 2. Komponenten-Konfiguration
 - Auswahl relevanter Infrastruktur-Komponenten
 - Kategorisiert nach Compute, Storage, Netzwerk, Datenbanken, etc.
-- Sizing-Auswahl (S/M/L/XL) mit Ressourcen-Schätzung
+- Kubernetes = Managed Control Plane; Worker Nodes über Compute-Komponente konfigurierbar
 
 ### 3. Gewichtungsprofile
 - Vordefinierte Profile: Ausgewogen, Compliance-First, Performance-First, Kostenoptimiert
@@ -50,7 +52,7 @@ Ein interaktiver Wizard zur Bewertung und Empfehlung souveräner Cloud-Architekt
 ### 4. Analyse & Empfehlung
 - Ranking aller Anbieter nach gewichtetem Score
 - Service-Abdeckung mit Verfügbarkeits-Status
-- TCO-Breakdown mit Kostenkomponenten
+- TCO-Breakdown mit realen Cloud-Preisen (Frankfurt-Region)
 - Detaillierte Vergleichstabelle
 
 ### 5. Bewertungskriterien-Dokumentation
@@ -64,7 +66,8 @@ Ein interaktiver Wizard zur Bewertung und Empfehlung souveräner Cloud-Architekt
 - **Frontend**: Vanilla JavaScript (ES6+)
 - **Styling**: CSS3 mit CSS Custom Properties
 - **Architektur**: Single-Page Application ohne Build-Prozess
-- **Daten**: JSON-basierte Konfiguration in `saa-data.js`
+- **Daten**: JSON-basierte Konfiguration in `js/saa-data.js`
+- **Preise**: `js/cloud-pricing.js` als zentrale Preisberechnungs-Engine (Frankfurt-Region)
 
 ## Setup
 
@@ -83,13 +86,18 @@ Ein interaktiver Wizard zur Bewertung und Empfehlung souveräner Cloud-Architekt
 SAA/
 ├── index.html                            # Haupt-HTML (Wizard)
 ├── evaluation-criteria.html              # Bewertungskriterien-Seite
-├── saa-app.js                            # Hauptapplikationslogik
-├── saa-analysis.js                       # Analyse- und Scoring-Logik
-├── criteria-page.js                      # Bewertungskriterien-Logik
-├── saa-styles.css                        # Haupt-Styling
-├── criteria-styles.css                   # Bewertungskriterien-Styling
-├── saa-data.js                           # Anbieter- und Service-Daten
-├── favicon.svg                           # Favicon
+├── js/
+│   ├── saa-app.js                        # Hauptapplikationslogik
+│   ├── saa-analysis.js                   # Analyse- und Scoring-Logik
+│   ├── saa-data.js                       # Anbieter- und Service-Daten
+│   ├── cloud-pricing.js                  # Cloud Pricing API (Frankfurt-Preise)
+│   └── criteria-page.js                  # Bewertungskriterien-Logik
+├── css/
+│   ├── saa-styles.css                    # Haupt-Styling
+│   └── criteria-styles.css               # Bewertungskriterien-Styling
+├── assets/
+│   ├── btc-logo.png                      # BTC Logo
+│   └── favicon.svg                       # Favicon
 ├── LICENSE                               # Lizenz
 └── README.md                             # Diese Datei
 ```
@@ -107,8 +115,8 @@ SAA/
 
 Die Service-Verfügbarkeit und Bewertungen basieren auf:
 - Öffentlich verfügbaren Dokumentationen der Cloud-Anbieter
+- Offiziellen Preislisten der Anbieter (Frankfurt-Region, Stand: Februar 2026)
 - Eigenen Recherchen und Erfahrungswerten
-- Stand: Januar 2025
 
 **Hinweis**: Die Daten erheben keinen Anspruch auf Vollständigkeit. Für produktive Entscheidungen sollten die aktuellen Anbieter-Dokumentationen konsultiert werden.
 
