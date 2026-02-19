@@ -18,12 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Kostenberechnung berücksichtigt jetzt den gewählten Architekturmodus
 - Ergebnisseite zeigt Architektur-Informationen und Workload-Pattern an
 
-### Technical
-- **ES-Module-Migration**: Alle JS-Dateien nutzen natives `import`/`export`; `index.html` lädt nur noch einen einzigen `<script type="module">` Entry-Point statt 11 separate Script-Tags – Ladereihenfolge wird vom Browser via Import-Graph aufgelöst
-- **Modul-Refactoring `saa-app.js`**: 8593 → 1253 Zeilen (−85 %); Logik aufgeteilt in `modules/saa-state.js`, `modules/saa-components.js`, `modules/saa-results.js`, `modules/saa-settings.js`, `modules/saa-multiapp.js`, `modules/saa-pdf.js`
-- **`modules/saa-utils.js`** neu: `IconMapper` (Emoji→FontAwesome) als shared Utility ausgelagert (war fälschlicherweise in `saa-app.js`, wird von 3 Modulen genutzt)
-- **Prototype-Mixin** ersetzt `.call(this)`-Delegation: Module-Methoden werden via `Object.assign(SovereignArchitectureAdvisor.prototype, SAAXxx)` direkt auf den Prototypen gemischt – kein Boilerplate mehr, kein verstecktes Kontext-Binding
-- **`getConsumptionEstimate`** in `saa-analysis.js`: 468-Zeilen-Switch aufgeteilt in Dispatcher (66 Z) + 11 private `_estimateXxx(ctx)`-Methoden (je 15–60 Z) nach Single-Responsibility
+### Technical (Refactoring-Begründung)
+
+Der ursprüngliche `saa-app.js` war mit 8.593 Zeilen ein unkontrollierbarer Monolith: Rendering, State-Persistenz, Analyse-Trigger, PDF-Export und Settings-Logik lagen in einer einzigen Klasse ohne klares Ownership. Jede Änderung war riskant, weil Seiteneffekte auf entfernte Stellen nicht vorhersehbar waren. Die folgende Restrukturierung macht Verantwortlichkeiten explizit und Änderungen isolierbar:
+
+- **ES-Module-Migration**: Alle JS-Dateien nutzen natives `import`/`export`. `index.html` lädt nur noch einen einzigen `<script type="module">` Entry-Point statt 11 manuell sortierter Script-Tags – die Ladereihenfolge ergibt sich jetzt zwingend aus dem Import-Graph, nicht aus menschlicher Sorgfalt
+- **Modul-Refactoring `saa-app.js`**: 8593 → 1253 Zeilen (−85 %); Logik nach Single-Responsibility aufgeteilt in `modules/saa-state.js` (Session/Settings), `modules/saa-components.js` (UI), `modules/saa-results.js` (Rendering), `modules/saa-settings.js`, `modules/saa-multiapp.js`, `modules/saa-pdf.js`
+- **`modules/saa-utils.js`** neu: `IconMapper` (Emoji→FontAwesome) als shared Utility ausgelagert – war fälschlicherweise im Orchestrator `saa-app.js` definiert, obwohl ausschließlich Rendering-Module ihn nutzen (52 Verwendungen in `saa-results.js` allein)
+- **Prototype-Mixin** ersetzt `.call(this)`-Delegation: Statt `SAAResults.renderX.call(this)` pro Methode werden Module via `Object.assign(SovereignArchitectureAdvisor.prototype, SAAResults)` direkt auf den Prototypen gemischt – kein Boilerplate-Forwarding mehr, kein implizites Kontext-Binding
+- **`getConsumptionEstimate`** in `saa-analysis.js`: 468-Zeilen-God-Function (11 verschachtelte Switch-Cases mit je eigenem Pricing-Branch) aufgeteilt in Dispatcher (66 Z) + 11 private `_estimateXxx(ctx)`-Methoden – jede Pricing-Logik ist jetzt separat lesbar, testbar und änderbar
 
 ## [2.0.0] - 2026-02-19 - Cloud Pricing API, Kubernetes-Redesign & UX
 

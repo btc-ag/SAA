@@ -63,41 +63,103 @@ Ein interaktiver Wizard zur Bewertung und Empfehlung souveräner Cloud-Architekt
 
 ## Tech Stack
 
-- **Frontend**: Vanilla JavaScript (ES6+)
+- **Frontend**: Vanilla JavaScript mit nativen ES-Modulen (`import`/`export`) – kein Build-Prozess, kein Bundler
 - **Styling**: CSS3 mit CSS Custom Properties
-- **Architektur**: Single-Page Application ohne Build-Prozess
-- **Daten**: JSON-basierte Konfiguration in `js/saa-data.js`
+- **Architektur**: Single-Page Application, modular aufgeteilt (siehe unten)
+- **Daten**: `js/saa-data.js` (Anbieter, Komponenten) + `js/saa-apps-data.js` (Applikations-Datenbank)
 - **Preise**: `js/cloud-pricing.js` als zentrale Preisberechnungs-Engine (Frankfurt-Region)
+
+## Architektur
+
+Die Anwendung ist in funktionale Module aufgeteilt, um Änderungen zu isolieren und die Codebase wartbar zu halten. Der Einstiegspunkt ist `js/saa-app.js`; alle anderen Dateien werden über native ES-Module-Imports geladen – keine manuelle Script-Reihenfolge im HTML nötig.
+
+### Warum Module?
+
+Der ursprüngliche `saa-app.js` war mit über 8.500 Zeilen ein typischer Monolith: Eine Klasse, alle Verantwortlichkeiten, kein klares Ownership. Das hat folgende Konsequenzen:
+
+- **Riskante Änderungen**: Jede Anpassung konnte unbeabsichtigt entfernte Stellen brechen
+- **Keine Testbarkeit**: Rendering, State, Analyse und PDF waren untrennbar verwoben
+- **Schlechte Orientierung**: Für eine Bugfix-Suche musste man tausende Zeilen scannen
+
+Die Aufteilung folgt dem **Single-Responsibility-Prinzip**: Jedes Modul hat genau eine Aufgabe, kennt seinen Scope und importiert explizit, was es braucht.
+
+### Modulübersicht
+
+| Modul | Verantwortlichkeit |
+|---|---|
+| `saa-app.js` | Orchestrator: Navigation, Suche, Analyse-Trigger, System-Requirements |
+| `modules/saa-state.js` | Session-Persistenz, Settings laden/speichern, Reset |
+| `modules/saa-components.js` | Komponenten-UI, Config-Panels, VM/DB/Storage-Gruppen |
+| `modules/saa-results.js` | Ergebnis-Rendering, Provider-Cards, TCO, Vergleichstabelle, Popups |
+| `modules/saa-settings.js` | Settings-Modal, Presets, Gewichte, API-Key |
+| `modules/saa-multiapp.js` | Multi-App-Workflow, App-Mapping-Tabelle, Portfolio-Parsing |
+| `modules/saa-pdf.js` | PDF-Export (Single-App und Portfolio) |
+| `modules/saa-utils.js` | Shared Utilities (IconMapper: Emoji → FontAwesome) |
+| `saa-data.js` | Cloud-Anbieter, Architektur-Komponenten, Deployment-Patterns |
+| `saa-apps-data.js` | Bekannte Applikationen (80+ Enterprise-Apps mit System-Requirements) |
+| `saa-analysis.js` | Analyse-Engine: Scoring, TCO-Berechnung, Maturity-Faktor |
+| `cloud-pricing.js` | Echte Cloud-Preise Frankfurt-Region |
+
+### Bindungsmuster
+
+Module-Methoden werden via **Prototype-Mixin** in die App-Klasse eingebunden:
+
+```js
+Object.assign(SovereignArchitectureAdvisor.prototype, SAAResults);
+```
+
+Das vermeidet das `.call(this)`-Boilerplate früherer Versionen und macht die Methoden zu echten Instanzmethoden ohne Kontext-Binding-Trickserei.
 
 ## Setup
 
 ### Voraussetzungen
 - Moderner Webbrowser (Chrome, Firefox, Safari, Edge)
-- Keine Server-Installation erforderlich
+- **Lokaler Webserver** für die Entwicklung (ES-Module funktionieren nicht über `file://`)
 
 ### Lokale Nutzung
-1. Repository klonen oder ZIP entpacken
-2. `index.html` im Browser öffnen für den Wizard
-3. Optional: `evaluation-criteria.html` öffnen für die Bewertungskriterien-Dokumentation
-4. Fertig!
+
+**Option A – VS Code Live Server** (empfohlen):
+1. Repository klonen
+2. VS Code Extension „Live Server" installieren
+3. `index.html` rechtsklick → „Open with Live Server"
+
+**Option B – Python**:
+```bash
+git clone <repo>
+cd SAA
+python3 -m http.server 8080
+# → http://localhost:8080
+```
+
+**GitHub Pages**: Funktioniert direkt – ES-Module laufen auf jedem HTTPS-Server ohne Einschränkungen.
 
 ### Dateistruktur
 ```
 SAA/
-├── index.html                            # Haupt-HTML (Wizard)
+├── index.html                            # Haupt-HTML (Wizard, lädt nur saa-app.js)
 ├── evaluation-criteria.html              # Bewertungskriterien-Seite
 ├── js/
-│   ├── saa-app.js                        # Hauptapplikationslogik
-│   ├── saa-analysis.js                   # Analyse- und Scoring-Logik
-│   ├── saa-data.js                       # Anbieter- und Service-Daten
+│   ├── saa-app.js                        # Entry-Point & Orchestrator
+│   ├── saa-analysis.js                   # Analyse-Engine (Scoring, TCO)
+│   ├── saa-data.js                       # Anbieter- und Komponenten-Daten
+│   ├── saa-apps-data.js                  # Applikations-Datenbank (80+ Apps)
 │   ├── cloud-pricing.js                  # Cloud Pricing API (Frankfurt-Preise)
-│   └── criteria-page.js                  # Bewertungskriterien-Logik
+│   ├── criteria-page.js                  # Bewertungskriterien-Logik
+│   └── modules/
+│       ├── saa-state.js                  # Session & Settings
+│       ├── saa-components.js             # Komponenten-UI
+│       ├── saa-results.js                # Ergebnis-Rendering
+│       ├── saa-settings.js               # Einstellungen-Modal
+│       ├── saa-multiapp.js               # Multi-App-Workflow
+│       ├── saa-pdf.js                    # PDF-Export
+│       └── saa-utils.js                  # Shared Utilities (IconMapper)
 ├── css/
 │   ├── saa-styles.css                    # Haupt-Styling
 │   └── criteria-styles.css               # Bewertungskriterien-Styling
 ├── assets/
 │   ├── btc-logo.png                      # BTC Logo
 │   └── favicon.svg                       # Favicon
+├── CHANGELOG.md                          # Versionshistorie
 ├── LICENSE                               # Lizenz
 └── README.md                             # Diese Datei
 ```
@@ -139,7 +201,7 @@ In `saa-data.js` unter `cloudProviders` einen neuen Eintrag anlegen:
 ```
 
 ### Neue Applikationen hinzufügen
-In `saa-data.js` eine neue Applikation ergänzen:
+In `saa-apps-data.js` unter `knownApplications` einen neuen Eintrag anlegen:
 
 ```javascript
 'app-id': {
