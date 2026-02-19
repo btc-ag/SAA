@@ -1294,7 +1294,7 @@ const architectureComponents = [
             { id: 'nodes', label: 'Worker Nodes', type: 'number', default: 3, min: 1, max: 100, unit: '' },
             { id: 'nodeRam', label: 'RAM/Node', type: 'number', default: 16, min: 4, max: 256, unit: 'GB' }
         ],
-        configSummary: (c) => `${c.nodes} Nodes, ${c.nodeRam} GB/Node`
+        configSummary: (c) => c.controlPlaneOnly ? 'Managed Control Plane' : `${c.nodes} Nodes, ${c.nodeRam} GB/Node`
     },
     {
         id: 'serverless', name: 'Serverless Functions', category: 'compute', icon: '⚡',

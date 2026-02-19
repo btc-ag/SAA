@@ -1498,6 +1498,18 @@ class SovereignArchitectureAdvisor {
         if (!component.configFields) return '';
 
         const config = this.componentConfigs[componentId] || {};
+
+        // Kubernetes im Control-Plane-Only-Modus: keine Worker-Felder zeigen
+        if (componentId === 'kubernetes' && config.controlPlaneOnly) {
+            return `
+                <div class="component-config-panel" onclick="event.stopPropagation()">
+                    <div class="component-config-field" style="color: var(--text-muted); font-size: 0.85rem; padding: 0.25rem 0;">
+                        <i class="fa-solid fa-circle-info" style="margin-right: 0.4rem;"></i>
+                        Managed Control Plane – Worker Nodes werden über die Compute-Komponente konfiguriert.
+                    </div>
+                </div>
+            `;
+        }
         const fields = component.configFields.map(field => {
             const value = config[field.id] !== undefined ? config[field.id] : field.default;
 
@@ -7092,24 +7104,13 @@ GitLab klein`
                         }
                     }
 
-                    if (appInstance.selectedComponents.has('kubernetes')) {
-                        // Worker Nodes als vmGroups damit saa-analysis.js korrekt multipliziert
-                        configs.compute = {
-                            vmGroups: [{
-                                cpu: sysReq.compute.cpu,
-                                ram: sysReq.compute.ram,
-                                count: instanceCount
-                            }]
-                        };
-                    } else {
-                        configs.compute = {
-                            cpu: sysReq.compute.cpu,
-                            ram: sysReq.compute.ram,
-                            instances: instanceCount
-                        };
-                        if (haType) {
-                            configs.compute._haType = haType;
-                        }
+                    configs.compute = {
+                        cpu: sysReq.compute.cpu,
+                        ram: sysReq.compute.ram,
+                        instances: instanceCount
+                    };
+                    if (haType) {
+                        configs.compute._haType = haType;
                     }
                 }
             }
@@ -7477,8 +7478,9 @@ GitLab klein`
         // Kubernetes
         if (configs.kubernetes) {
             converted.kubernetes = {
+                controlPlaneOnly: configs.kubernetes.controlPlaneOnly || false,
                 clusters: [{
-                    nodes: configs.kubernetes.nodes || 3,
+                    nodes: configs.kubernetes.nodes ?? 3,
                     cpuPerNode: configs.kubernetes.cpuPerNode || 4,
                     ramPerNode: configs.kubernetes.ramPerNode || 16
                 }]
