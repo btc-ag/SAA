@@ -19,7 +19,7 @@
 
 const CloudPricing = {
     // Metadaten
-    version: '2.0.0',
+    version: '3.0.0',
     lastUpdated: '2026-01-27',
     currency: 'EUR',
 
