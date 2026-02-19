@@ -499,7 +499,7 @@ class SovereignArchitectureAdvisor {
                     document.getElementById('appSearchInput').value = 'Benutzerdefinierte Anwendung';
                     this.nextStep();
                 } else if (app) {
-                    // Bekannte App → direkt laden, Recherche-Schritt überspringen
+                    // Bekannte App → direkt laden, Sizing-Auswahl auf Step 0 anzeigen
                     const knownApp = knownApplications[app];
                     if (knownApp) {
                         document.getElementById('appSearchInput').value = knownApp.name;
@@ -519,7 +519,25 @@ class SovereignArchitectureAdvisor {
                             };
                             try { this.initComponentConfigsFromSystemRequirements(); } catch (e) {}
                         }
-                        this.nextStep(); // Direkt zu Komponenten
+                        // Sizing-Auswahl anzeigen (ohne Recherche-Delay)
+                        const sysReqHtml = this.renderSystemRequirements(knownApp);
+                        const resultDiv = document.getElementById('researchResult');
+                        resultDiv.innerHTML = `
+                            <div class="research-result">
+                                <div class="research-result-header">
+                                    <span class="research-result-title">${knownApp.name}</span>
+                                </div>
+                                <p class="research-result-description">${knownApp.description || ''}</p>
+                                ${sysReqHtml}
+                                <div style="margin-top: 1rem;">
+                                    <button class="nav-button primary" onclick="app.nextStep()">
+                                        Weiter mit ${knownApp.components.length} Komponenten →
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        resultDiv.style.display = 'block';
+                        this.bindSizingEvents();
                     } else {
                         // Unbekannte App → Fallback auf Suche
                         document.getElementById('appSearchInput').value = app;
