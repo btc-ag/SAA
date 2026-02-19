@@ -499,8 +499,32 @@ class SovereignArchitectureAdvisor {
                     document.getElementById('appSearchInput').value = 'Benutzerdefinierte Anwendung';
                     this.nextStep();
                 } else if (app) {
-                    document.getElementById('appSearchInput').value = app;
-                    this.searchApplication();
+                    // Bekannte App → direkt laden, Recherche-Schritt überspringen
+                    const knownApp = knownApplications[app];
+                    if (knownApp) {
+                        document.getElementById('appSearchInput').value = knownApp.name;
+                        this.applicationData = knownApp;
+                        this.selectedComponents.clear();
+                        knownApp.components.forEach(c => this.selectedComponents.add(c));
+                        if (knownApp.systemRequirements) {
+                            const defaultSize = knownApp.systemRequirements[this.selectedSizing]
+                                ? this.selectedSizing
+                                : (knownApp.systemRequirements.medium ? 'medium' :
+                                   knownApp.systemRequirements.small ? 'small' : 'large');
+                            this.selectedSizing = defaultSize;
+                            this.systemConfig = {
+                                sizing: defaultSize,
+                                config: knownApp.systemRequirements[defaultSize],
+                                application: knownApp.name
+                            };
+                            try { this.initComponentConfigsFromSystemRequirements(); } catch (e) {}
+                        }
+                        this.nextStep(); // Direkt zu Komponenten
+                    } else {
+                        // Unbekannte App → Fallback auf Suche
+                        document.getElementById('appSearchInput').value = app;
+                        this.searchApplication();
+                    }
                 }
             });
         });
