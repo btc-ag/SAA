@@ -928,7 +928,8 @@ GitLab klein`
                         if (nodeMatch) instanceCount = parseInt(nodeMatch[1]);
                     }
 
-                    if (sysReq.ha) {
+                    // HA-Override nur wenn KEIN kubernetes gewählt (sonst überschreibt ha.nodes den Worker-Count)
+                    if (sysReq.ha && !appInstance.selectedComponents.has('kubernetes')) {
                         const haConfig = this.extractHAConfig(sysReq.ha);
                         if (haConfig && haConfig.nodeCount > 1) {
                             instanceCount = haConfig.nodeCount;
