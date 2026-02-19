@@ -21,6 +21,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - System-Konfiguration Zusammenfassung in der Ergebnisansicht
 - Architektur-Modus-Anzeige mit Transformation-Details in den Analyseergebnissen
 
+### Architektur-Modus (Feature-Beschreibung)
+
+Cloud-Infrastruktur ist nicht gleich Cloud-Infrastruktur: Wer SAP S/4HANA betreibt, denkt in dedizierten VMs, Block Storage und Netzwerkisolation. Wer WordPress hostet, könnte dasselbe auf einem PaaS-Dienst mit einem Bruchteil des Betriebsaufwands erreichen. Der Architektur-Modus macht diesen Unterschied sichtbar und bewertbar.
+
+**Cloud-native**: Der Wizard schlägt vor, rechenintensive Komponenten (`compute`) durch verwaltete Plattform-Dienste zu ersetzen (`PaaS / Serverless` — z.B. App Service, Cloud Run, AWS Lambda). Das reduziert den Betriebsaufwand signifikant, da Patching, Skalierung und Hochverfügbarkeit vom Anbieter übernommen werden. Kubernetes-basierte Apps (z.B. GitLab, Harbor) werden nicht umgebaut — sie sind bereits cloud-native. Enterprise-Apps mit explizitem Block- und File-Storage-Bedarf (z.B. SAP) werden ebenfalls konservativ behandelt, da PaaS hier nicht sinnvoll substituiert.
+
+**Klassisch**: Plattform-Dienste (`serverless`, `kubernetes`) werden auf klassische VMs (`compute`) zurückgeführt. Sinnvoll, wenn volle Kontrolle über die Laufzeitumgebung erforderlich ist oder die Ziel-Cloud keinen ausgereiften PaaS-Stack bietet.
+
+**Transparenz**: Der Modus-Wechsel verändert die sichtbare Komponenten-Auswahl live auf der Konfigurationsseite — der User sieht genau, was analysiert wird. Manuelle Anpassungen bleiben als Delta erhalten und werden nach jedem Modus-Wechsel wieder angewendet. Ein Reset-Button kehrt jederzeit zum ursprünglich geladenen Zustand zurück.
+
+Die Kostenberechnung berücksichtigt den gewählten Modus über einen `operationsFactor`: Cloud-native-Deployments haben typischerweise geringere Betriebskosten (weniger Wartungsaufwand, automatisches Patching), aber ggf. höhere Verbrauchskosten je nach Anbieter-Pricing.
+
 ### Technical (Refactoring-Begründung)
 
 Der ursprüngliche `saa-app.js` war mit 8.593 Zeilen ein unkontrollierbarer Monolith: Rendering, State-Persistenz, Analyse-Trigger, PDF-Export und Settings-Logik lagen in einer einzigen Klasse ohne klares Ownership. Jede Änderung war riskant, weil Seiteneffekte auf entfernte Stellen nicht vorhersehbar waren. Die folgende Restrukturierung macht Verantwortlichkeiten explizit und Änderungen isolierbar:
