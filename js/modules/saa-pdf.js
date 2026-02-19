@@ -311,7 +311,7 @@ export const SAAPdf = {
         setTimeout(() => {
             printWindow.print();
         }, 500);
-    }
+    },
 
     /**
      * Exportiert Portfolio-Analyse als PDF (Multi-App Mode)
@@ -606,7 +606,7 @@ export const SAAPdf = {
         setTimeout(() => {
             printWindow.print();
         }, 500);
-    }
+    },
 
     /**
      * Rendert eine Provider-Karte für das Portfolio-PDF
@@ -674,7 +674,7 @@ export const SAAPdf = {
                 </div>
             </div>
         `;
-    }
+    },
 
     /**
      * Rendert eine Provider-Karte für das PDF
@@ -759,7 +759,7 @@ export const SAAPdf = {
                 <strong>Bewertung:</strong> ${result.recommendation?.summary || 'Keine Zusammenfassung verfügbar.'}
             </div>
         </div>`;
-    }
+    },
 
     // ═══════════════════════════════════════════════════════════════════════════════
     // HELPER METHODS

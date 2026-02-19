@@ -260,7 +260,7 @@ export const SAAComponents = {
                 }
             });
         });
-    }
+    },
 
     /**
      * Bindet Event-Handler für Komponenten-Konfigurationsfelder
@@ -348,7 +348,7 @@ export const SAAComponents = {
                 }
             });
         });
-    }
+    },
 
     /**
      * Aktualisiert die Konfiguration einer Komponente
@@ -372,7 +372,7 @@ export const SAAComponents = {
 
         // systemConfig aktualisieren für TCO-Berechnung
         this.updateSystemConfigFromComponents();
-    }
+    },
 
     /**
      * Aktualisiert ein einzelnes VM-Feld in einer VM-Group
@@ -405,7 +405,7 @@ export const SAAComponents = {
         // Summary aktualisieren
         this.updateComponentConfigSummary(componentId);
         this.updateSystemConfigFromComponents();
-    }
+    },
 
     /**
      * Fügt eine neue VM zu einer VM-Group hinzu
@@ -427,7 +427,7 @@ export const SAAComponents = {
         if (component) {
             this.updateComponentCard(component);
         }
-    }
+    },
 
     /**
      * Entfernt eine VM aus einer VM-Group
@@ -445,7 +445,7 @@ export const SAAComponents = {
         if (component) {
             this.updateComponentCard(component);
         }
-    }
+    },
 
     /**
      * Aktualisiert ein einzelnes DB-Feld in einer DB-Group
@@ -478,7 +478,7 @@ export const SAAComponents = {
         // Summary aktualisieren
         this.updateComponentConfigSummary(componentId);
         this.updateSystemConfigFromComponents();
-    }
+    },
 
     /**
      * Fügt eine neue Datenbank zu einer DB-Group hinzu
@@ -500,7 +500,7 @@ export const SAAComponents = {
         if (component) {
             this.updateComponentCard(component);
         }
-    }
+    },
 
     /**
      * Entfernt eine Datenbank aus einer DB-Group
@@ -518,7 +518,7 @@ export const SAAComponents = {
         if (component) {
             this.updateComponentCard(component);
         }
-    }
+    },
 
     /**
      * Aktualisiert ein einzelnes Storage-Feld in einer Storage-Group
@@ -551,7 +551,7 @@ export const SAAComponents = {
         // Summary aktualisieren
         this.updateComponentConfigSummary(componentId);
         this.updateSystemConfigFromComponents();
-    }
+    },
 
     /**
      * Fügt ein neues Volume zu einer Storage-Group hinzu
@@ -573,7 +573,7 @@ export const SAAComponents = {
         if (component) {
             this.updateComponentCard(component);
         }
-    }
+    },
 
     /**
      * Entfernt ein Volume aus einer Storage-Group
@@ -591,7 +591,7 @@ export const SAAComponents = {
         if (component) {
             this.updateComponentCard(component);
         }
-    }
+    },
 
     /**
      * Initialisiert die Konfiguration einer Komponente mit Defaults
@@ -604,7 +604,7 @@ export const SAAComponents = {
         component.configFields.forEach(field => {
             this.componentConfigs[componentId][field.id] = field.default;
         });
-    }
+    },
 
 
     /**
@@ -632,7 +632,7 @@ export const SAAComponents = {
                 summaryEl.textContent = component.configSummary(config);
             } catch (e) {}
         }
-    }
+    },
 
     /**
      * Aktualisiert systemConfig basierend auf allen Komponenten-Konfigurationen
@@ -887,7 +887,7 @@ export const SAAComponents = {
             sizing: 'custom',
             config: config
         };
-    }
+    },
 
     renderComponentCard(component, instanceId = null) {
         const cardId = instanceId || component.id;
@@ -946,7 +946,7 @@ export const SAAComponents = {
                 ${configPanel}
             </div>
         `;
-    }
+    },
 
     /**
      * Rendert das Konfigurations-Panel für eine Komponente
@@ -1009,7 +1009,7 @@ export const SAAComponents = {
                 ${fields}
             </div>
         `;
-    }
+    },
 
     /**
      * Rendert ein VM-Group Feld mit mehreren VM-Konfigurationen
@@ -1063,7 +1063,7 @@ export const SAAComponents = {
                 </div>
             </div>
         `;
-    }
+    },
 
     /**
      * Rendert ein DB-Group Feld mit mehreren Datenbank-Instanzen
@@ -1116,7 +1116,7 @@ export const SAAComponents = {
                 </div>
             </div>
         `;
-    }
+    },
 
     /**
      * Rendert ein Storage-Group Feld mit mehreren Storage-Volumes
@@ -1166,7 +1166,7 @@ export const SAAComponents = {
                 </div>
             </div>
         `;
-    }
+    },
 
     toggleComponent(componentId) {
         const wasSelected = this.selectedComponents.has(componentId);
@@ -1188,7 +1188,7 @@ export const SAAComponents = {
 
         // Session-State speichern nach Komponenten-Änderung
         this.saveSessionState();
-    }
+    },
 
     /**
      * Fügt eine weitere Instanz einer Komponente hinzu
@@ -1218,7 +1218,7 @@ export const SAAComponents = {
         this.updateSelectedSummary();
         this.updateNavigationState();
         this.updateSystemConfigFromComponents();
-    }
+    },
 
     /**
      * Entfernt eine Instanz einer Komponente
@@ -1236,7 +1236,7 @@ export const SAAComponents = {
         this.updateSelectedSummary();
         this.updateNavigationState();
         this.updateSystemConfigFromComponents();
-    }
+    },
 
     /**
      * Rendert eine einzelne Komponenten-Karte neu
@@ -1311,7 +1311,7 @@ export const SAAComponents = {
 
         // Config-Event-Handler binden
         this.bindComponentConfigEvents(newCard);
-    }
+    },
 
     updateSelectedSummary() {
         const containerId = this.isMultiAppMode ? 'currentAppComponentsSummary' : 'selectedComponentsSummary';
@@ -1366,7 +1366,7 @@ export const SAAComponents = {
                 this.toggleComponent(btn.dataset.id);
             });
         });
-    }
+    },
 
     /**
      * Zeigt das Dropdown mit allen Applikationen

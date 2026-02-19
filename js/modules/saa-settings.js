@@ -13,7 +13,7 @@ export const SAASettings = {
             overlay.classList.add('visible');
             this.updateSettingsDisplay();
         }
-    }
+    },
 
     /**
      * Schließt den Settings-Dialog
@@ -23,7 +23,7 @@ export const SAASettings = {
         if (overlay) {
             overlay.classList.remove('visible');
         }
-    }
+    },
 
     /**
      * Aktualisiert die Settings-Anzeige
@@ -85,7 +85,7 @@ export const SAASettings = {
         if (apiKeyInput && apiKeyInput.value) {
             this.validateApiKey(apiKeyInput.value);
         }
-    }
+    },
 
     /**
      * Wählt ein Preset aus
@@ -112,7 +112,7 @@ export const SAASettings = {
                 this.runAnalysis();
             }
         }
-    }
+    },
 
     /**
      * Aktualisiert die benutzerdefinierten Gewichte
@@ -153,7 +153,7 @@ export const SAASettings = {
                 }
             }, 300)();
         }
-    }
+    },
 
     /**
      * Aktualisiert die Summen-Anzeige für Custom Weights
@@ -166,7 +166,7 @@ export const SAASettings = {
             totalEl.innerHTML = `Summe: <strong>${total}%</strong> ${isValid ? IconMapper.toFontAwesome('✓', 'utility') : IconMapper.toFontAwesome('⚠️', 'utility')}`;
             totalEl.className = `custom-weight-total ${isValid ? 'valid' : 'invalid'}`;
         }
-    }
+    },
 
     /**
      * Aktualisiert die Reife-Faktor Einstellungen
@@ -213,7 +213,7 @@ export const SAASettings = {
                 }
             }, 300)();
         }
-    }
+    },
 
     /**
      * Aktualisiert die Betriebsaufwand-Einstellungen
@@ -238,7 +238,7 @@ export const SAASettings = {
                 }
             }, 300)();
         }
-    }
+    },
 
     /**
      * Aktualisiert die Projektaufwand-Einstellungen
@@ -263,7 +263,7 @@ export const SAASettings = {
                 }
             }, 300)();
         }
-    }
+    },
 
     /**
      * Gibt das Label für das aktuelle Preset zurück
@@ -278,7 +278,7 @@ export const SAASettings = {
             custom: 'Benutzerdefiniert'
         };
         return labels[this.selectedPreset] || 'Ausgewogen';
-    }
+    },
 
     /**
      * Gibt das Icon für das aktuelle Preset zurück
@@ -286,7 +286,7 @@ export const SAASettings = {
     getPresetIcon() {
         // Icons entfernt - returns empty string
         return '';
-    }
+    },
 
     /**
      * Gibt einen lesbaren Namen für eine Service-ID zurück
@@ -314,7 +314,7 @@ export const SAASettings = {
             identity: 'Identity'
         };
         return names[serviceId] || serviceId;
-    }
+    },
 
     /**
      * Aktualisiert die Formel-Anzeige
@@ -332,7 +332,7 @@ export const SAASettings = {
                 Kosteneffizienz × <span class="weight-cost">${(w.cost / 100).toFixed(2)}</span>
             </code>
         `;
-    }
+    },
 
     /**
      * Toggle API Key Sichtbarkeit
@@ -349,7 +349,7 @@ export const SAASettings = {
                 btn.textContent = '👁️';
             }
         }
-    }
+    },
 
     /**
      * Validiert den API Key
@@ -375,7 +375,7 @@ export const SAASettings = {
             status.className = 'api-key-status invalid';
             this.apiKey = null;
         }
-    }
+    },
 
     /**
      * Öffnet das Detail-Popup für einen Provider

@@ -272,7 +272,7 @@ export const SAAResults = {
 
         // Bind detail buttons
         this.bindDetailButtons();
-    }
+    },
 
     /**
      * Rendert aggregierte Analyse-Ergebnisse für Multi-App
@@ -393,7 +393,7 @@ export const SAAResults = {
 
         // Bind detail buttons für Provider-Karten
         this.bindDetailButtons();
-    }
+    },
 
     /**
      * Rendert eine aggregierte Provider-Karte
@@ -464,7 +464,7 @@ export const SAAResults = {
                 </button>
             </div>
         `;
-    }
+    },
 
     /**
      * Rendert ein App-Breakdown Accordion-Item
@@ -608,7 +608,7 @@ export const SAAResults = {
                 </div>
             </div>
         `;
-    }
+    },
 
     /**
      * Toggle Accordion für App-Details
@@ -628,7 +628,7 @@ export const SAAResults = {
         if (!wasExpanded) {
             item.classList.add('expanded');
         }
-    }
+    },
 
     /**
      * Scrollt zu einer App-Breakdown und öffnet sie
@@ -651,7 +651,7 @@ export const SAAResults = {
             // Scrolle zum Element
             item.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
-    }
+    },
 
     /**
      * Rendert die TCO-Übersicht
@@ -732,7 +732,7 @@ export const SAAResults = {
             </div>
             ${breakdownHtml}
         `;
-    }
+    },
 
     renderRecommendationCard(result, index, appIndex = null) {
         const isTopPick = index === 0;
@@ -839,7 +839,7 @@ export const SAAResults = {
                 </button>
             </div>
         `;
-    }
+    },
 
     /**
      * Bindet Event-Handler für Detail-Buttons
@@ -877,7 +877,7 @@ export const SAAResults = {
                 }
             });
         });
-    }
+    },
 
     /**
      * Rendert Comparison Table für eine spezifische App (Multi-App)
@@ -961,7 +961,7 @@ export const SAAResults = {
         `;
 
         return html;
-    }
+    },
 
     /**
      * Rendert einen Hinweis wenn Custom Scores aktiv sind
@@ -999,7 +999,7 @@ export const SAAResults = {
                 </a>
             </div>
         `;
-    }
+    },
 
     renderComparisonTable() {
         const requiredServices = this.analyzer.getRequiredServices(Array.from(this.selectedComponents));
@@ -1080,7 +1080,7 @@ export const SAAResults = {
         `;
 
         return html;
-    }
+    },
 
     /**
      * Baut den Tooltip-Inhalt für einen Service
@@ -1107,7 +1107,7 @@ export const SAAResults = {
             .replace(/'/g, '&#39;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
-    }
+    },
 
     /**
      * Formatiert Service-Daten als HTML für Tooltip
@@ -1165,7 +1165,7 @@ export const SAAResults = {
         html += `</div>`;
 
         return html;
-    }
+    },
 
     /**
      * Rendert kompakte Score-Anzeige für Control/Performance
@@ -1192,7 +1192,7 @@ export const SAAResults = {
                 </div>
             </div>
         `;
-    }
+    },
 
     /**
      * Initialisiert Tooltips für Service-Badges
@@ -1225,14 +1225,14 @@ export const SAAResults = {
                 el.setAttribute('title', tooltip.replace(/&#10;/g, '\n'));
             }
         });
-    }
+    },
 
     formatRecommendationText(text) {
         return text
             .replace(/\*\*(.*?)\*\*/g, '<span class="summary-highlight">$1</span>')
             .replace(/\n/g, '<br>')
             .replace(/• /g, '<span class="bullet">•</span> ');
-    }
+    },
 
     /**
      * Formatiert Portfolio-Empfehlungstext für Multi-App

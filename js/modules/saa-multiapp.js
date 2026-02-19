@@ -21,7 +21,7 @@ export const SAAMultiApp = {
         }
         this.isMultiAppMode = true;
         this.totalSteps = 4; // Step 0 hinzugefügt
-    }
+    },
 
     /**
      * Parst Applikationsnamen (Komma, Semikolon, Tab, Absatz) und erstellt ApplicationInstance[]
@@ -66,7 +66,7 @@ export const SAAMultiApp = {
         });
 
         return parsedApps;
-    }
+    },
 
     /**
      * Startet den Multi-App-Modus mit der Eingabe
@@ -88,7 +88,7 @@ export const SAAMultiApp = {
 
         // Gehe zu Step 1 (Mapping-Tabelle im Multi-App-Modus)
         this.goToStep(1);
-    }
+    },
 
     /**
      * Lädt eine Vorlage von Apps
@@ -124,7 +124,7 @@ GitLab klein`
         if (textarea && templates[templateName]) {
             textarea.value = templates[templateName];
         }
-    }
+    },
 
     /**
      * Formatiert VM-Typ-Namen für die Anzeige (z.B. webserver -> Webserver, appTier -> App Tier)
@@ -137,7 +137,7 @@ GitLab klein`
             .replace(/\b(db|sql|vm|ha|web|app)\b/gi, match => match.toUpperCase());  // DB, SQL, VM, etc. großschreiben
 
         return formatted;
-    }
+    },
 
     /**
      * Maps database keywords to their corresponding component IDs
@@ -157,7 +157,7 @@ GitLab klein`
             return 'database_sql';
         }
         return null;
-    }
+    },
 
     /**
      * Extracts node count and type from HA configuration
@@ -215,7 +215,7 @@ GitLab klein`
         }
 
         return result;
-    }
+    },
 
     /**
      * Helper: Parse Storage Size mit TB/GB/PB Konvertierung
@@ -231,7 +231,7 @@ GitLab klein`
         if (unit === 'TB') return Math.round(value * 1024);
         if (unit === 'PB') return Math.round(value * 1024 * 1024);
         return Math.round(value);
-    }
+    },
 
     /**
      * Helper: Parse Database Size mit TB/GB Konvertierung und Bereichs-Support
@@ -252,7 +252,7 @@ GitLab klein`
 
         if (unit === 'TB') return Math.round(value * 1024);
         return Math.round(value);
-    }
+    },
 
     /**
      * Helper: Parse Storage Configuration
@@ -290,7 +290,7 @@ GitLab klein`
                 fileSize: storageSizeGB
             };
         }
-    }
+    },
 
     /**
      * Helper: Parse Database Configuration (SQL & NoSQL)
@@ -398,7 +398,7 @@ GitLab klein`
                 }
             }
         }
-    }
+    },
 
     /**
      * System Requirements für eine spezifische App initialisieren
@@ -1179,7 +1179,7 @@ GitLab klein`
 
         // 5. Kombiniere: Konfigurierte Infrastruktur-Komponenten + ursprüngliche Nicht-Infrastruktur-Komponenten
         appInstance.selectedComponents = new Set([...configuredComponentIds, ...originalNonInfraComponents]);
-    }
+    },
 
     /**
      * Konvertiert Legacy-Config-Format ins neue Array-Format für die Analyseengine
@@ -1338,7 +1338,7 @@ GitLab klein`
         }
 
         return converted;
-    }
+    },
 
     /**
      * Rendert die App-Mapping-Tabelle (Step 1)
@@ -1479,7 +1479,7 @@ GitLab klein`
         });
 
         this.updateMappingSummary();
-    }
+    },
 
     /**
      * Event Handler: App-Typ wurde geändert
@@ -1508,7 +1508,7 @@ GitLab klein`
             app.selectedComponents = new Set();
             app.componentConfigs = {};
         }
-    }
+    },
 
     /**
      * Event Handler: Sizing wurde geändert
@@ -1530,7 +1530,7 @@ GitLab klein`
                 app
             );
         }
-    }
+    },
 
     /**
      * Zeigt das Autocomplete-Dropdown für App-Typ
@@ -1545,7 +1545,7 @@ GitLab klein`
         dropdown.style.width = `${rect.width}px`;
 
         dropdown.classList.add('visible');
-    }
+    },
 
     /**
      * Filtert das Autocomplete-Dropdown basierend auf Eingabe
@@ -1677,7 +1677,7 @@ GitLab klein`
                 });
             });
         }
-    }
+    },
 
     /**
      * Keyboard-Navigation für App-Typ Autocomplete
@@ -1706,7 +1706,7 @@ GitLab klein`
         } else if (e.key === 'Escape') {
             dropdown.classList.remove('visible');
         }
-    }
+    },
 
     /**
      * Berechnet String-Ähnlichkeit (Levenshtein-basiert)
@@ -1720,7 +1720,7 @@ GitLab klein`
         // Levenshtein-Distanz
         const distance = this.levenshteinDistance(longer, shorter);
         return (longerLength - distance) / longerLength;
-    }
+    },
 
     /**
      * Berechnet Levenshtein-Distanz zwischen zwei Strings
@@ -1744,7 +1744,7 @@ GitLab klein`
             if (i > 0) costs[s2.length] = lastValue;
         }
         return costs[s2.length];
-    }
+    },
 
     /**
      * App aus Mapping-Tabelle entfernen
@@ -1757,7 +1757,7 @@ GitLab klein`
             if (row) row.remove();
             this.updateMappingSummary();
         }
-    }
+    },
 
     /**
      * App aus Komponenten-Konfiguration entfernen (Tab)
@@ -1786,7 +1786,7 @@ GitLab klein`
 
         // Aktualisiere die Ansicht
         this.renderCurrentAppConfig();
-    }
+    },
 
     /**
      * Mapping-Zusammenfassung aktualisieren
@@ -1803,7 +1803,7 @@ GitLab klein`
         if (totalEl) totalEl.textContent = totalCount;
         if (autoEl) autoEl.textContent = autoMatched;
         if (customEl) customEl.textContent = customCount;
-    }
+    },
 
     /**
      * Manuell eine neue App zur Mapping-Tabelle hinzufügen
@@ -1852,7 +1852,7 @@ GitLab klein`
             // Rendere die Konfiguration für die neue App
             this.renderCurrentAppConfig();
         }
-    }
+    },
 
     /**
      * Zur nächsten App navigieren
@@ -1862,7 +1862,7 @@ GitLab klein`
             this.currentAppIndex++;
             this.renderCurrentAppConfig();
         }
-    }
+    },
 
     /**
      * Zur vorherigen App navigieren
@@ -1872,7 +1872,7 @@ GitLab klein`
             this.currentAppIndex--;
             this.renderCurrentAppConfig();
         }
-    }
+    },
 
     /**
      * Rendert die Konfiguration der aktuellen App
@@ -1956,7 +1956,7 @@ GitLab klein`
 
         // Tabs aktualisieren
         this.updateAppTabs();
-    }
+    },
 
     /**
      * App-Navigation-Buttons aktualisieren
@@ -1977,7 +1977,7 @@ GitLab klein`
         if (counter) {
             counter.textContent = `${this.currentAppIndex + 1} von ${this.applications.length}`;
         }
-    }
+    },
 
     /**
      * App-Tabs aktualisieren
@@ -2031,7 +2031,7 @@ GitLab klein`
             this.addManualApp();
         });
         tabsContainer.appendChild(addTab);
-    }
+    },
 
     /**
      * Helper: HTML escaping
@@ -2040,7 +2040,7 @@ GitLab klein`
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
-    }
+    },
 
     /**
      * Helper: Size Label
