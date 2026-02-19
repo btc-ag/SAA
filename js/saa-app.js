@@ -977,6 +977,10 @@ class SovereignArchitectureAdvisor {
                 this.architectureSettings.mode = value === 'auto' ? null : value;
                 // Re-render um visuelles Feedback zu geben
                 this.renderComponents();
+                // Analyse neu starten falls bereits Ergebnisse vorhanden
+                if (this.analysisResults) {
+                    this.runAnalysis();
+                }
             });
         });
     }
@@ -4443,7 +4447,12 @@ class SovereignArchitectureAdvisor {
             'classic': { icon: 'fa-server', label: 'Klassisch / VM-basiert', color: 'var(--text-secondary)' },
             null: { icon: 'fa-wand-magic-sparkles', label: 'Automatisch', color: 'var(--accent-color)' }
         };
-        const currentMode = archModeDisplay[this.architectureSettings.mode] || archModeDisplay[null];
+        // Fix 3: Automatisch-Modus zeigt den tatsächlich gewählten Modus an
+        let currentMode = archModeDisplay[this.architectureSettings.mode] || archModeDisplay[null];
+        if (this.architectureSettings.mode === null && archInfo?.transformation?.applied) {
+            const autoChosen = archInfo.transformation.mode === 'cloud_native' ? 'Cloud-native' : 'Klassisch';
+            currentMode = { ...currentMode, label: `Automatisch → ${autoChosen}` };
+        }
 
         let html = `
             <!-- Ausgewählte Komponenten -->
@@ -4483,7 +4492,7 @@ class SovereignArchitectureAdvisor {
                     </div>
                 ` : ''}
                 ${archInfo.transformation?.applied ? `
-                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
                         ${archInfo.operationsFactor < 1 ? `
                             <span style="
                                 display: inline-flex;
@@ -4497,7 +4506,22 @@ class SovereignArchitectureAdvisor {
                                 font-weight: 500;
                             ">
                                 <i class="fa-solid fa-arrow-down"></i>
-                                ${Math.round((1 - archInfo.operationsFactor) * 100)}% weniger Betriebsaufwand
+                                ~${Math.round((1 - archInfo.operationsFactor) * 100)}% weniger Betriebsaufwand
+                            </span>
+                        ` : archInfo.operationsFactor > 1 ? `
+                            <span style="
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 0.25rem;
+                                padding: 0.35rem 0.75rem;
+                                background: rgba(245, 158, 11, 0.1);
+                                color: var(--warning-color, #f59e0b);
+                                border-radius: 6px;
+                                font-size: 0.8rem;
+                                font-weight: 500;
+                            ">
+                                <i class="fa-solid fa-arrow-up"></i>
+                                ~${Math.round((archInfo.operationsFactor - 1) * 100)}% mehr Betriebsaufwand
                             </span>
                         ` : ''}
                         ${archInfo.transformation.reason ? `
@@ -4516,6 +4540,63 @@ class SovereignArchitectureAdvisor {
                             </span>
                         ` : ''}
                     </div>
+                    ${(() => {
+                        const replacements = archInfo.transformation.replacements || {};
+                        const additions = archInfo.transformation.additions || [];
+                        const removals = archInfo.transformation.removals || [];
+                        const serviceLabels = {
+                            compute: 'VM / Compute', kubernetes: 'Kubernetes', serverless: 'Serverless',
+                            database_sql: 'SQL DB', database_nosql: 'NoSQL DB',
+                            storage_object: 'Object Storage', storage_block: 'Block Storage',
+                            loadbalancer: 'Load Balancer', cdn: 'CDN', messaging: 'Messaging',
+                            cache: 'Cache', monitoring: 'Monitoring', logging: 'Logging',
+                            app_service: 'App Service / PaaS', static_hosting: 'Static Hosting',
+                            api_gateway: 'API Gateway', container_registry: 'Container Registry'
+                        };
+                        const label = id => serviceLabels[id] || id;
+                        const replTags = Object.entries(replacements).map(([from, to]) => `
+                            <span style="
+                                display: inline-flex; align-items: center; gap: 0.3rem;
+                                padding: 0.3rem 0.6rem;
+                                background: var(--surface-primary);
+                                border: 1px solid var(--border-color);
+                                border-radius: 6px; font-size: 0.8rem; color: var(--text-primary);
+                            ">
+                                <span style="color: var(--text-secondary);">${label(from)}</span>
+                                <i class="fa-solid fa-arrow-right" style="color: var(--primary-color); font-size: 0.7rem;"></i>
+                                <span style="color: var(--primary-color); font-weight: 600;">${label(to)}</span>
+                            </span>
+                        `).join('');
+                        const addTags = additions.map(s => `
+                            <span style="
+                                display: inline-flex; align-items: center; gap: 0.25rem;
+                                padding: 0.3rem 0.6rem;
+                                background: rgba(16, 185, 129, 0.08);
+                                border: 1px solid rgba(16, 185, 129, 0.3);
+                                border-radius: 6px; font-size: 0.8rem; color: var(--success-color);
+                            ">
+                                <i class="fa-solid fa-plus" style="font-size: 0.65rem;"></i> ${label(s)}
+                            </span>
+                        `).join('');
+                        const remTags = removals.map(s => `
+                            <span style="
+                                display: inline-flex; align-items: center; gap: 0.25rem;
+                                padding: 0.3rem 0.6rem;
+                                background: rgba(239, 68, 68, 0.08);
+                                border: 1px solid rgba(239, 68, 68, 0.3);
+                                border-radius: 6px; font-size: 0.8rem; color: var(--error-color, #ef4444);
+                                text-decoration: line-through;
+                            ">
+                                ${label(s)}
+                            </span>
+                        `).join('');
+                        const allTags = replTags + addTags + remTags;
+                        return allTags ? `
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                                ${allTags}
+                            </div>
+                        ` : '';
+                    })()}
                 ` : `
                     <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
                         ${archInfo.transformation?.reason || 'Klassische VM-basierte Architektur wird verwendet.'}
