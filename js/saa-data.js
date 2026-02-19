@@ -1599,8 +1599,8 @@ const knownApplications = {
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
             small: { users: 'bis 1.000', compute: { cpu: 8, ram: 16 }, database: { type: 'PostgreSQL 14+', size: '50GB' }, storage: { type: 'SSD', size: '100GB' }, cache: 'Redis 6+', os: ['Ubuntu 22.04', 'Debian 12', 'RHEL 8/9'] },
-            medium: { users: 'bis 2.000', compute: { cpu: 33, ram: 52 }, database: { type: 'PostgreSQL 14+ (HA)', size: '100GB' }, storage: { type: 'SSD', size: '500GB' }, cache: 'Redis 6+ (HA)', architecture: 'Multi-Node' },
-            large: { users: 'bis 10.000', compute: { cpu: 100, ram: 200 }, database: { type: 'PostgreSQL 14+ (HA Cluster)', size: '500GB+' }, storage: { type: 'NVMe SSD', size: '2TB+' }, cache: 'Redis Cluster', architecture: 'Full HA with Gitaly Cluster', ha: { nodes: 3, type: 'Gitaly Cluster + PostgreSQL Streaming Replication + Redis Cluster' } }
+            medium: { users: 'bis 2.000', nodes: 3, compute: { cpu: 11, ram: 18 }, database: { type: 'PostgreSQL 14+ (HA)', size: '100GB' }, storage: { type: 'SSD', size: '500GB' }, cache: 'Redis 6+ (HA)', architecture: 'Multi-Node (3 Worker Nodes)' },
+            large: { users: 'bis 10.000', nodes: 5, compute: { cpu: 20, ram: 40 }, database: { type: 'PostgreSQL 14+ (HA Cluster)', size: '500GB+' }, storage: { type: 'NVMe SSD', size: '2TB+' }, cache: 'Redis Cluster', architecture: 'Full HA with Gitaly Cluster (5 Worker Nodes)', ha: { nodes: 3, type: 'Gitaly Cluster + PostgreSQL Streaming Replication + Redis Cluster' } }
         },
         sizing: { source: 'https://docs.gitlab.com/administration/reference_architectures/' }
     },
