@@ -93,21 +93,36 @@ export const SAAComponents = {
                         align-items: center;
                         gap: 0.5rem;
                         padding: 0.5rem 1rem;
-                        border: 2px solid ${this.architectureSettings.mode === null ? 'var(--primary-color)' : 'var(--border-color)'};
+                        border: 2px solid var(--border-color);
                         border-radius: 8px;
                         cursor: pointer;
                         transition: all 0.2s;
-                        background: ${this.architectureSettings.mode === null ? 'var(--primary-color-light)' : 'var(--surface-primary)'};
+                        background: var(--surface-primary);
                     ">
                         <input type="radio" name="architectureMode" value="auto"
-                            ${this.architectureSettings.mode === null ? 'checked' : ''}
                             style="accent-color: var(--primary-color);">
-                        <i class="fa-solid fa-wand-magic-sparkles" style="color: ${this.architectureSettings.mode === null ? 'var(--primary-color)' : 'var(--text-secondary)'};"></i>
+                        <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--text-secondary);"></i>
                         <div>
-                            <div style="font-weight: 500; font-size: 0.9rem;">Automatisch</div>
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Basierend auf Workload</div>
+                            <div style="font-weight: 500; font-size: 0.9rem;">Empfohlen</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">App-Standard anwenden</div>
                         </div>
                     </label>
+                    ${this._archOriginal ? `
+                    <button onclick="app.resetArchitectureMode()" style="
+                        display: flex;
+                        align-items: center;
+                        gap: 0.4rem;
+                        padding: 0.5rem 0.9rem;
+                        border: 2px solid var(--border-color);
+                        border-radius: 8px;
+                        cursor: pointer;
+                        background: var(--surface-primary);
+                        color: var(--text-secondary);
+                        font-size: 0.85rem;
+                        margin-left: auto;
+                    " title="Zurück zur ursprünglichen Konfiguration">
+                        <i class="fa-solid fa-rotate-left"></i> Zurücksetzen
+                    </button>` : ''}
                 </div>
                 ${this.detectedPattern && this.architectureSettings.mode !== 'classic' ? `
                     <div style="
@@ -251,15 +266,110 @@ export const SAAComponents = {
         container.querySelectorAll('input[name="architectureMode"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
                 const value = e.target.value;
-                this.architectureSettings.mode = value === 'auto' ? null : value;
-                // Re-render um visuelles Feedback zu geben
-                this.renderComponents();
-                // Analyse neu starten falls bereits Ergebnisse vorhanden
-                if (this.analysisResults) {
-                    this.runAnalysis();
+                if (value === 'auto') {
+                    // Empfohlenen Modus aus App-Config setzen
+                    const recommended = this.applicationData?.recommendedArchitecture || 'classic';
+                    this.architectureSettings.mode = recommended;
+                } else {
+                    this.architectureSettings.mode = value;
                 }
+                this.applyArchitectureModeToComponents();
+                this.renderComponents();
+                if (this.analysisResults) this.runAnalysis();
             });
         });
+    },
+
+    /**
+     * Wendet den aktuellen Architektur-Modus auf selectedComponents + componentConfigs an.
+     * Ausgangspunkt ist immer _archOriginal (Snapshot vor erster Transformation).
+     * Manuelle Nutzer-Änderungen (_archDelta) werden on top erhalten.
+     */
+    applyArchitectureModeToComponents() {
+        // Fallback: Snapshot erstellen falls noch nicht vorhanden
+        if (!this._archOriginal) {
+            this._archOriginal = {
+                selectedComponents: new Set(this.selectedComponents),
+                componentConfigs: JSON.parse(JSON.stringify(this.componentConfigs))
+            };
+        }
+
+        const base = this._archOriginal.selectedComponents;
+        const mode = this.architectureSettings.mode || 'classic';
+
+        // App-ID für Pattern-Erkennung
+        const appId = this.applicationData
+            ? Object.keys(knownApplications).find(k => knownApplications[k].name === this.applicationData.name)
+            : null;
+
+        // Pattern erkennen (basierend auf Original-Basis, nicht auf transformiertem Zustand)
+        const baseIds = Array.from(base).map(id => id.replace(/-\d+$/, ''));
+        const pattern = detectDeploymentPattern(baseIds, appId);
+
+        // Transformation berechnen
+        const patternConfig = pattern ? pattern[mode] : null;
+        const transformed = new Set(base);
+
+        // Nur gültige Komponenten-IDs (nicht Service-IDs) anfassen
+        const validComponentIds = new Set(architectureComponents.map(c => c.id));
+
+        if (patternConfig) {
+            // replaceServices: Komponenten ersetzen (nur wenn Ziel auch eine Komponente ist)
+            for (const [oldId, newId] of Object.entries(patternConfig.replaceServices || {})) {
+                if (transformed.has(oldId)) {
+                    transformed.delete(oldId);
+                    if (validComponentIds.has(newId)) transformed.add(newId);
+                }
+            }
+            // addServices: Komponenten hinzufügen (nur gültige Komponenten-IDs)
+            for (const id of (patternConfig.addServices || [])) {
+                if (validComponentIds.has(id)) transformed.add(id);
+            }
+            // removeServices: Komponenten entfernen (graceful – silently skip unknown IDs)
+            for (const id of (patternConfig.removeServices || [])) {
+                transformed.delete(id);
+            }
+        }
+
+        // Delta anwenden (manuelle Nutzer-Änderungen bleiben erhalten)
+        this._archDelta.added.forEach(id => transformed.add(id));
+        this._archDelta.removed.forEach(id => transformed.delete(id));
+
+        this.selectedComponents = transformed;
+
+        // Configs aktualisieren
+        // Neue Komponenten (nicht in Originalstate): initialisieren
+        for (const id of transformed) {
+            const baseId = id.replace(/-\d+$/, '');
+            if (!this._archOriginal.componentConfigs[id] && !this.componentConfigs[id]) {
+                this.initComponentConfig(baseId === id ? id : baseId);
+                // Falls es die base-ID ist, kopieren wir die Config unter der neuen ID
+                if (baseId !== id && this.componentConfigs[baseId]) {
+                    this.componentConfigs[id] = { ...this.componentConfigs[baseId] };
+                }
+            }
+        }
+        // Entfernte Komponenten: Config-Key löschen (nur die, die nicht in _archOriginal waren)
+        for (const id of Object.keys(this.componentConfigs)) {
+            if (!transformed.has(id) && !this._archOriginal.componentConfigs[id]) {
+                delete this.componentConfigs[id];
+            }
+        }
+        // Ursprüngliche Configs wiederherstellen (aus Snapshot)
+        for (const [id, cfg] of Object.entries(this._archOriginal.componentConfigs)) {
+            if (transformed.has(id)) {
+                this.componentConfigs[id] = JSON.parse(JSON.stringify(cfg));
+            }
+        }
+        // Delta-Configs anwenden
+        for (const [compId, fields] of Object.entries(this._archDelta.configs)) {
+            if (transformed.has(compId) && this.componentConfigs[compId]) {
+                Object.assign(this.componentConfigs[compId], fields);
+            }
+        }
+
+        this.updateSystemConfigFromComponents();
+        this.saveSessionState();
     },
 
     /**
@@ -366,6 +476,14 @@ export const SAAComponents = {
         }
 
         this.componentConfigs[componentId][fieldId] = value;
+
+        // Delta-Tracking: Config-Änderung nach Arch-Transformation merken
+        if (this._archOriginal) {
+            if (!this._archDelta.configs[componentId]) {
+                this._archDelta.configs[componentId] = {};
+            }
+            this._archDelta.configs[componentId][fieldId] = value;
+        }
 
         // Summary aktualisieren
         this.updateComponentConfigSummary(componentId);
@@ -1170,6 +1288,16 @@ export const SAAComponents = {
 
     toggleComponent(componentId) {
         const wasSelected = this.selectedComponents.has(componentId);
+        // Delta-Tracking: manuelle Änderungen des Nutzers nach Arch-Transformation merken
+        if (this._archOriginal) {
+            if (wasSelected) {
+                this._archDelta.removed.add(componentId);
+                this._archDelta.added.delete(componentId);
+            } else {
+                this._archDelta.added.add(componentId);
+                this._archDelta.removed.delete(componentId);
+            }
+        }
         if (wasSelected) {
             this.selectedComponents.delete(componentId);
             // Config behalten für den Fall, dass Komponente wieder ausgewählt wird

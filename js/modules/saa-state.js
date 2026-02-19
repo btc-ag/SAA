@@ -151,6 +151,8 @@ export const SAAState = {
         this.strategyWeight = 50;
         this.systemConfig = null;
         this.selectedSizing = 'medium';
+        this._archOriginal = null;
+        this._archDelta = { added: new Set(), removed: new Set(), configs: {} };
 
         document.getElementById('appSearchInput').value = '';
         document.getElementById('researchResult').style.display = 'none';

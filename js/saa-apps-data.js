@@ -6,6 +6,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'sap-s4hana': {
         name: 'SAP S/4HANA',
+        recommendedArchitecture: 'classic',
         description: 'Enterprise-ERP-Suite der nächsten Generation von SAP, basierend auf der SAP HANA In-Memory-Datenbank mit Echtzeit-Datenverarbeitung. HANA läuft als VM, keine Managed DB erforderlich.',
         components: ['compute', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity', 'ai_ml'],
         systemRequirements: {
@@ -17,6 +18,7 @@ const knownApplications = {
     },
     'sap-business-one': {
         name: 'SAP Business One',
+        recommendedArchitecture: 'classic',
         description: 'Integrierte ERP-Lösung für kleine und mittelständische Unternehmen mit MS SQL Server oder SAP HANA.',
         components: ['compute', 'database_sql', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -28,6 +30,7 @@ const knownApplications = {
     },
     'microsoft-dynamics-365': {
         name: 'Microsoft Dynamics 365',
+        recommendedArchitecture: 'cloud_native',
         description: 'Cloud-basierte Business-Applikations-Suite von Microsoft, die CRM und ERP kombiniert.',
         components: ['compute', 'kubernetes', 'serverless', 'database_sql', 'database_nosql', 'storage_object', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity', 'ai_ml'],
         systemRequirements: {
@@ -39,6 +42,7 @@ const knownApplications = {
     },
     'suitecrm': {
         name: 'SuiteCRM',
+        recommendedArchitecture: 'classic',
         description: 'Open-Source-CRM-Alternative zu Salesforce basierend auf LAMP-Stack mit Vertriebs-, Marketing- und Service-Automatisierung.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -50,6 +54,7 @@ const knownApplications = {
     },
     'oracle-ebs': {
         name: 'Oracle E-Business Suite',
+        recommendedArchitecture: 'classic',
         description: 'Umfassende integrierte Business-Applikations-Suite von Oracle mit Drei-Schichten-Architektur.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -61,6 +66,7 @@ const knownApplications = {
     },
     'odoo': {
         name: 'Odoo',
+        recommendedArchitecture: 'classic',
         description: 'Modulares Open-Source-ERP und CRM mit über 30 Haupt-Apps, PostgreSQL und Python/JavaScript-Stack.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -72,6 +78,7 @@ const knownApplications = {
     },
     'mautic': {
         name: 'Mautic',
+        recommendedArchitecture: 'classic',
         description: 'Open-Source-Marketing-Automatisierungsplattform als self-hosted Alternative zu HubSpot.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -83,6 +90,7 @@ const knownApplications = {
     },
     'sugarcrm': {
         name: 'SugarCRM',
+        recommendedArchitecture: 'classic',
         description: 'Flexible CRM-Plattform mit On-Premise- und Cloud-Optionen, PHP-Applikation mit Elasticsearch.',
         components: ['compute', 'database_sql', 'database_nosql', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -94,6 +102,7 @@ const knownApplications = {
     },
     'infor-cloudsuite': {
         name: 'Infor CloudSuite',
+        recommendedArchitecture: 'cloud_native',
         description: 'Branchenspezifische ERP-Cloud-Lösung auf AWS-Infrastruktur mit .NET/Mongoose-Plattform.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_block', 'storage_file', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity', 'ai_ml'],
         systemRequirements: {
@@ -105,6 +114,7 @@ const knownApplications = {
     },
     'sage-x3': {
         name: 'Sage X3',
+        recommendedArchitecture: 'classic',
         description: 'Mittelstands-ERP mit offener Multi-Tier-Architektur, Node.js-Webserver und MongoDB für Administration.',
         components: ['compute', 'database_sql', 'database_nosql', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -116,6 +126,7 @@ const knownApplications = {
     },
     'netsuite': {
         name: 'Oracle NetSuite',
+        recommendedArchitecture: 'cloud_native',
         description: 'Cloud-native ERP/CRM-Suite mit Multi-Tenant SuiteCloud-Plattform und Oracle-Datenbank.',
         components: ['compute', 'kubernetes', 'serverless', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity', 'ai_ml'],
         systemRequirements: {
@@ -133,6 +144,7 @@ const knownApplications = {
     },
     'workday': {
         name: 'Workday HCM',
+        recommendedArchitecture: 'cloud_native',
         description: 'Cloud-native HCM-Plattform mit In-Memory-Datenbank-Architektur für HR und Finanzen.',
         components: ['compute', 'kubernetes', 'database_sql', 'database_nosql', 'storage_object', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity', 'ai_ml'],
         systemRequirements: {
@@ -150,6 +162,7 @@ const knownApplications = {
     },
     'servicenow': {
         name: 'ServiceNow',
+        recommendedArchitecture: 'cloud_native',
         description: 'IT-Service-Management-Plattform mit Multi-Instance-Architektur für ITSM, ITOM und mehr.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity', 'ai_ml'],
         systemRequirements: {
@@ -173,6 +186,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'gitlab': {
         name: 'GitLab',
+        recommendedArchitecture: 'cloud_native',
         description: 'Vollständige DevOps-Plattform für Source Code Management, CI/CD, Container Registry und Issue Tracking.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -184,6 +198,7 @@ const knownApplications = {
     },
     'github-enterprise': {
         name: 'GitHub Enterprise Server',
+        recommendedArchitecture: 'classic',
         description: 'Self-hosted Version von GitHub mit Git-Repository-Verwaltung, Pull Requests und Actions CI/CD.',
         components: ['compute', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -195,6 +210,7 @@ const knownApplications = {
     },
     'jenkins': {
         name: 'Jenkins',
+        recommendedArchitecture: 'cloud_native',
         description: 'Erweiterbarer Open-Source Automation Server für CI/CD mit Controller-Agent-Architektur.',
         components: ['compute', 'kubernetes', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -206,6 +222,7 @@ const knownApplications = {
     },
     'argocd': {
         name: 'ArgoCD',
+        recommendedArchitecture: 'cloud_native',
         description: 'Deklaratives GitOps Continuous Delivery Tool für Kubernetes mit Git als Single Source of Truth.',
         components: ['kubernetes', 'cache', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -217,6 +234,7 @@ const knownApplications = {
     },
     'tekton': {
         name: 'Tekton Pipelines',
+        recommendedArchitecture: 'cloud_native',
         description: 'Kubernetes-natives Open-Source Framework für CI/CD-Systeme mit Custom Resources.',
         components: ['kubernetes', 'storage_block', 'dns', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -228,6 +246,7 @@ const knownApplications = {
     },
     'harbor': {
         name: 'Harbor',
+        recommendedArchitecture: 'cloud_native',
         description: 'CNCF Enterprise Container Registry mit Vulnerability Scanning, Content Trust und RBAC.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_file', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -239,6 +258,7 @@ const knownApplications = {
     },
     'sonarqube': {
         name: 'SonarQube',
+        recommendedArchitecture: 'classic',
         description: 'Plattform für kontinuierliche Code-Qualitätsprüfung mit Analyse auf Bugs und Vulnerabilities.',
         components: ['compute', 'database_sql', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -250,6 +270,7 @@ const knownApplications = {
     },
     'nexus': {
         name: 'Nexus Repository Manager',
+        recommendedArchitecture: 'classic',
         description: 'Universal Repository Manager für Binaries und Build-Artefakte (Maven, npm, Docker, etc.).',
         components: ['compute', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -261,6 +282,7 @@ const knownApplications = {
     },
     'artifactory': {
         name: 'JFrog Artifactory',
+        recommendedArchitecture: 'cloud_native',
         description: 'Universal Artifact Repository Manager für alle Package-Typen mit Binary Management.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_file', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -272,6 +294,7 @@ const knownApplications = {
     },
     'terraform-enterprise': {
         name: 'Terraform Enterprise',
+        recommendedArchitecture: 'cloud_native',
         description: 'Self-hosted Version von Terraform Cloud für Infrastructure-as-Code mit Policy Enforcement.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -283,6 +306,7 @@ const knownApplications = {
     },
     'ansible-tower': {
         name: 'Ansible Tower / AWX',
+        recommendedArchitecture: 'cloud_native',
         description: 'Web-basierte UI und REST API für Ansible Automation mit Role-Based Access Control.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'loadbalancer', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -294,6 +318,7 @@ const knownApplications = {
     },
     'vault': {
         name: 'HashiCorp Vault',
+        recommendedArchitecture: 'cloud_native',
         description: 'Secrets Management und Data Protection Plattform für Credentials, Keys und Zertifikate.',
         components: ['compute', 'kubernetes', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'identity'],
         systemRequirements: {
@@ -305,6 +330,7 @@ const knownApplications = {
     },
     'consul': {
         name: 'HashiCorp Consul',
+        recommendedArchitecture: 'cloud_native',
         description: 'Service Mesh und Service Discovery Lösung mit Registry, Health Checking und Key-Value Store.',
         components: ['compute', 'kubernetes', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -316,6 +342,7 @@ const knownApplications = {
     },
     'backstage': {
         name: 'Backstage',
+        recommendedArchitecture: 'cloud_native',
         description: 'Open-Source Developer Portal Framework von Spotify mit Software Catalog und TechDocs.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -331,6 +358,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'wordpress': {
         name: 'WordPress',
+        recommendedArchitecture: 'classic',
         description: 'Das weltweit meistgenutzte Open-Source-CMS für Blogs und Websites mit umfangreichem Plugin-Ökosystem.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'cdn', 'dns', 'cache', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -342,6 +370,7 @@ const knownApplications = {
     },
     'drupal': {
         name: 'Drupal',
+        recommendedArchitecture: 'cloud_native',
         description: 'Enterprise-CMS mit Symfony-Framework für komplexe, inhaltsreiche Websites.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'cdn', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -353,6 +382,7 @@ const knownApplications = {
     },
     'joomla': {
         name: 'Joomla',
+        recommendedArchitecture: 'classic',
         description: 'Flexibles Open-Source-CMS für Websites und Online-Anwendungen.',
         components: ['compute', 'database_sql', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'cache', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -363,6 +393,7 @@ const knownApplications = {
     },
     'nextcloud': {
         name: 'Nextcloud',
+        recommendedArchitecture: 'cloud_native',
         description: 'Self-hosted Collaboration-Plattform für Dateisynchronisation, Kalender, Kontakte und Office.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -374,6 +405,7 @@ const knownApplications = {
     },
     'confluence': {
         name: 'Confluence',
+        recommendedArchitecture: 'cloud_native',
         description: 'Enterprise-Wiki und Collaboration-Tool von Atlassian für Team-Dokumentation.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -385,6 +417,7 @@ const knownApplications = {
     },
     'sharepoint': {
         name: 'SharePoint',
+        recommendedArchitecture: 'classic',
         description: 'Microsoft Enterprise-Plattform für Dokumentenmanagement und Intranet-Portale.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -396,6 +429,7 @@ const knownApplications = {
     },
     'mattermost': {
         name: 'Mattermost',
+        recommendedArchitecture: 'cloud_native',
         description: 'Self-hosted Messaging-Plattform für sichere Team-Kommunikation (Slack-Alternative).',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -407,6 +441,7 @@ const knownApplications = {
     },
     'rocketchat': {
         name: 'Rocket.Chat',
+        recommendedArchitecture: 'cloud_native',
         description: 'Open-Source Team-Kommunikationsplattform mit Chat, Video-Calls und Omnichannel.',
         components: ['compute', 'kubernetes', 'database_nosql', 'storage_object', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -418,6 +453,7 @@ const knownApplications = {
     },
     'matrix': {
         name: 'Matrix/Element',
+        recommendedArchitecture: 'cloud_native',
         description: 'Dezentrales, föderiertes Kommunikationsprotokoll mit End-to-End-Verschlüsselung.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -429,6 +465,7 @@ const knownApplications = {
     },
     'discourse': {
         name: 'Discourse',
+        recommendedArchitecture: 'classic',
         description: 'Moderne Open-Source-Forensoftware mit Echtzeit-Benachrichtigungen auf Ruby on Rails.',
         components: ['compute', 'database_sql', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -440,6 +477,7 @@ const knownApplications = {
     },
     'mediawiki': {
         name: 'MediaWiki',
+        recommendedArchitecture: 'classic',
         description: 'Die Wiki-Software hinter Wikipedia für große Wissensbasen mit Versionierung.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_object', 'loadbalancer', 'cdn', 'dns', 'cache', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -451,6 +489,7 @@ const knownApplications = {
     },
     'strapi': {
         name: 'Strapi',
+        recommendedArchitecture: 'cloud_native',
         description: 'Headless CMS auf Node.js-Basis mit REST- und GraphQL-API für moderne Web-Anwendungen.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -462,6 +501,7 @@ const knownApplications = {
     },
     'ghost': {
         name: 'Ghost',
+        recommendedArchitecture: 'classic',
         description: 'Moderne Publishing-Plattform auf Node.js für Blogs und Newsletter mit Membership-System.',
         components: ['compute', 'database_sql', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -473,6 +513,7 @@ const knownApplications = {
     },
     'typo3': {
         name: 'TYPO3',
+        recommendedArchitecture: 'cloud_native',
         description: 'Enterprise-CMS aus Deutschland für große Websites mit Multi-Site-Fähigkeit.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'cdn', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -488,6 +529,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'postgresql-managed': {
         name: 'PostgreSQL (Managed)',
+        recommendedArchitecture: 'cloud_native',
         description: 'Enterprise-grade relationale Open-Source-Datenbank mit ACID-Compliance und Erweiterbarkeit.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'loadbalancer', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -499,6 +541,7 @@ const knownApplications = {
     },
     'mysql-mariadb': {
         name: 'MySQL/MariaDB',
+        recommendedArchitecture: 'cloud_native',
         description: 'Weit verbreitete relationale Open-Source-Datenbanken mit Master-Replica-Architekturen.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'loadbalancer', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -510,6 +553,7 @@ const knownApplications = {
     },
     'mongodb': {
         name: 'MongoDB',
+        recommendedArchitecture: 'cloud_native',
         description: 'Dokumentenorientierte NoSQL-Datenbank mit flexiblem Schema und horizontaler Skalierung.',
         components: ['compute', 'kubernetes', 'database_nosql', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -521,6 +565,7 @@ const knownApplications = {
     },
     'elasticsearch': {
         name: 'Elasticsearch/OpenSearch',
+        recommendedArchitecture: 'cloud_native',
         description: 'Verteilte Such- und Analytics-Engine basierend auf Apache Lucene für Volltextsuche.',
         components: ['compute', 'kubernetes', 'database_nosql', 'storage_block', 'loadbalancer', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -532,6 +577,7 @@ const knownApplications = {
     },
     'apache-kafka': {
         name: 'Apache Kafka',
+        recommendedArchitecture: 'cloud_native',
         description: 'Verteilte Event-Streaming-Plattform für High-Throughput-Daten-Pipelines.',
         components: ['compute', 'kubernetes', 'storage_block', 'loadbalancer', 'dns', 'messaging', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -543,6 +589,7 @@ const knownApplications = {
     },
     'redis-primary': {
         name: 'Redis (als primäre DB)',
+        recommendedArchitecture: 'cloud_native',
         description: 'In-Memory-Datenstruktur-Store als primäre Datenbank mit Persistenz und Clustering.',
         components: ['compute', 'kubernetes', 'database_nosql', 'storage_block', 'loadbalancer', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -554,6 +601,7 @@ const knownApplications = {
     },
     'grafana': {
         name: 'Grafana',
+        recommendedArchitecture: 'cloud_native',
         description: 'Open-Source-Plattform für Monitoring und Observability mit interaktiven Dashboards.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'loadbalancer', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -565,6 +613,7 @@ const knownApplications = {
     },
     'prometheus': {
         name: 'Prometheus',
+        recommendedArchitecture: 'cloud_native',
         description: 'Open-Source-Monitoring-System mit Time-Series-Datenbank und PromQL-Abfragesprache.',
         components: ['compute', 'kubernetes', 'storage_block', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -576,6 +625,7 @@ const knownApplications = {
     },
     'influxdb': {
         name: 'InfluxDB',
+        recommendedArchitecture: 'cloud_native',
         description: 'Purpose-built Time-Series-Datenbank für IoT-Sensordaten und Metriken.',
         components: ['compute', 'kubernetes', 'storage_block', 'loadbalancer', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -587,6 +637,7 @@ const knownApplications = {
     },
     'apache-superset': {
         name: 'Apache Superset',
+        recommendedArchitecture: 'cloud_native',
         description: 'Moderne Open-Source-BI-Plattform für Datenexploration und Visualisierung.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'loadbalancer', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -598,6 +649,7 @@ const knownApplications = {
     },
     'metabase': {
         name: 'Metabase',
+        recommendedArchitecture: 'cloud_native',
         description: 'Benutzerfreundliches Open-Source-BI-Tool für Self-Service-Analytics.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'loadbalancer', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -609,6 +661,7 @@ const knownApplications = {
     },
     'powerbi-report-server': {
         name: 'Power BI Report Server',
+        recommendedArchitecture: 'classic',
         description: 'On-Premises-Reporting-Lösung von Microsoft für Power-BI-Berichte.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -620,6 +673,7 @@ const knownApplications = {
     },
     'tableau-server': {
         name: 'Tableau Server',
+        recommendedArchitecture: 'classic',
         description: 'Enterprise-BI-Plattform für visuelle Datenanalyse mit Self-Service-Analytics.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -631,6 +685,7 @@ const knownApplications = {
     },
     'apache-airflow': {
         name: 'Apache Airflow',
+        recommendedArchitecture: 'cloud_native',
         description: 'Workflow-Orchestrierungsplattform für datengetriebene ETL- und ML-Pipelines.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'storage_object', 'loadbalancer', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -646,6 +701,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'keycloak': {
         name: 'Keycloak',
+        recommendedArchitecture: 'cloud_native',
         description: 'Open-Source Identity and Access Management für SSO mit OpenID Connect, OAuth 2.0 und SAML.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -657,6 +713,7 @@ const knownApplications = {
     },
     'freeipa': {
         name: 'FreeIPA',
+        recommendedArchitecture: 'classic',
         description: 'Integrierte Security Information Management Lösung mit LDAP, Kerberos und DNS.',
         components: ['compute', 'storage_block', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -668,6 +725,7 @@ const knownApplications = {
     },
     'openldap': {
         name: 'OpenLDAP',
+        recommendedArchitecture: 'classic',
         description: 'Freie Open-Source-Implementierung des LDAP-Protokolls mit modularer Architektur.',
         components: ['compute', 'storage_block', 'loadbalancer', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -679,6 +737,7 @@ const knownApplications = {
     },
     'authentik': {
         name: 'Authentik',
+        recommendedArchitecture: 'cloud_native',
         description: 'Open-Source Identity Provider für SSO mit SAML, OAuth2/OIDC, LDAP und RADIUS.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -690,6 +749,7 @@ const knownApplications = {
     },
     'zitadel': {
         name: 'Zitadel',
+        recommendedArchitecture: 'cloud_native',
         description: 'Identity Infrastructure Platform mit Event Sourcing, Multi-Tenancy und Passkeys.',
         components: ['compute', 'kubernetes', 'serverless', 'database_sql', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -701,6 +761,7 @@ const knownApplications = {
     },
     'owasp-zap': {
         name: 'OWASP ZAP',
+        recommendedArchitecture: 'cloud_native',
         description: 'Open-Source Web Application Security Scanner für automatisierte Sicherheitstests.',
         components: ['compute', 'kubernetes', 'storage_block', 'monitoring', 'logging'],
         systemRequirements: {
@@ -712,6 +773,7 @@ const knownApplications = {
     },
     'trivy': {
         name: 'Trivy',
+        recommendedArchitecture: 'cloud_native',
         description: 'Umfassender Security Scanner für Container-Images, Kubernetes und IaC.',
         components: ['compute', 'kubernetes', 'storage_block', 'monitoring', 'logging'],
         systemRequirements: {
@@ -723,6 +785,7 @@ const knownApplications = {
     },
     'falco': {
         name: 'Falco',
+        recommendedArchitecture: 'cloud_native',
         description: 'Cloud Native Runtime Security Tool (CNCF) für Echtzeit-Bedrohungserkennung.',
         components: ['compute', 'kubernetes', 'storage_block', 'messaging', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -734,6 +797,7 @@ const knownApplications = {
     },
     'wazuh': {
         name: 'Wazuh',
+        recommendedArchitecture: 'cloud_native',
         description: 'Unified XDR und SIEM Plattform für Endpoints und Cloud Workloads.',
         components: ['compute', 'kubernetes', 'database_nosql', 'storage_block', 'storage_object', 'loadbalancer', 'messaging', 'monitoring', 'logging', 'secrets', 'identity', 'ai_ml'],
         systemRequirements: {
@@ -745,6 +809,7 @@ const knownApplications = {
     },
     'graylog': {
         name: 'Graylog',
+        recommendedArchitecture: 'cloud_native',
         description: 'Zentrales Log Management System mit MongoDB und Elasticsearch/OpenSearch.',
         components: ['compute', 'kubernetes', 'database_nosql', 'storage_block', 'loadbalancer', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -756,6 +821,7 @@ const knownApplications = {
     },
     'splunk': {
         name: 'Splunk',
+        recommendedArchitecture: 'cloud_native',
         description: 'Enterprise SIEM und Log-Analyse-Plattform mit SmartStore und Machine Learning.',
         components: ['compute', 'kubernetes', 'database_nosql', 'storage_object', 'storage_block', 'loadbalancer', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity', 'ai_ml'],
         systemRequirements: {
@@ -767,6 +833,7 @@ const knownApplications = {
     },
     'crowdsec': {
         name: 'CrowdSec',
+        recommendedArchitecture: 'cloud_native',
         description: 'Open-Source Security Engine mit crowdsourced Threat Intelligence.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -778,6 +845,7 @@ const knownApplications = {
     },
     'pfsense': {
         name: 'pfSense',
+        recommendedArchitecture: 'classic',
         description: 'Open-Source Firewall und Router Distribution auf FreeBSD-Basis.',
         components: ['compute', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -789,6 +857,7 @@ const knownApplications = {
     },
     'wireguard': {
         name: 'WireGuard VPN Server',
+        recommendedArchitecture: 'classic',
         description: 'Modernes, schnelles VPN-Protokoll mit minimaler Angriffsfläche.',
         components: ['compute', 'storage_block', 'dns', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -804,6 +873,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'magento': {
         name: 'Magento/Adobe Commerce',
+        recommendedArchitecture: 'classic',
         description: 'Enterprise E-Commerce-Plattform mit B2B/B2C-Funktionen, Elasticsearch, Redis und Varnish.',
         components: ['compute', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -815,6 +885,7 @@ const knownApplications = {
     },
     'shopware': {
         name: 'Shopware',
+        recommendedArchitecture: 'classic',
         description: 'Deutsche E-Commerce-Plattform für B2B und B2C mit PHP 8.2+, MySQL und Redis.',
         components: ['compute', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -826,6 +897,7 @@ const knownApplications = {
     },
     'prestashop': {
         name: 'PrestaShop',
+        recommendedArchitecture: 'classic',
         description: 'Open-Source E-Commerce-Lösung für kleine bis mittlere Online-Shops.',
         components: ['compute', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -837,6 +909,7 @@ const knownApplications = {
     },
     'woocommerce': {
         name: 'WooCommerce',
+        recommendedArchitecture: 'classic',
         description: 'WordPress-basierte E-Commerce-Erweiterung mit breiter Hosting-Kompatibilität.',
         components: ['compute', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'cache', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -848,6 +921,7 @@ const knownApplications = {
     },
     'saleor': {
         name: 'Saleor',
+        recommendedArchitecture: 'cloud_native',
         description: 'Modernes Headless E-Commerce mit GraphQL-API und MACH-Architektur.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -859,6 +933,7 @@ const knownApplications = {
     },
     'spree': {
         name: 'Spree Commerce',
+        recommendedArchitecture: 'classic',
         description: 'Modulare Ruby on Rails E-Commerce-Plattform mit REST/GraphQL APIs.',
         components: ['compute', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -874,6 +949,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'nodejs-webapp': {
         name: 'Node.js Web App',
+        recommendedArchitecture: 'cloud_native',
         description: 'Event-driven JavaScript-Runtime für skalierbare Web-Applikationen und Real-time Apps.',
         components: ['compute', 'kubernetes', 'serverless', 'database_sql', 'database_nosql', 'storage_object', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -885,6 +961,7 @@ const knownApplications = {
     },
     'kubernetes-app': {
         name: 'Containerisierte Anwendung (Kubernetes)',
+        recommendedArchitecture: 'cloud_native',
         description: 'Generische containerisierte Anwendung die auf einem Kubernetes-Cluster deployed wird. Inkl. Kubernetes-Cluster-Management (Managed K8s wie AKS/EKS/GKE) plus App-Ressourcen.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity', 'container_registry'],
         systemRequirements: {
@@ -896,6 +973,7 @@ const knownApplications = {
     },
     'kubernetes-cluster': {
         name: 'Kubernetes Cluster',
+        recommendedArchitecture: 'cloud_native',
         description: 'Managed Kubernetes Cluster (AKS/EKS/GKE) als Plattform für Container-Workloads. Ohne spezifische Anwendung - nur der Cluster selbst.',
         components: ['compute', 'kubernetes', 'container_registry', 'loadbalancer', 'dns', 'storage_block', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -907,6 +985,7 @@ const knownApplications = {
     },
     'spring-boot': {
         name: 'Spring Boot Application',
+        recommendedArchitecture: 'cloud_native',
         description: 'Java-Framework für Enterprise-Applikationen mit eingebettetem Server.',
         components: ['compute', 'kubernetes', 'database_sql', 'database_nosql', 'storage_object', 'storage_block', 'loadbalancer', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -918,6 +997,7 @@ const knownApplications = {
     },
     'django': {
         name: 'Django Application',
+        recommendedArchitecture: 'cloud_native',
         description: 'Python Web-Framework mit Gunicorn/uWSGI, Nginx und Celery für Background-Tasks.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -929,6 +1009,7 @@ const knownApplications = {
     },
     'laravel': {
         name: 'Laravel Application',
+        recommendedArchitecture: 'cloud_native',
         description: 'PHP-Framework mit Queue-Worker, Redis und optionalem Serverless via Laravel Vapor.',
         components: ['compute', 'kubernetes', 'serverless', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -940,6 +1021,7 @@ const knownApplications = {
     },
     'kubernetes-microservices': {
         name: 'Kubernetes Microservices',
+        recommendedArchitecture: 'cloud_native',
         description: 'Container-orchestrierte Microservices-Architektur mit Service Mesh und Distributed Tracing.',
         components: ['kubernetes', 'database_sql', 'database_nosql', 'storage_object', 'storage_block', 'loadbalancer', 'cdn', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity', 'ai_ml'],
         systemRequirements: {
@@ -951,6 +1033,7 @@ const knownApplications = {
     },
     'kong-gateway': {
         name: 'API Gateway (Kong)',
+        recommendedArchitecture: 'cloud_native',
         description: 'Open-Source API Gateway für Microservices mit PostgreSQL oder Cassandra Backend.',
         components: ['compute', 'kubernetes', 'database_sql', 'database_nosql', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -962,6 +1045,7 @@ const knownApplications = {
     },
     'nginx-proxy': {
         name: 'Nginx Reverse Proxy',
+        recommendedArchitecture: 'cloud_native',
         description: 'High-Performance HTTP-Server und Reverse Proxy mit Load Balancing und Caching.',
         components: ['compute', 'kubernetes', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -973,6 +1057,7 @@ const knownApplications = {
     },
     'tomcat': {
         name: 'Apache Tomcat',
+        recommendedArchitecture: 'cloud_native',
         description: 'Java Servlet Container für Java Web-Applikationen (WAR-Dateien).',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -988,6 +1073,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'kubeflow': {
         name: 'Kubeflow',
+        recommendedArchitecture: 'cloud_native',
         description: 'ML-Toolkit für Kubernetes mit Pipelines, Training und Model Serving.',
         components: ['kubernetes', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity', 'ai_ml'],
         systemRequirements: {
@@ -999,6 +1085,7 @@ const knownApplications = {
     },
     'mlflow': {
         name: 'MLflow',
+        recommendedArchitecture: 'cloud_native',
         description: 'Open-Source-Plattform für ML-Lifecycle-Management mit Experiment Tracking.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'monitoring', 'logging', 'secrets', 'identity', 'ai_ml'],
         systemRequirements: {
@@ -1010,6 +1097,7 @@ const knownApplications = {
     },
     'jupyterhub': {
         name: 'JupyterHub',
+        recommendedArchitecture: 'cloud_native',
         description: 'Multi-User Jupyter Notebook Server für Data Science Teams.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_object', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1025,6 +1113,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'jira': {
         name: 'Jira',
+        recommendedArchitecture: 'cloud_native',
         description: 'Atlassian Projektmanagement und Issue-Tracking für agile Teams.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1036,6 +1125,7 @@ const knownApplications = {
     },
     'bitbucket': {
         name: 'Bitbucket',
+        recommendedArchitecture: 'classic',
         description: 'Atlassian Git-Repository-Management mit CI/CD-Pipelines.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1047,6 +1137,7 @@ const knownApplications = {
     },
     'redmine': {
         name: 'Redmine',
+        recommendedArchitecture: 'classic',
         description: 'Open-Source Projektmanagement und Issue-Tracking-System auf Ruby on Rails.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1058,6 +1149,7 @@ const knownApplications = {
     },
     'zabbix': {
         name: 'Zabbix',
+        recommendedArchitecture: 'classic',
         description: 'Enterprise-class Open-Source Monitoring für Netzwerke und Applikationen.',
         components: ['compute', 'database_sql', 'storage_block', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1069,6 +1161,7 @@ const knownApplications = {
     },
     'nagios': {
         name: 'Nagios',
+        recommendedArchitecture: 'classic',
         description: 'Open-Source IT-Infrastruktur-Monitoring mit Plugin-Architektur.',
         components: ['compute', 'database_sql', 'storage_block', 'dns', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -1080,6 +1173,7 @@ const knownApplications = {
     },
     'plex': {
         name: 'Plex Media Server',
+        recommendedArchitecture: 'classic',
         description: 'Media-Server für Streaming von Videos, Musik und Fotos.',
         components: ['compute', 'database_sql', 'storage_object', 'storage_block', 'cdn', 'dns', 'monitoring', 'logging'],
         systemRequirements: {
@@ -1091,6 +1185,7 @@ const knownApplications = {
     },
     'vaultwarden': {
         name: 'Vaultwarden',
+        recommendedArchitecture: 'classic',
         description: 'Leichtgewichtige Bitwarden-kompatible Password-Manager-Server-Implementierung.',
         components: ['compute', 'database_sql', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -1102,6 +1197,7 @@ const knownApplications = {
     },
     'gitea': {
         name: 'Gitea',
+        recommendedArchitecture: 'classic',
         description: 'Leichtgewichtiger, selbstgehosteter Git-Service als GitHub/GitLab Alternative.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_object', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1113,6 +1209,7 @@ const knownApplications = {
     },
     'openproject': {
         name: 'OpenProject',
+        recommendedArchitecture: 'cloud_native',
         description: 'Open-Source Projektmanagement-Software für klassisches und agiles PM.',
         components: ['compute', 'kubernetes', 'database_sql', 'storage_block', 'storage_object', 'loadbalancer', 'dns', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1124,6 +1221,7 @@ const knownApplications = {
     },
     'minio': {
         name: 'MinIO',
+        recommendedArchitecture: 'cloud_native',
         description: 'High-Performance Object Storage kompatibel mit Amazon S3 API.',
         components: ['compute', 'kubernetes', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1139,6 +1237,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'sap-isu': {
         name: 'SAP IS-U (Industry Solution Utilities)',
+        recommendedArchitecture: 'classic',
         description: 'SAP Branchenlösung für Energieversorger mit Zählerdatenverwaltung und Abrechnungsfunktionen.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1150,6 +1249,7 @@ const knownApplications = {
     },
     'lovion-nis': {
         name: 'Lovion Network Information System',
+        recommendedArchitecture: 'classic',
         description: 'Netzinformationssystem für Versorgungsunternehmen mit GIS-Integration für Gas, Wasser, Strom und Fernwärme.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1161,6 +1261,7 @@ const knownApplications = {
     },
     'soptim-itrade': {
         name: 'SOPTIM iTrade',
+        recommendedArchitecture: 'classic',
         description: 'Energiehandelsplattform für Strom- und Gashandel mit Börsenkonnektivität und automatisiertem Intraday-Handel.',
         components: ['compute', 'database_sql', 'storage_block', 'loadbalancer', 'dns', 'messaging', 'cache', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1172,6 +1273,7 @@ const knownApplications = {
     },
     'smallworld-gis': {
         name: 'Smallworld GIS',
+        recommendedArchitecture: 'classic',
         description: 'GE Vernova GIS-Plattform für Versorgungsnetze (Strom, Gas, Wasser, Telekom) mit spezialisierter Netzwerkverwaltung.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -1183,6 +1285,7 @@ const knownApplications = {
     },
     'arcgis-enterprise': {
         name: 'ArcGIS Enterprise',
+        recommendedArchitecture: 'classic',
         description: 'Esri Enterprise GIS-Plattform für Geoinformationssysteme mit GIS Server, Portal und Image Server.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1198,6 +1301,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'windows-file-server': {
         name: 'Windows File Server',
+        recommendedArchitecture: 'classic',
         description: 'Enterprise-Dateiserver mit SMB 3.1.1 Protokoll für zentrale Dateispeicherung und Freigaben.',
         components: ['storage_file', 'compute', 'storage_block', 'dns', 'monitoring', 'logging', 'identity'],
         systemRequirements: {
@@ -1209,6 +1313,7 @@ const knownApplications = {
     },
     'hcl-domino': {
         name: 'HCL Domino Server (ehem. Lotus Notes)',
+        recommendedArchitecture: 'classic',
         description: 'Collaboration-Plattform für E-Mail, Kalender, Dokumente und Workflow-Anwendungen.',
         components: ['compute', 'storage_block', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1220,6 +1325,7 @@ const knownApplications = {
     },
     'lotus-notes-server': {
         name: 'Lotus Notes Server (Legacy)',
+        recommendedArchitecture: 'classic',
         description: 'Legacy-Bezeichnung für HCL Domino Server. Siehe hcl-domino für aktuelle Version.',
         components: ['compute', 'storage_block', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1235,6 +1341,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'printserver-sap': {
         name: 'SAP Printerspooler / Print Server',
+        recommendedArchitecture: 'classic',
         description: 'Print-Spooling-System für SAP-Umgebungen mit TemSe-Verwaltung und Druckerwarteschlangen.',
         components: ['compute', 'storage_block', 'dns', 'monitoring', 'logging'],
         systemRequirements: {
@@ -1246,6 +1353,7 @@ const knownApplications = {
     },
     'kofax-fax-gateway': {
         name: 'Kofax Communication Server',
+        recommendedArchitecture: 'classic',
         description: 'Fax-Gateway und Communication Server für Fax-Versand und -Empfang mit G.711 Pass-Through.',
         components: ['compute', 'storage_block', 'dns', 'monitoring', 'logging'],
         systemRequirements: {
@@ -1261,6 +1369,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'oracle-database-enterprise': {
         name: 'Oracle Database Enterprise Edition',
+        recommendedArchitecture: 'classic',
         description: 'Enterprise-Datenbanksystem von Oracle mit RAC, Partitionierung und Advanced Security.',
         components: ['database_sql', 'compute', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -1272,6 +1381,7 @@ const knownApplications = {
     },
     'mysql-enterprise': {
         name: 'MySQL Enterprise Server',
+        recommendedArchitecture: 'classic',
         description: 'Enterprise-MySQL-Datenbank mit Enterprise Monitor, Backup und Advanced Security.',
         components: ['database_sql', 'compute', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -1283,6 +1393,7 @@ const knownApplications = {
     },
     'sabio-mysql-test': {
         name: 'SABIO Test MySQL DB',
+        recommendedArchitecture: 'classic',
         description: 'Test-MySQL-Datenbankinstanz für SABIO-System (Hinweis: SABIO-Produkt konnte nicht verifiziert werden).',
         components: ['compute', 'storage_block', 'dns', 'monitoring', 'logging'],
         systemRequirements: {
@@ -1298,6 +1409,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'quest-migration-manager': {
         name: 'Quest Migration Manager for Exchange',
+        recommendedArchitecture: 'classic',
         description: 'Migration-Tool für Exchange-Umgebungen mit Mail- und Kalender-Migration.',
         components: ['compute', 'database_sql', 'storage_block', 'dns', 'monitoring', 'logging'],
         systemRequirements: {
@@ -1309,6 +1421,7 @@ const knownApplications = {
     },
     'mdm-server': {
         name: 'Master Data Management Server',
+        recommendedArchitecture: 'classic',
         description: 'Zentraler MDM-Server für Master Data Management und Stammdatenverwaltung.',
         components: ['compute', 'database_sql', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1320,6 +1433,7 @@ const knownApplications = {
     },
     'power-bi-gateway': {
         name: 'Power BI On-Premises Data Gateway',
+        recommendedArchitecture: 'classic',
         description: 'Gateway für Verbindung zwischen Power BI Cloud und On-Premises Datenquellen.',
         components: ['compute', 'storage_block', 'dns', 'monitoring', 'logging'],
         systemRequirements: {
@@ -1331,6 +1445,7 @@ const knownApplications = {
     },
     'barramundi-management': {
         name: 'Barramundi Management Suite',
+        recommendedArchitecture: 'classic',
         description: 'Client-Management-Suite für Software-Verteilung, OS-Installation und Endpoint-Management.',
         components: ['compute', 'storage_block', 'storage_file', 'dns', 'monitoring', 'logging'],
         systemRequirements: {
@@ -1342,6 +1457,7 @@ const knownApplications = {
     },
     'ingenits-orgmanager': {
         name: 'Ingentis org.manager',
+        recommendedArchitecture: 'classic',
         description: 'Organisationsmanagement-Software für Organigramme und Personalplanung mit SAP-Integration.',
         components: ['compute', 'database_sql', 'storage_block', 'dns', 'monitoring', 'logging', 'identity'],
         systemRequirements: {
@@ -1357,6 +1473,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'pgp-keyserver': {
         name: 'PGP Keyserver / Symantec Encryption Management Server',
+        recommendedArchitecture: 'classic',
         description: 'PGP-Keyserver für Verschlüsselungs-Management und Zertifikatsverwaltung.',
         components: ['compute', 'storage_block', 'dns', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -1368,6 +1485,7 @@ const knownApplications = {
     },
     'zutrittskontrolle': {
         name: 'Zutrittskontrolle / Access Control System',
+        recommendedArchitecture: 'classic',
         description: 'Enterprise-Zutrittskontrollsystem für Türen, Benutzer und Berechtigungsverwaltung.',
         components: ['compute', 'database_sql', 'storage_block', 'dns', 'monitoring', 'logging'],
         systemRequirements: {
@@ -1379,6 +1497,7 @@ const knownApplications = {
     },
     'ftp-ftps-server': {
         name: 'FTP/FTPS Enterprise Server',
+        recommendedArchitecture: 'classic',
         description: 'Enterprise FTP/FTPS-Server für sicheren Dateitransfer mit Verschlüsselung.',
         components: ['compute', 'storage_block', 'storage_file', 'dns', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -1390,6 +1509,7 @@ const knownApplications = {
     },
     'as4-gateway': {
         name: 'AS4 Gateway Server',
+        recommendedArchitecture: 'classic',
         description: 'AS4-Gateway für sichere B2B-Nachrichtenaustausch (ENTSOG, PEPPOL, eDelivery).',
         components: ['compute', 'storage_block', 'dns', 'monitoring', 'logging', 'secrets'],
         systemRequirements: {
@@ -1405,6 +1525,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'prevero-fpanda': {
         name: 'Unit4 Prevero (FP&A)',
+        recommendedArchitecture: 'classic',
         description: 'Corporate Performance Management und Financial Planning & Analysis (primär Cloud).',
         components: ['compute', 'database_sql', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1416,6 +1537,7 @@ const knownApplications = {
     },
     'infopian-prevero': {
         name: 'Infopian Prevero N>asset (Legacy)',
+        recommendedArchitecture: 'classic',
         description: 'Legacy-Name für Unit4 Prevero FP&A. Siehe prevero-fpanda für aktuelle Version.',
         components: ['compute', 'database_sql', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1427,6 +1549,7 @@ const knownApplications = {
     },
     'kemas-poolfahrzeug': {
         name: 'KEMAS Poolfahrzeugmanagement',
+        recommendedArchitecture: 'classic',
         description: 'Poolfahrzeugverwaltung und CarSharing-System basierend auf KEMAS NET Plattform.',
         components: ['compute', 'database_sql', 'storage_block', 'dns', 'monitoring', 'logging', 'identity'],
         systemRequirements: {
@@ -1441,6 +1564,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'citrix-cvad-complete': {
         name: 'Citrix Virtual Apps and Desktops (Komplette Umgebung)',
+        recommendedArchitecture: 'classic',
         description: 'Vollständige Citrix CVAD-Infrastruktur mit allen Komponenten: Delivery Controller, StoreFront, Director, Licensing, SQL, ADC, VDA.',
         components: ['compute', 'database_sql', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging', 'secrets', 'identity'],
         systemRequirements: {
@@ -1497,6 +1621,7 @@ const knownApplications = {
     },
     'citrix-delivery-controller': {
         name: 'Citrix Delivery Controller',
+        recommendedArchitecture: 'classic',
         description: 'Zentrale Management-Komponente für Citrix CVAD, verwaltet Brokering, Konfiguration und Machine Catalogs.',
         components: ['compute', 'database_sql', 'storage_block', 'dns', 'monitoring', 'logging', 'identity'],
         systemRequirements: {
@@ -1508,6 +1633,7 @@ const knownApplications = {
     },
     'citrix-storefront': {
         name: 'Citrix StoreFront',
+        recommendedArchitecture: 'classic',
         description: 'Web-Portal für Citrix-Benutzer, authentifiziert Benutzer und listet verfügbare Ressourcen.',
         components: ['compute', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging'],
         systemRequirements: {
@@ -1519,6 +1645,7 @@ const knownApplications = {
     },
     'citrix-director': {
         name: 'Citrix Director',
+        recommendedArchitecture: 'classic',
         description: 'Monitoring und Troubleshooting-Konsole für Citrix-Administratoren und Help Desk.',
         components: ['compute', 'database_sql', 'storage_block', 'dns', 'monitoring', 'logging'],
         systemRequirements: {
@@ -1530,6 +1657,7 @@ const knownApplications = {
     },
     'citrix-licensing': {
         name: 'Citrix License Server',
+        recommendedArchitecture: 'classic',
         description: 'Lizenzverwaltung für Citrix-Produkte, verwaltet Concurrent User und Subscription Licenses.',
         components: ['compute', 'storage_block', 'dns', 'monitoring', 'logging'],
         systemRequirements: {
@@ -1541,6 +1669,7 @@ const knownApplications = {
     },
     'citrix-pvs': {
         name: 'Citrix Provisioning Services (PVS)',
+        recommendedArchitecture: 'classic',
         description: 'Image-Streaming-Technologie für VMs, streamt Betriebssystem-Images über Netzwerk an Target Devices.',
         components: ['compute', 'database_sql', 'storage_block', 'storage_file', 'dns', 'monitoring', 'logging'],
         systemRequirements: {
@@ -1552,6 +1681,7 @@ const knownApplications = {
     },
     'citrix-adc-vpx': {
         name: 'Citrix ADC VPX (NetScaler)',
+        recommendedArchitecture: 'classic',
         description: 'Application Delivery Controller als Virtual Appliance für Load Balancing, SSL Offload und Gateway-Funktionen.',
         components: ['compute', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging'],
         systemRequirements: {
@@ -1563,6 +1693,7 @@ const knownApplications = {
     },
     'citrix-sql-database': {
         name: 'SQL Server für Citrix CVAD',
+        recommendedArchitecture: 'classic',
         description: 'SQL Server-Infrastruktur für Citrix Site Configuration, Configuration Logging und Monitoring Databases. Benötigt 3 separate Datenbanken.',
         components: ['database_sql', 'storage_block', 'loadbalancer', 'dns', 'monitoring', 'logging'],
         systemRequirements: {
@@ -1598,6 +1729,7 @@ const knownApplications = {
     },
     'citrix-vda': {
         name: 'Citrix Virtual Delivery Agent (VDA)',
+        recommendedArchitecture: 'classic',
         description: 'Agent auf VMs/Desktops für Citrix-Verbindungen. Single-Session (Windows 10/11) oder Multi-Session (Server RDSH). Dies sind die Workload-VMs, die die tatsächlichen User-Sessions ausführen.',
         components: ['compute', 'storage_block', 'storage_file', 'monitoring', 'logging'],
         systemRequirements: {
@@ -1638,6 +1770,7 @@ const knownApplications = {
     },
     'mde-endgeraete-manager': {
         name: 'MDE Endgeräte Manager (Mobile Device Management)',
+        recommendedArchitecture: 'classic',
         description: 'Mobile Device Management für Android, iOS und iPadOS Geräte.',
         components: ['compute', 'database_sql', 'storage_block', 'dns', 'monitoring', 'logging', 'identity'],
         systemRequirements: {
@@ -1653,6 +1786,7 @@ const knownApplications = {
     // ═══════════════════════════════════════════════════════════════════════════════
     'terminalserver-gis': {
         name: 'Terminalserver GIS-Umgebung',
+        recommendedArchitecture: 'classic',
         description: 'Windows Terminal Server für GIS-Anwendungen mit Remote Desktop Services.',
         components: ['compute', 'storage_block', 'storage_file', 'loadbalancer', 'dns', 'monitoring', 'logging', 'identity'],
         systemRequirements: {

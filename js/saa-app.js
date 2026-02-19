@@ -70,10 +70,14 @@ class SovereignArchitectureAdvisor {
 
         // Architektur-Modus Einstellungen
         this.architectureSettings = {
-            mode: null,              // null = Auto, 'cloud_native' = Cloud-native/PaaS, 'classic' = VM-basiert
+            mode: 'classic',         // 'cloud_native' = Cloud-native/PaaS, 'classic' = VM-basiert
             appId: null              // App-ID für spezifische Pattern-Erkennung
         };
         this.detectedPattern = null; // Erkanntes Deployment-Pattern
+
+        // Architektur-Snapshot & Delta
+        this._archOriginal = null;   // { selectedComponents: Set, componentConfigs: {} } — Zustand vor Transformation
+        this._archDelta    = { added: new Set(), removed: new Set(), configs: {} }; // Manuelle Nutzerpflege on top
 
         // Preset-Definitionen
         this.presets = {
@@ -310,6 +314,16 @@ class SovereignArchitectureAdvisor {
                                 application: knownApp.name
                             };
                             try { this.initComponentConfigsFromSystemRequirements(); } catch (e) {}
+                        }
+                        // Snapshot vor Transformation speichern, empfohlenen Modus setzen
+                        this._archOriginal = {
+                            selectedComponents: new Set(this.selectedComponents),
+                            componentConfigs: JSON.parse(JSON.stringify(this.componentConfigs))
+                        };
+                        this._archDelta = { added: new Set(), removed: new Set(), configs: {} };
+                        this.architectureSettings.mode = knownApp.recommendedArchitecture || 'classic';
+                        if (typeof this.applyArchitectureModeToComponents === 'function') {
+                            this.applyArchitectureModeToComponents();
                         }
                         const sysReqHtml = this.renderSystemRequirements(knownApp);
                         const resultDiv = document.getElementById('researchResult');
@@ -679,6 +693,16 @@ class SovereignArchitectureAdvisor {
                     } catch (error) {
                     }
                 }
+                // Snapshot vor Transformation speichern, empfohlenen Modus setzen
+                this._archOriginal = {
+                    selectedComponents: new Set(this.selectedComponents),
+                    componentConfigs: JSON.parse(JSON.stringify(this.componentConfigs))
+                };
+                this._archDelta = { added: new Set(), removed: new Set(), configs: {} };
+                this.architectureSettings.mode = result.application.recommendedArchitecture || 'classic';
+                if (typeof this.applyArchitectureModeToComponents === 'function') {
+                    this.applyArchitectureModeToComponents();
+                }
 
                 // System Requirements HTML generieren
                 const sysReqHtml = this.renderSystemRequirements(result.application);
@@ -941,6 +965,16 @@ class SovereignArchitectureAdvisor {
 
             // Komponenten-Konfigurationen aus System-Requirements aktualisieren
             this.initComponentConfigsFromSystemRequirements();
+
+            // Snapshot nach Sizing-Änderung erneuern (Modus beibehalten)
+            this._archOriginal = {
+                selectedComponents: new Set(this.selectedComponents),
+                componentConfigs: JSON.parse(JSON.stringify(this.componentConfigs))
+            };
+            this._archDelta = { added: new Set(), removed: new Set(), configs: {} };
+            if (typeof this.applyArchitectureModeToComponents === 'function') {
+                this.applyArchitectureModeToComponents();
+            }
         }
     }
 
@@ -1167,6 +1201,21 @@ class SovereignArchitectureAdvisor {
                 nextBtn.onclick = () => this.nextStep();
             }
         }
+    }
+
+    /**
+     * Setzt selectedComponents + componentConfigs auf den Zustand vor der Arch-Transformation zurück.
+     * Öffentlich – wird vom Reset-Button per onclick="app.resetArchitectureMode()" aufgerufen.
+     */
+    resetArchitectureMode() {
+        if (!this._archOriginal) return;
+        this.selectedComponents = new Set(this._archOriginal.selectedComponents);
+        this.componentConfigs   = JSON.parse(JSON.stringify(this._archOriginal.componentConfigs));
+        this._archDelta = { added: new Set(), removed: new Set(), configs: {} };
+        this.architectureSettings.mode = this.applicationData?.recommendedArchitecture || 'classic';
+        this.updateSystemConfigFromComponents();
+        this.renderComponents();
+        if (this.analysisResults) this.runAnalysis();
     }
 
     runAnalysis() {

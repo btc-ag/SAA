@@ -118,7 +118,7 @@ class CloudAnalyzer {
 
         // Default Architecture Settings
         const architecture = architectureSettings || {
-            mode: null, // null = Legacy-Verhalten (keine Transformation)
+            mode: 'classic',
             appId: null
         };
 
@@ -207,87 +207,59 @@ class CloudAnalyzer {
             }
         });
 
-        let baseServices = Array.from(services);
+        const baseServices = Array.from(services);
 
         // Wenn kein Modus angegeben, gib einfach die Services zurück (Rückwärtskompatibilität)
         if (architectureMode === null) {
             return baseServices; // Legacy-Verhalten
         }
 
-        // Architektur-Modus transformieren die Services
-        const transformedResult = this.transformServicesForArchitectureMode(
-            baseServices,
-            componentIds,
-            architectureMode,
-            appId
-        );
+        // Pattern erkennen für operationsFactor – Service-Transformation passiert bereits UI-seitig
+        const archInfo = this.detectArchitecturePattern(componentIds, architectureMode, appId);
 
-        return transformedResult;
+        return {
+            services: baseServices, // bereits durch applyArchitectureModeToComponents() transformiert
+            pattern: archInfo.pattern,
+            transformation: archInfo.transformation
+        };
     }
 
     /**
-     * Transformiert Services basierend auf Architektur-Modus und erkanntem Pattern
-     * @returns {Object} { services: Array, pattern: Object|null, transformation: Object }
+     * Erkennt das Deployment-Pattern und berechnet operationsFactor.
+     * Service-Transformation passiert nun UI-seitig (applyArchitectureModeToComponents).
+     * @param {Array} componentIds - Bereits transformierte Komponenten-IDs
+     * @param {string} mode - 'cloud_native' | 'classic'
+     * @param {string} appId - Optional: App-ID für spezifische Erkennung
+     * @returns {Object} { pattern: Object|null, transformation: Object }
      */
-    transformServicesForArchitectureMode(baseServices, componentIds, mode, appId = null) {
-        // Pattern erkennen
+    detectArchitecturePattern(componentIds, mode, appId = null) {
         const detectedPattern = typeof detectDeploymentPattern === 'function'
             ? detectDeploymentPattern(componentIds, appId)
             : null;
 
-        // Wenn kein Pattern erkannt oder klassischer Modus, keine Transformation
-        if (!detectedPattern || mode === 'classic') {
+        if (!detectedPattern) {
             return {
-                services: baseServices,
-                pattern: detectedPattern,
+                pattern: null,
                 transformation: {
                     mode: mode || 'classic',
                     applied: false,
-                    reason: detectedPattern ? 'Klassischer Modus gewählt' : 'Kein passendes Pattern erkannt',
-                    operationsFactor: detectedPattern?.classic?.operationsFactor || 1.0,
-                    description: detectedPattern?.classic?.description || 'Klassische VM-basierte Architektur'
+                    operationsFactor: 1.0,
+                    patternName: null,
+                    description: 'Kein passendes Pattern erkannt'
                 }
             };
         }
 
-        // Cloud-native Transformation anwenden
-        const patternConfig = detectedPattern.cloudNative;
-        const transformedServices = new Set(baseServices);
-
-        // 1. Services ersetzen
-        if (patternConfig.replaceServices) {
-            Object.entries(patternConfig.replaceServices).forEach(([from, to]) => {
-                if (transformedServices.has(from)) {
-                    transformedServices.delete(from);
-                    transformedServices.add(to);
-                }
-            });
-        }
-
-        // 2. Services hinzufügen
-        if (patternConfig.addServices) {
-            patternConfig.addServices.forEach(s => transformedServices.add(s));
-        }
-
-        // 3. Services entfernen
-        if (patternConfig.removeServices) {
-            patternConfig.removeServices.forEach(s => transformedServices.delete(s));
-        }
+        const modeConfig = detectedPattern[mode] || detectedPattern.classic;
 
         return {
-            services: Array.from(transformedServices),
             pattern: detectedPattern,
             transformation: {
-                mode: 'cloud_native',
+                mode: mode || 'classic',
                 applied: true,
-                patternId: detectedPattern.id,
+                operationsFactor: modeConfig?.operationsFactor || 1.0,
                 patternName: detectedPattern.name,
-                reason: patternConfig.description,
-                operationsFactor: patternConfig.operationsFactor || 0.5,
-                description: patternConfig.description,
-                replacements: patternConfig.replaceServices || {},
-                additions: patternConfig.addServices || [],
-                removals: patternConfig.removeServices || []
+                description: modeConfig?.description || ''
             }
         };
     }
