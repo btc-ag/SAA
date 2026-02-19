@@ -1677,8 +1677,8 @@ const architectureComponents = [
         configSummary: (c) => c.controlPlaneOnly ? 'Managed Control Plane' : `${c.nodes} Nodes, ${c.nodeRam} GB/Node`
     },
     {
-        id: 'serverless', name: 'Serverless Functions', category: 'compute', icon: '⚡',
-        description: 'Event-getriebene Funktionen', requiredServices: ['serverless'],
+        id: 'serverless', name: 'PaaS / Serverless', category: 'compute', icon: '⚡',
+        description: 'Managed Plattform: App Service, Cloud Run, Lambda/Serverless Functions', requiredServices: ['serverless'],
         configurable: true,
         configFields: [
             { id: 'invocations', label: 'Aufrufe/Monat', type: 'select', default: 'medium', options: [
@@ -1822,6 +1822,9 @@ class ApplicationInstance {
         this.applicationData = null; // Referenz auf knownApplications
         this.analysisResults = null;
         this.isCustom = type === null;
+        // Architektur-Snapshot & Delta (pro App im Multi-App-Modus)
+        this._archOriginal = null;
+        this._archDelta = { added: new Set(), removed: new Set(), configs: {} };
     }
 
     generateUUID() {

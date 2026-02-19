@@ -14,28 +14,36 @@ function inferCloudNativeComponents(base) {
     const has = (id) => result.has(id);
 
     // Kubernetes-Apps: Managed K8s ist bereits cloud-native → keine Komponenten-Änderung
-    if (has('kubernetes')) {
+    if (has('kubernetes')) return result;
+
+    // Explizit serverless: compute fällt weg, LB auch
+    if (has('serverless')) {
+        result.delete('compute');
+        result.delete('loadbalancer');
         return result;
     }
 
-    // API / Microservice-Apps (compute + messaging ODER serverless vorhanden):
-    // compute → serverless, loadbalancer fällt weg (Serverless-Plattform übernimmt Routing)
-    if (has('compute') && (has('messaging') || has('serverless'))) {
+    // Enterprise-Heuristik (rein komponentenbasiert, app-unabhängig):
+    // Enterprise-Apps (SAP, Oracle etc.) nutzen Block- UND File-Storage,
+    // haben aber KEINE Managed DB (die DB läuft auf eigener VM via Block-Storage).
+    // Web-Apps/CMS (WordPress, Joomla) haben immer eine Managed DB.
+    const isEnterprise = has('compute') && has('storage_block') && has('storage_file') &&
+        !has('database_sql') && !has('database_nosql');
+
+    if (has('compute') && !isEnterprise) {
+        // Web-Apps, APIs, CMS etc.: compute → PaaS/Serverless, LB fällt weg
         result.delete('compute');
         result.add('serverless');
         result.delete('loadbalancer');
         return result;
     }
 
-    // Web-/Backend-Apps (compute ohne messaging):
-    // PaaS-Plattform (App Service / Cloud Run) übernimmt den Load Balancer
+    // Enterprise / unbekannte Apps: nur Load Balancer entfernen, compute bleibt
     if (has('compute')) {
         result.delete('loadbalancer');
-        // compute bleibt – symbolisiert jetzt die managed App-Plattform
-        return result;
     }
 
-    return result; // z.B. reine DB- oder Storage-Apps: unverändert
+    return result; // reine DB- oder Storage-Apps: unverändert
 }
 
 /**
@@ -347,6 +355,11 @@ export const SAAComponents = {
         // Delta anwenden (manuelle Nutzer-Änderungen bleiben erhalten)
         this._archDelta.added.forEach(id => transformed.add(id));
         this._archDelta.removed.forEach(id => transformed.delete(id));
+
+        // Konsistenz-Cleanup: serverless und compute schließen sich aus
+        if (mode === 'cloud_native' && transformed.has('serverless') && transformed.has('compute')) {
+            transformed.delete('compute');
+        }
 
         this.selectedComponents = transformed;
 
@@ -1321,6 +1334,17 @@ export const SAAComponents = {
                 this.initComponentConfig(componentId);
             }
         }
+        // controlPlaneOnly synchronisieren: kubernetes zeigt nur Control Plane wenn compute auch da
+        if (componentId === 'kubernetes' || componentId === 'compute') {
+            if (this.selectedComponents.has('kubernetes')) {
+                if (!this.componentConfigs['kubernetes']) this.initComponentConfig('kubernetes');
+                const k8sConfig = this.componentConfigs['kubernetes'];
+                k8sConfig.controlPlaneOnly = this.selectedComponents.has('compute');
+                // Kubernetes-Karte neu rendern damit Config-Panel aktualisiert wird
+                if (componentId === 'compute') this.reRenderComponentCard('kubernetes');
+            }
+        }
+
         // Karte komplett neu rendern um Config-Panel zu zeigen/verstecken
         this.reRenderComponentCard(componentId);
         this.updateSelectedSummary();

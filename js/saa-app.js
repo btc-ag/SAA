@@ -75,9 +75,9 @@ class SovereignArchitectureAdvisor {
         };
         this.detectedPattern = null; // Erkanntes Deployment-Pattern
 
-        // Architektur-Snapshot & Delta
-        this._archOriginal = null;   // { selectedComponents: Set, componentConfigs: {} } — Zustand vor Transformation
-        this._archDelta    = { added: new Set(), removed: new Set(), configs: {} }; // Manuelle Nutzerpflege on top
+        // Architektur-Snapshot & Delta (single-app backing fields)
+        this.__archOriginal = null;
+        this.__archDelta    = { added: new Set(), removed: new Set(), configs: {} };
 
         // Preset-Definitionen
         this.presets = {
@@ -105,7 +105,13 @@ class SovereignArchitectureAdvisor {
         }
         return this._selectedComponents;
     }
-    set selectedComponents(value) { this._selectedComponents = value; }
+    set selectedComponents(value) {
+        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
+            this.applications[this.currentAppIndex].selectedComponents = value;
+        } else {
+            this._selectedComponents = value;
+        }
+    }
 
     get componentConfigs() {
         if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
@@ -113,7 +119,13 @@ class SovereignArchitectureAdvisor {
         }
         return this._componentConfigs;
     }
-    set componentConfigs(value) { this._componentConfigs = value; }
+    set componentConfigs(value) {
+        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
+            this.applications[this.currentAppIndex].componentConfigs = value;
+        } else {
+            this._componentConfigs = value;
+        }
+    }
 
     get applicationData() {
         if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
@@ -146,6 +158,34 @@ class SovereignArchitectureAdvisor {
         return this._systemConfig;
     }
     set systemConfig(value) { this._systemConfig = value; }
+
+    get _archOriginal() {
+        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
+            return this.applications[this.currentAppIndex]._archOriginal;
+        }
+        return this.__archOriginal;
+    }
+    set _archOriginal(value) {
+        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
+            this.applications[this.currentAppIndex]._archOriginal = value;
+        } else {
+            this.__archOriginal = value;
+        }
+    }
+
+    get _archDelta() {
+        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
+            return this.applications[this.currentAppIndex]._archDelta;
+        }
+        return this.__archDelta;
+    }
+    set _archDelta(value) {
+        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
+            this.applications[this.currentAppIndex]._archDelta = value;
+        } else {
+            this.__archDelta = value;
+        }
+    }
 
     init() {
         this.loadSettings(); // Lade gespeicherte Einstellungen
