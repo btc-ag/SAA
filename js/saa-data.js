@@ -2076,4 +2076,4 @@ class SizingDetector {
     }
 }
 
-export { selfBuildOptions, architectureModes, deploymentPatterns, cloudProviders, architectureComponents, detectDeploymentPattern, ApplicationMatcher, SizingDetector };
+export { selfBuildOptions, architectureModes, deploymentPatterns, cloudProviders, architectureComponents, detectDeploymentPattern, ApplicationMatcher, SizingDetector, ApplicationInstance };
