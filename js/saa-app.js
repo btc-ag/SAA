@@ -1241,9 +1241,11 @@ class SovereignArchitectureAdvisor {
         const k8sInstances = collectInstances('kubernetes');
         let kubernetesConfig = null;
         if (k8sInstances.length > 0) {
+            const anyControlPlaneOnly = k8sInstances.some(k => k.controlPlaneOnly);
             kubernetesConfig = {
+                controlPlaneOnly: anyControlPlaneOnly,
                 clusters: k8sInstances.map(k8s => ({
-                    nodes: parseInt(k8s.nodes) || 3,
+                    nodes: parseInt(k8s.nodes) ?? 3,
                     cpuPerNode: parseInt(k8s.cpuPerNode) || 4,
                     ramPerNode: parseInt(k8s.ramPerNode) || 16
                 }))
@@ -6689,12 +6691,20 @@ GitLab klein`
 
                 } else {
                     // Single-VM (WordPress etc.)
+                    let instanceCount = sysReq.compute.nodes || 1;
+
+                    // Wenn kubernetes auch gewählt: compute-Specs = Worker Nodes → node count aus sysReq.nodes
+                    if (this.selectedComponents.has('kubernetes') && sysReq.nodes) {
+                        const nodeMatch = sysReq.nodes.toString().match(/(\d+)/);
+                        if (nodeMatch) instanceCount = parseInt(nodeMatch[1]);
+                    }
+
                     this.componentConfigs['compute'].cpu = sysReq.compute.cpu;
                     this.componentConfigs['compute'].ram = sysReq.compute.ram;
-                    this.componentConfigs['compute'].instances = sysReq.compute.nodes || 1;
+                    this.componentConfigs['compute'].instances = instanceCount;
 
-                    // Apply HA configuration if present (overrides nodes)
-                    if (sysReq.ha) {
+                    // Apply HA configuration if present (overrides nodes, but not kubernetes worker count)
+                    if (sysReq.ha && !this.selectedComponents.has('kubernetes')) {
                         const haConfig = this.extractHAConfig(sysReq.ha);
                         if (haConfig && haConfig.nodeCount > 1) {
                             this.componentConfigs['compute'].instances = haConfig.nodeCount;
@@ -6893,7 +6903,16 @@ GitLab klein`
                 }
             }
 
-            // Weitere Konfigurationen...
+            // Kubernetes-Konfiguration
+            if (this.selectedComponents.has('kubernetes')) {
+                if (!this.componentConfigs['kubernetes']) {
+                    this.initComponentConfig('kubernetes');
+                }
+                const computeHandlesWorkers = this.selectedComponents.has('compute');
+                this.componentConfigs['kubernetes'].controlPlaneOnly = computeHandlesWorkers;
+                this.componentConfigs['kubernetes'].nodes = computeHandlesWorkers ? 0 : (parseInt(sysReq.nodes) || 3);
+            }
+
             return;
         }
 
@@ -7309,12 +7328,13 @@ GitLab klein`
             const computeHandlesWorkers = appInstance.selectedComponents.has('compute');
             // Wenn compute gewählt: VMs = Worker Nodes → kubernetes berechnet nur Control Plane
             // Wenn kein compute: kubernetes berechnet Control Plane + Worker Nodes selbst
+            // sysReq.compute enthält bei kubernetes-cluster TOTAL-Specs → per-Node = total / nodeCount
             const useComputeAsNodes = !computeHandlesWorkers && sysReq.compute;
             configs.kubernetes = {
                 controlPlaneOnly: computeHandlesWorkers,
                 nodes: computeHandlesWorkers ? 0 : nodeCount,
-                cpuPerNode: useComputeAsNodes ? (sysReq.compute.cpu || 4) : 4,
-                ramPerNode: useComputeAsNodes ? (sysReq.compute.ram || 16) : 16
+                cpuPerNode: useComputeAsNodes ? Math.ceil((sysReq.compute.cpu || 4) / nodeCount) : 4,
+                ramPerNode: useComputeAsNodes ? Math.ceil((sysReq.compute.ram || 16) / nodeCount) : 16
             };
         }
 
