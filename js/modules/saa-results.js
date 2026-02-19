@@ -1817,9 +1817,17 @@ export const SAAResults = {
         // Betriebskosten-Details
         const operationsRows = tco.operations?.details?.map(detail => {
             const levelClass = detail.level === 'low' ? 'low' : detail.level === 'high' ? 'high' : 'medium';
+            const rowStyle = detail.isAppBaseOps
+                ? ' style="border-top: 1px solid var(--border-color, #e2e8f0); font-weight: 500;"'
+                : '';
+            const nameSuffix = detail.isSelfBuild
+                ? ' <span style="color: var(--btc-warning);">(Self-Build)</span>'
+                : detail.isAppBaseOps
+                    ? ' <span style="color: var(--text-secondary); font-size: 0.8em; font-weight: normal;">(Plattformbetrieb)</span>'
+                    : '';
             return `
-                <tr>
-                    <td>${detail.name || detail.id}${detail.isSelfBuild ? ' <span style="color: var(--btc-warning);">(Self-Build)</span>' : ''}</td>
+                <tr${rowStyle}>
+                    <td>${detail.name || detail.id}${nameSuffix}</td>
                     <td><span class="cost-level-badge ${levelClass}">${detail.level}</span></td>
                     <td style="text-align: right;">${(detail.fteEstimate * 8000).toLocaleString('de-DE')}€</td>
                     <td style="color: var(--text-secondary); font-size: 0.8rem;">${detail.fteEstimate} FTE</td>

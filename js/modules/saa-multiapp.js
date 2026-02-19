@@ -61,6 +61,7 @@ export const SAAMultiApp = {
                     componentConfigs: JSON.parse(JSON.stringify(instance.componentConfigs))
                 };
                 instance._archDelta = { added: new Set(), removed: new Set(), configs: {} };
+                instance.architectureMode = knownApplications[appType].recommendedArchitecture || 'classic';
             }
 
             parsedApps.push({

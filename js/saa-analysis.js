@@ -154,7 +154,8 @@ class CloudAnalyzer {
                 requiredServices,
                 systemConfig,
                 operations,
-                projectEffort
+                projectEffort,
+                architecture
             );
             return { provider, serviceAnalysis, tcoEstimate };
         });
@@ -460,7 +461,7 @@ class CloudAnalyzer {
      * @param {Object} operationsSettings - Einstellungen für Betriebsaufwand
      * @param {Object} projectEffortSettings - Einstellungen für Projektaufwand
      */
-    calculateTCO(provider, serviceAnalysis, requiredServices, systemConfig = null, operationsSettings = null, projectEffortSettings = null) {
+    calculateTCO(provider, serviceAnalysis, requiredServices, systemConfig = null, operationsSettings = null, projectEffortSettings = null, architectureSettings = null) {
         const allServices = [...serviceAnalysis.available, ...serviceAnalysis.preview];
         const missingServices = serviceAnalysis.missing;
 
@@ -474,7 +475,7 @@ class CloudAnalyzer {
         const consumptionCosts = this.calculateConsumptionCosts(allServices, requiredServices, systemConfig, provider);
 
         // Operations Costs (Betriebsaufwand) — Differenz zwischen Modi kommt aus service-level operations-Rating
-        const operationsCosts = this.calculateOperationsCosts(allServices, missingServices, systemConfig);
+        const operationsCosts = this.calculateOperationsCosts(allServices, missingServices, systemConfig, architectureSettings);
         operationsCosts.includedInCosts = opSettings.includeInCosts;
 
         // Project Effort (Projektaufwand) - mit systemConfig für Skalierung
@@ -1134,7 +1135,7 @@ class CloudAnalyzer {
      * Die Differenz zwischen Cloud-native und Klassisch ergibt sich aus den service-level operations-Ratings
      * (serverless = low, compute = medium) — kein separater Architektur-Faktor nötig.
      */
-    calculateOperationsCosts(services, missingServices, systemConfig = null) {
+    calculateOperationsCosts(services, missingServices, systemConfig = null, architectureSettings = null) {
         const levelMap = { low: 1, medium: 2, high: 3 };
         let totalLevel = 0;
         let details = [];
@@ -1172,6 +1173,37 @@ class CloudAnalyzer {
             }
         });
 
+        // Applikationsbetrieb: plattformseitiger Aufwand (HA, Deployments, Incident Response)
+        // Kommt als virtueller Eintrag hinzu — nicht an eine Infrastrukturkomponente gebunden
+        {
+            const mode = architectureSettings?.mode || 'classic';
+            const sizing = architectureSettings?.sizing || 'medium';
+            const serviceIds = services.map(s => s.id);
+            const complexity = this._getAppComplexity(serviceIds);
+
+            const baseFTEByMode  = { classic: 0.3, cloud_native: 0.1 };
+            const complexityFactor = { low: 0.6, medium: 1.0, high: 1.5 };
+            const sizingFactor     = { small: 0.7, medium: 1.0, large: 1.4 };
+
+            const appBaseOpsFTE = Math.round(
+                (baseFTEByMode[mode] ?? 0.3)
+                * (complexityFactor[complexity] ?? 1.0)
+                * (sizingFactor[sizing] ?? 1.0)
+                * 100) / 100;
+
+            const appBaseOpsLevelScore = appBaseOpsFTE <= 0.12 ? 1 : appBaseOpsFTE <= 0.25 ? 2 : 3;
+            const appBaseOpsLevel = appBaseOpsFTE <= 0.12 ? 'low' : appBaseOpsFTE <= 0.25 ? 'medium' : 'high';
+
+            totalLevel += appBaseOpsLevelScore;
+            details.push({
+                id: 'app_base_ops',
+                name: 'Applikationsbetrieb',
+                level: appBaseOpsLevel,
+                fteEstimate: appBaseOpsFTE,
+                isAppBaseOps: true
+            });
+        }
+
         const avgLevel = details.length > 0 ? totalLevel / details.length : 2;
         const overallLevel = avgLevel <= 1.5 ? 'low' : avgLevel <= 2.5 ? 'medium' : 'high';
 
@@ -1198,6 +1230,22 @@ class CloudAnalyzer {
             high: 0.3        // Hohe Ops (z.B. Self-Build)
         };
         return fteMap[level] || 0.15;
+    }
+
+    /**
+     * Schätzt Applikationskomplexität anhand der gewählten Service-IDs.
+     * Unabhängig von App-Name — rein komponentenbasiert.
+     * @param {string[]} serviceIds
+     * @returns {'low'|'medium'|'high'}
+     */
+    _getAppComplexity(serviceIds) {
+        if (
+            serviceIds.includes('kubernetes') ||
+            (serviceIds.includes('storage_block') && serviceIds.includes('storage_file')) ||
+            serviceIds.length >= 8
+        ) return 'high';
+        if (serviceIds.length >= 4 || serviceIds.includes('messaging')) return 'medium';
+        return 'low';
     }
 
     /**
@@ -1751,13 +1799,18 @@ class MultiAppAnalyzer {
         // Step 1: Jede App individuell analysieren
         const appResults = applications.map(app => {
             const componentIds = Array.from(app.selectedComponents);
+            const appArchSettings = {
+                mode: app.architectureMode || 'classic',
+                sizing: app.sizing || 'medium'
+            };
             const results = this.analyzer.analyzeForComponents(
                 componentIds,
                 weights,
                 app.systemConfig,
                 maturitySettings,
                 operationsSettings,
-                projectEffortSettings
+                projectEffortSettings,
+                appArchSettings
             );
 
             return {

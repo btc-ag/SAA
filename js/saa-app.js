@@ -1272,7 +1272,8 @@ class SovereignArchitectureAdvisor {
         // Architektur-Einstellungen vorbereiten
         const archSettings = {
             mode: this.architectureSettings.mode, // null = Auto, 'cloud_native' oder 'classic'
-            appId: appId
+            appId: appId,
+            sizing: this.selectedSizing || 'medium'
         };
 
         // Neue 4-Gewichte-API verwenden, mit systemConfig für realistische Kostenberechnung

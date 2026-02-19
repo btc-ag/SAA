@@ -1822,6 +1822,7 @@ class ApplicationInstance {
         this.applicationData = null; // Referenz auf knownApplications
         this.analysisResults = null;
         this.isCustom = type === null;
+        this.architectureMode = 'classic'; // 'cloud_native' | 'classic'
         // Architektur-Snapshot & Delta (pro App im Multi-App-Modus)
         this._archOriginal = null;
         this._archDelta = { added: new Set(), removed: new Set(), configs: {} };

@@ -394,6 +394,10 @@ export const SAAComponents = {
         }
 
         this.updateSystemConfigFromComponents();
+        // Architektur-Modus in ApplicationInstance speichern (für multi-app analyzePortfolio)
+        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
+            this.applications[this.currentAppIndex].architectureMode = mode;
+        }
         this.saveSessionState();
     },
 
