@@ -1368,8 +1368,4 @@ export const SAAComponents = {
         });
     },
 
-    /**
-     * Zeigt das Dropdown mit allen Applikationen
-     */
-
 };

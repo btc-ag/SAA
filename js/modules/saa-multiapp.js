@@ -2050,6 +2050,5 @@ GitLab klein`
                sizing === 'medium' ? 'Mittel (100-500 User)' :
                'Groß (500+ User)';
     }
-}
 
 };

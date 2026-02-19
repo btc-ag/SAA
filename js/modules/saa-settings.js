@@ -377,8 +377,4 @@ export const SAASettings = {
         }
     },
 
-    /**
-     * Öffnet das Detail-Popup für einen Provider
-     */
-
 };
