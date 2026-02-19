@@ -1,8 +1,11 @@
 // SAAComponents Module
 // Komponenten-Auswahl, Config-Panels, VM/DB/Storage-Konfiguration
-// Wird aufgerufen via SAAComponents.METHOD.call(app) aus saa-app.js
 
-const SAAComponents = {
+import { architectureComponents, detectDeploymentPattern } from '../saa-data.js';
+import { knownApplications } from '../saa-apps-data.js';
+import { IconMapper } from './saa-utils.js';
+
+export const SAAComponents = {
     renderComponents() {
         // Container auswählen basierend auf Modus
         const containerId = this.isMultiAppMode ? 'currentAppComponentsContainer' : 'componentsContainer';
@@ -21,9 +24,7 @@ const SAAComponents = {
         // Deployment-Pattern erkennen für aktuelle Komponenten
         const componentIds = Array.from(this.selectedComponents).map(id => id.replace(/-\d+$/, ''));
         const appId = this.applicationData ? Object.keys(knownApplications).find(k => knownApplications[k].name === this.applicationData.name) : null;
-        this.detectedPattern = typeof detectDeploymentPattern === 'function'
-            ? detectDeploymentPattern(componentIds, appId)
-            : null;
+        this.detectedPattern = detectDeploymentPattern(componentIds, appId);
 
         // Architektur-Modus Toggle
         let html = `

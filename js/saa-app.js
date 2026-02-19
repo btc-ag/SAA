@@ -1,68 +1,19 @@
 /**
  * Sovereign Architecture Advisor - Main Application
- * Hauptlogik und UI-Steuerung mit Debouncing und Tooltips
+ * Orchestrator: Navigation, Suche, Analyse, System-Requirements
  */
 
-/**
- * Icon Utilities - Mapping von Emojis zu Font Awesome Icons
- */
-const IconMapper = {
-    // Komponenten-Icons
-    component: {
-        '🖥️': 'fa-solid fa-server',
-        '💻': 'fa-solid fa-microchip',
-        '☸️': 'fa-solid fa-dharmachakra',
-        '⚡': 'fa-solid fa-bolt',
-        '🗄️': 'fa-solid fa-database',
-        '📊': 'fa-solid fa-chart-simple',
-        '📦': 'fa-solid fa-box',
-        '💾': 'fa-solid fa-hard-drive',
-        '📁': 'fa-solid fa-folder',
-        '⚖️': 'fa-solid fa-scale-balanced',
-        '🌐': 'fa-solid fa-globe',
-        '🔗': 'fa-solid fa-link',
-        '📬': 'fa-solid fa-envelope',
-        '📨': 'fa-solid fa-envelope',
-        '🚀': 'fa-solid fa-rocket',
-        '📈': 'fa-solid fa-chart-line',
-        '📋': 'fa-solid fa-clipboard-list',
-        '🔐': 'fa-solid fa-lock',
-        '👤': 'fa-solid fa-user',
-        '🤖': 'fa-solid fa-robot',
-        '🔍': 'fa-solid fa-magnifying-glass',
-        '🐘': 'fa-brands fa-php',
-        '🏗️': 'fa-solid fa-building',
-        '☁️': 'fa-solid fa-cloud'
-    },
-    // Cloud Provider Kategorien
-    provider: {
-        '🌐': 'fa-solid fa-globe',
-        '🏛️': 'fa-solid fa-landmark',
-        '🇪🇺': 'fa-solid fa-flag',
-        '🔒': 'fa-solid fa-lock',
-        '🔄': 'fa-solid fa-rotate',
-        '☁️': 'fa-solid fa-cloud'
-    },
-    // Utility Icons (TCO, Warnings, etc.)
-    utility: {
-        '💰': 'fa-solid fa-coins',
-        '👥': 'fa-solid fa-users',
-        '📅': 'fa-solid fa-calendar-days',
-        '⚠️': 'fa-solid fa-triangle-exclamation',
-        '✓': 'fa-solid fa-check',
-        '⚡': 'fa-solid fa-bolt',
-        '📦': 'fa-solid fa-box',
-        '📊': 'fa-solid fa-chart-simple',
-        '🔒': 'fa-solid fa-lock',
-        'ℹ️': 'fa-solid fa-circle-info'
-    },
-    // Konvertiert Emoji zu Font Awesome Icon
-    toFontAwesome(emoji, category = 'component') {
-        const mapping = this[category];
-        const iconClass = mapping[emoji] || 'fa-solid fa-cloud';
-        return `<i class="${iconClass}"></i>`;
-    }
-};
+import { cloudProviders, architectureComponents, ApplicationMatcher, SizingDetector } from './saa-data.js';
+import { knownApplications } from './saa-apps-data.js';
+import { CloudAnalyzer, ApplicationResearcher, MultiAppAnalyzer } from './saa-analysis.js';
+import { IconMapper } from './modules/saa-utils.js';
+import { SAAState } from './modules/saa-state.js';
+import { SAAComponents } from './modules/saa-components.js';
+import { SAAResults } from './modules/saa-results.js';
+import { SAASettings } from './modules/saa-settings.js';
+import { SAAMultiApp } from './modules/saa-multiapp.js';
+import { SAAPdf } from './modules/saa-pdf.js';
+
 
 class SovereignArchitectureAdvisor {
     constructor() {
@@ -202,173 +153,6 @@ class SovereignArchitectureAdvisor {
     }
 
     /**
-     * Lädt den Session-State aus SessionStorage (für F5-Persistenz)
-     */
-    loadSessionState() {
-        try {
-            const stored = sessionStorage.getItem('saa_session_state');
-            if (stored) {
-                const state = JSON.parse(stored);
-
-                // Restore state
-                this.currentStep = state.currentStep || 0;
-                this.isMultiAppMode = state.isMultiAppMode || false;
-
-                if (state.isMultiAppMode) {
-                    // Multi-App State - selectedComponents müssen als Set wiederhergestellt werden
-                    this.applications = (state.applications || []).map(app => {
-                        // Stelle sicher, dass selectedComponents ein Set ist
-                        if (app.selectedComponents) {
-                            if (app.selectedComponents instanceof Set) {
-                                // Bereits ein Set - nichts tun
-                            } else if (Array.isArray(app.selectedComponents)) {
-                                // Array -> Set
-                                app.selectedComponents = new Set(app.selectedComponents);
-                            } else if (typeof app.selectedComponents === 'object') {
-                                // Objekt (z.B. von JSON) -> Values als Set
-                                app.selectedComponents = new Set(Object.values(app.selectedComponents));
-                            } else {
-                                app.selectedComponents = new Set();
-                            }
-                        } else {
-                            app.selectedComponents = new Set();
-                        }
-                        return app;
-                    });
-                    this.currentAppIndex = state.currentAppIndex || 0;
-                    this.aggregatedResults = state.aggregatedResults || null;
-                } else {
-                    // Single-App State
-                    this._selectedComponents = new Set(state.selectedComponents || []);
-                    this._componentConfigs = state.componentConfigs || {};
-                    this._componentInstances = state.componentInstances || {};
-                    this._applicationData = state.applicationData || null;
-                    this._analysisResults = state.analysisResults || null;
-                    this._selectedSizing = state.selectedSizing || 'medium';
-                    this._systemConfig = state.systemConfig || null;
-                }
-
-                console.log('Session-State wiederhergestellt:', state);
-
-                // Custom Scores neu laden (falls sie in der Zwischenzeit geändert wurden)
-                this.analyzer.customScores = this.analyzer.loadCustomScores();
-
-                // UI entsprechend aktualisieren
-                if (this.currentStep === 2) {
-                    // Komponenten-Auswahl wiederherstellen
-                    setTimeout(() => {
-                        this.renderComponents();
-                        this.updateSelectedSummary();
-                    }, 100);
-                } else if (this.currentStep === 3) {
-                    // Analyse-Ergebnisse wiederherstellen
-                    // WICHTIG: Analyse neu berechnen, da Custom Scores sich geändert haben könnten
-                    setTimeout(() => {
-                        if (this.isMultiAppMode && this.applications.length > 0) {
-                            // Multi-App: Neuberechnung durchführen
-                            this.runMultiAppAnalysis();
-                        } else if (this._selectedComponents && this._selectedComponents.size > 0) {
-                            // Single-App: Neuberechnung durchführen
-                            this.runAnalysis();
-                        }
-                    }, 100);
-                }
-            }
-        } catch (e) {
-            console.error('Fehler beim Laden des Session-State:', e);
-        }
-    }
-
-    /**
-     * Speichert den aktuellen Session-State in SessionStorage
-     */
-    saveSessionState() {
-        try {
-            const state = {
-                currentStep: this.currentStep,
-                isMultiAppMode: this.isMultiAppMode
-            };
-
-            if (this.isMultiAppMode) {
-                state.applications = this.applications;
-                state.currentAppIndex = this.currentAppIndex;
-                state.aggregatedResults = this.aggregatedResults;
-            } else {
-                // Single-App State
-                state.selectedComponents = Array.from(this._selectedComponents);
-                state.componentConfigs = this._componentConfigs;
-                state.componentInstances = this._componentInstances;
-                state.applicationData = this._applicationData;
-                state.analysisResults = this._analysisResults;
-                state.selectedSizing = this._selectedSizing;
-                state.systemConfig = this._systemConfig;
-            }
-
-            sessionStorage.setItem('saa_session_state', JSON.stringify(state));
-        } catch (e) {
-            console.error('Fehler beim Speichern des Session-State:', e);
-        }
-    }
-
-    /**
-     * Lädt gespeicherte Algorithmus-Einstellungen aus LocalStorage
-     */
-    loadSettings() {
-        try {
-            const stored = localStorage.getItem('saa_algorithm_settings');
-            if (stored) {
-                const settings = JSON.parse(stored);
-
-                // Gewichtungen laden
-                if (settings.weights) {
-                    this.weights = settings.weights;
-                }
-                if (settings.selectedPreset) {
-                    this.selectedPreset = settings.selectedPreset;
-                }
-
-                // Maturity-Einstellungen laden
-                if (settings.maturitySettings) {
-                    this.maturitySettings = settings.maturitySettings;
-                }
-
-                // Operations-Einstellungen laden
-                if (settings.operationsSettings) {
-                    this.operationsSettings = settings.operationsSettings;
-                }
-
-                // Projektaufwand-Einstellungen laden
-                if (settings.projectEffortSettings) {
-                    this.projectEffortSettings = settings.projectEffortSettings;
-                }
-
-                console.log('Algorithmus-Einstellungen geladen:', settings);
-            }
-        } catch (e) {
-            console.error('Fehler beim Laden der Einstellungen:', e);
-        }
-    }
-
-    /**
-     * Speichert aktuelle Algorithmus-Einstellungen in LocalStorage
-     */
-    saveSettings() {
-        try {
-            const settings = {
-                weights: this.weights,
-                selectedPreset: this.selectedPreset,
-                maturitySettings: this.maturitySettings,
-                operationsSettings: this.operationsSettings,
-                projectEffortSettings: this.projectEffortSettings
-            };
-            localStorage.setItem('saa_algorithm_settings', JSON.stringify(settings));
-            console.log('Algorithmus-Einstellungen gespeichert:', settings);
-        } catch (e) {
-            console.error('Fehler beim Speichern der Einstellungen:', e);
-        }
-    }
-
-    /**
      * Initialisiert das globale Tooltip-System für Tabellen
      */
     initTooltipSystem() {
@@ -460,14 +244,18 @@ class SovereignArchitectureAdvisor {
     }
 
     bindEvents() {
-        // Search Button
+        this.bindSearchEvents();
+        this.bindQuickSuggestionEvents();
+        this.bindUIEvents();
+        this.bindMultiAppEvents();
+    }
+
+    bindSearchEvents() {
         const searchBtn = document.getElementById('searchBtn');
         if (searchBtn) {
             searchBtn.addEventListener('click', () => this.searchApplication());
         }
 
-
-        // Search Input Enter + Dropdown
         const searchInput = document.getElementById('appSearchInput');
         if (searchInput) {
             searchInput.addEventListener('keypress', (e) => {
@@ -481,7 +269,6 @@ class SovereignArchitectureAdvisor {
             searchInput.addEventListener('keydown', (e) => this.handleDropdownKeyboard(e));
         }
 
-        // Close dropdown on outside click
         document.addEventListener('click', (e) => {
             const dropdown = document.getElementById('appDropdown');
             const input = document.getElementById('appSearchInput');
@@ -489,24 +276,22 @@ class SovereignArchitectureAdvisor {
                 this.hideAppDropdown();
             }
         });
+    }
 
-        // Quick Suggestions
+    bindQuickSuggestionEvents() {
         document.querySelectorAll('.quick-suggestion').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const app = e.target.dataset.app;
-                const template = e.target.dataset.template;
 
                 // Neuer App-Start → State vollständig zurücksetzen
                 if (app) this.hardReset();
 
                 if (app === 'custom') {
-                    // Benutzerdefinierte App: Direkt zur manuellen Auswahl
                     this.applicationData = null;
                     document.getElementById('researchResult').style.display = 'none';
                     document.getElementById('appSearchInput').value = 'Benutzerdefinierte Anwendung';
                     this.nextStep();
                 } else if (app) {
-                    // Bekannte App → direkt laden, Sizing-Auswahl auf Step 0 anzeigen
                     const knownApp = knownApplications[app];
                     if (knownApp) {
                         document.getElementById('appSearchInput').value = knownApp.name;
@@ -526,7 +311,6 @@ class SovereignArchitectureAdvisor {
                             };
                             try { this.initComponentConfigsFromSystemRequirements(); } catch (e) {}
                         }
-                        // Sizing-Auswahl anzeigen (ohne Recherche-Delay)
                         const sysReqHtml = this.renderSystemRequirements(knownApp);
                         const resultDiv = document.getElementById('researchResult');
                         resultDiv.innerHTML = `
@@ -546,28 +330,25 @@ class SovereignArchitectureAdvisor {
                         resultDiv.style.display = 'block';
                         this.bindSizingEvents();
                     } else {
-                        // Unbekannte App → Fallback auf Suche
                         document.getElementById('appSearchInput').value = app;
                         this.searchApplication();
                     }
                 }
             });
         });
+    }
 
-        // Navigation Buttons - onclick wird dynamisch in updateNavigationState() gesetzt
+    bindUIEvents() {
+        // Navigation
         document.getElementById('prevBtn')?.addEventListener('click', () => this.prevStep());
-
-        // Skip to manual selection
         document.getElementById('skipToManual')?.addEventListener('click', () => {
             this.applicationData = null;
             document.getElementById('researchResult').style.display = 'none';
             this.nextStep();
         });
-
-        // Klickbare Wizard-Steps
         document.querySelectorAll('.wizard-step').forEach((step) => {
             step.style.cursor = 'pointer';
-            step.addEventListener('click', (e) => {
+            step.addEventListener('click', () => {
                 const targetStep = parseInt(step.dataset.step);
                 if (targetStep && targetStep !== this.currentStep) {
                     this.goToStep(targetStep);
@@ -575,51 +356,33 @@ class SovereignArchitectureAdvisor {
             });
         });
 
-        // Settings/Algorithmus Button
+        // Settings
         document.getElementById('settingsBtn')?.addEventListener('click', () => this.openSettings());
         document.getElementById('closeSettingsBtn')?.addEventListener('click', () => this.closeSettings());
         document.getElementById('settingsOverlay')?.addEventListener('click', (e) => {
             if (e.target.id === 'settingsOverlay') this.closeSettings();
         });
-
-        // Preset Cards
         document.querySelectorAll('.preset-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const preset = card.dataset.preset;
-                this.selectPreset(preset);
-            });
+            card.addEventListener('click', () => this.selectPreset(card.dataset.preset));
         });
-
-        // Custom Weight Inputs
         ['customControl', 'customPerformance', 'customAvailability', 'customCost'].forEach(id => {
             document.getElementById(id)?.addEventListener('input', () => this.updateCustomWeights());
         });
-
-        // API Key Toggle
         document.getElementById('toggleApiKeyBtn')?.addEventListener('click', () => this.toggleApiKeyVisibility());
-
-        // API Key Input Change
         document.getElementById('apiKeyInput')?.addEventListener('input', (e) => this.validateApiKey(e.target.value));
-
-        // Maturity Factor Settings
-        document.getElementById('maturityEnabled')?.addEventListener('change', (e) => this.updateMaturitySettings());
+        document.getElementById('maturityEnabled')?.addEventListener('change', () => this.updateMaturitySettings());
         document.getElementById('previewPenalty')?.addEventListener('input', () => this.updateMaturitySettings());
         document.getElementById('missingPenalty')?.addEventListener('input', () => this.updateMaturitySettings());
+        document.getElementById('operationsEnabled')?.addEventListener('change', () => this.updateOperationsSettings());
+        document.getElementById('projectEffortEnabled')?.addEventListener('change', () => this.updateProjectEffortSettings());
 
-        // Operations Settings
-        document.getElementById('operationsEnabled')?.addEventListener('change', (e) => this.updateOperationsSettings());
-
-        // Project Effort Settings
-        document.getElementById('projectEffortEnabled')?.addEventListener('change', (e) => this.updateProjectEffortSettings());
-
-        // Detail Popup Overlay Click
+        // Detail Popup
         document.getElementById('detailPopupOverlay')?.addEventListener('click', (e) => {
             if (e.target.id === 'detailPopupOverlay') this.closeDetailPopup();
         });
+    }
 
-        // ========== MULTI-APP EVENT HANDLERS ==========
-
-        // Parse Apps Button (Step 0)
+    bindMultiAppEvents() {
         document.getElementById('parseAppsBtn')?.addEventListener('click', () => {
             const input = document.getElementById('multiAppInput');
             if (input && input.value.trim()) {
@@ -627,62 +390,40 @@ class SovereignArchitectureAdvisor {
             }
         });
 
-        // Mode Toggle Buttons (Step 0)
         document.getElementById('singleModeBtn')?.addEventListener('click', () => {
-            // Aktiviere Single-App-Modus
             this.isMultiAppMode = false;
             this.applications = [];
             this.currentAppIndex = 0;
             this.aggregatedResults = null;
             this._analysisResults = null;
-
             document.getElementById('singleModeBtn').classList.add('active');
             document.getElementById('multiModeBtn').classList.remove('active');
             document.getElementById('singleAppInputMode').style.display = 'block';
             document.getElementById('multiAppInputMode').style.display = 'none';
-
-            // Zurück zu Step 0 wenn nicht bereits dort
-            if (this.currentStep !== 0) {
-                this.goToStep(0);
-            }
+            if (this.currentStep !== 0) this.goToStep(0);
         });
 
         document.getElementById('multiModeBtn')?.addEventListener('click', () => {
-            // Aktiviere Multi-App-Modus
             this.isMultiAppMode = true;
             this._analysisResults = null;
-
             document.getElementById('multiModeBtn').classList.add('active');
             document.getElementById('singleModeBtn').classList.remove('active');
             document.getElementById('singleAppInputMode').style.display = 'none';
             document.getElementById('multiAppInputMode').style.display = 'block';
-
-            // Zurück zu Step 0 wenn nicht bereits dort
-            if (this.currentStep !== 0) {
-                this.goToStep(0);
-            }
+            if (this.currentStep !== 0) this.goToStep(0);
         });
 
-        // Template Buttons (Step 0)
         document.querySelectorAll('[data-template]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const template = e.target.dataset.template;
-                this.loadTemplate(template);
-            });
+            btn.addEventListener('click', (e) => this.loadTemplate(e.target.dataset.template));
         });
 
-        // App Navigation Buttons (Step 2 Multi-App)
         document.getElementById('prevAppBtn')?.addEventListener('click', () => this.goToPrevApp());
         document.getElementById('nextAppBtn')?.addEventListener('click', () => this.goToNextApp());
 
-        // Wizard Steps klickbar machen (Zurück-Navigation)
         document.querySelectorAll('.wizard-step').forEach(step => {
             step.addEventListener('click', () => {
                 const stepNum = parseInt(step.dataset.step);
-                // Nur zurück navigieren erlauben (zu completed steps)
-                if (stepNum < this.currentStep) {
-                    this.goToStep(stepNum);
-                }
+                if (stepNum < this.currentStep) this.goToStep(stepNum);
             });
         });
     }
@@ -727,33 +468,6 @@ class SovereignArchitectureAdvisor {
         }
     }
 
-    // ─── SAAComponents – delegiert an modules/saa-components.js ───────────────
-    renderComponents() { return SAAComponents.renderComponents.call(this); }
-    bindComponentConfigEvents(container) { return SAAComponents.bindComponentConfigEvents.call(this, container); }
-    updateComponentConfig(componentId, fieldId, value) { return SAAComponents.updateComponentConfig.call(this, componentId, fieldId, value); }
-    updateVMGroupField(input) { return SAAComponents.updateVMGroupField.call(this, input); }
-    addVMToGroup(componentId, fieldId) { return SAAComponents.addVMToGroup.call(this, componentId, fieldId); }
-    removeVMFromGroup(componentId, fieldId, vmIndex) { return SAAComponents.removeVMFromGroup.call(this, componentId, fieldId, vmIndex); }
-    updateDBGroupField(input) { return SAAComponents.updateDBGroupField.call(this, input); }
-    addDBToGroup(componentId, fieldId) { return SAAComponents.addDBToGroup.call(this, componentId, fieldId); }
-    removeDBFromGroup(componentId, fieldId, dbIndex) { return SAAComponents.removeDBFromGroup.call(this, componentId, fieldId, dbIndex); }
-    updateStorageGroupField(input) { return SAAComponents.updateStorageGroupField.call(this, input); }
-    addStorageToGroup(componentId, fieldId) { return SAAComponents.addStorageToGroup.call(this, componentId, fieldId); }
-    removeStorageFromGroup(componentId, fieldId, volIndex) { return SAAComponents.removeStorageFromGroup.call(this, componentId, fieldId, volIndex); }
-    initComponentConfig(componentId) { return SAAComponents.initComponentConfig.call(this, componentId); }
-    updateComponentConfigSummary(componentId) { return SAAComponents.updateComponentConfigSummary.call(this, componentId); }
-    updateSystemConfigFromComponents() { return SAAComponents.updateSystemConfigFromComponents.call(this); }
-    renderComponentCard(component, instanceId = null) { return SAAComponents.renderComponentCard.call(this, component, instanceId); }
-    renderComponentConfigPanel(component, componentId) { return SAAComponents.renderComponentConfigPanel.call(this, component, componentId); }
-    renderVMGroupField(componentId, field, vmGroups) { return SAAComponents.renderVMGroupField.call(this, componentId, field, vmGroups); }
-    renderDBGroupField(componentId, field, databases) { return SAAComponents.renderDBGroupField.call(this, componentId, field, databases); }
-    renderStorageGroupField(componentId, field, volumes) { return SAAComponents.renderStorageGroupField.call(this, componentId, field, volumes); }
-    toggleComponent(componentId) { return SAAComponents.toggleComponent.call(this, componentId); }
-    addComponentInstance(baseComponentId) { return SAAComponents.addComponentInstance.call(this, baseComponentId); }
-    removeComponentInstance(instanceId) { return SAAComponents.removeComponentInstance.call(this, instanceId); }
-    reRenderComponentCard(componentId) { return SAAComponents.reRenderComponentCard.call(this, componentId); }
-    updateSelectedSummary() { return SAAComponents.updateSelectedSummary.call(this); }
-
 
     /**
      * Zeigt das Dropdown mit allen Applikationen
@@ -785,19 +499,6 @@ class SovereignArchitectureAdvisor {
 
         const filter = input.value.toLowerCase().trim();
         const apps = Object.entries(knownApplications);
-
-        // Kategorien definieren
-        const categories = {
-            'ERP & Business': ['sap-s4hana', 'sap-business-one', 'dynamics-365', 'suitecrm', 'oracle-ebs', 'odoo', 'mautic', 'sugarcrm', 'infor-cloudsuite', 'sage-x3', 'netsuite', 'workday', 'servicenow'],
-            'DevOps & CI/CD': ['gitlab', 'github-enterprise', 'jenkins', 'argocd', 'tekton', 'harbor', 'sonarqube', 'nexus', 'jfrog-artifactory', 'terraform-enterprise', 'ansible-tower', 'hashicorp-vault', 'consul', 'backstage'],
-            'CMS & Collaboration': ['wordpress', 'typo3', 'drupal', 'nextcloud', 'confluence', 'sharepoint', 'mattermost', 'rocketchat', 'matrix-synapse', 'discourse', 'mediawiki', 'strapi', 'ghost', 'neos'],
-            'Datenbanken & Analytics': ['postgresql', 'mysql-mariadb', 'mongodb', 'elasticsearch', 'kafka', 'redis-primary', 'grafana', 'prometheus', 'influxdb', 'metabase', 'apache-superset', 'power-bi-report-server', 'tableau-server', 'apache-airflow'],
-            'Security & Identity': ['keycloak', 'freeipa', 'openldap', 'authentik', 'zitadel', 'owasp-zap', 'trivy', 'falco', 'wazuh', 'graylog', 'splunk-enterprise', 'crowdsec', 'pfsense', 'wireguard'],
-            'E-Commerce': ['magento', 'shopware', 'prestashop', 'woocommerce', 'saleor', 'spree'],
-            'Web & Application': ['nodejs-express', 'spring-boot', 'django', 'laravel', 'microservices-mesh', 'kong', 'nginx', 'tomcat'],
-            'AI & ML': ['kubeflow', 'mlflow', 'jupyterhub'],
-            'Projektmanagement': ['jira', 'bitbucket', 'redmine', 'zabbix', 'nagios', 'plex', 'vaultwarden', 'gitea', 'openproject', 'minio']
-        };
 
         // Apps filtern mit Fuzzy-Matching
         let filteredApps;
@@ -1104,284 +805,90 @@ class SovereignArchitectureAdvisor {
     /**
      * Rendert die Details für ein bestimmtes Sizing
      */
+    // Helper: generiert ein einzelnes sysreq-Item
+    _sysreqItem(icon, label, value, extraHtml = '', wide = false) {
+        return `
+            <div class="sysreq-item${wide ? ' sysreq-item-wide' : ''}">
+                <div class="sysreq-item-icon">${IconMapper.toFontAwesome(icon, 'component')}</div>
+                <div class="sysreq-item-content">
+                    <div class="sysreq-item-label">${label}</div>
+                    <div class="sysreq-item-value">${value}</div>
+                    ${extraHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    // Helper: Compute-Block (Multi-VM oder Standard)
+    _renderSizingCompute(compute, sizeConfig) {
+        const dbKeywords = ['mongodb', 'mysql', 'postgresql', 'postgres', 'redis', 'elasticsearch', 'cassandra', 'neo4j', 'couchdb'];
+        const vmTypes = Object.entries(compute)
+            .filter(([k, v]) => v && typeof v === 'object' && (v.cpu || v.ram) && !dbKeywords.some(db => k.toLowerCase().includes(db)))
+            .map(([key, config]) => ({ key, config }));
+
+        const icon = '💻';
+
+        if (vmTypes.length > 0) {
+            // Multi-VM-Struktur
+            const details = vmTypes.map(({ key, config }) => {
+                let nodeCount = config.nodes || config.count || 1;
+                let haType = null;
+                if (sizeConfig.ha) {
+                    const ha = this.extractHAConfig(sizeConfig.ha);
+                    if (ha && ha.nodeCount > 1 && !ha.hasMultipleRoles) { nodeCount = ha.nodeCount; haType = ha.haType; }
+                }
+                const spec = `${config.cpu || '-'} vCPU / ${config.ram || '-'} GB RAM${nodeCount > 1 ? ` (${nodeCount} Nodes${haType ? ` - ${haType}` : ''})` : ''}`;
+                return `<div class="sysreq-item-detail"><strong>${this.formatVMTypeName(key)}:</strong> ${spec}</div>`;
+            }).join('');
+            return `<div class="sysreq-item"><div class="sysreq-item-icon">${IconMapper.toFontAwesome(icon, 'component')}</div><div class="sysreq-item-content"><div class="sysreq-item-label">Compute</div>${details}</div></div>`;
+        }
+
+        // Standard-Struktur
+        let nodeInfo = compute.nodes > 1 ? `<div class="sysreq-item-detail">Nodes: ${compute.nodes}</div>` : '';
+        if (sizeConfig.ha) {
+            const ha = this.extractHAConfig(sizeConfig.ha);
+            if (ha && ha.nodeCount > 1) nodeInfo = `<div class="sysreq-item-detail">${ha.nodeCount} Nodes${ha.haType ? ` (${ha.haType})` : ''}</div>`;
+        }
+        const extra = `${compute.workers ? `<div class="sysreq-item-detail">Workers: ${compute.workers}</div>` : ''}${nodeInfo}`;
+        return this._sysreqItem(icon, 'Compute', `${compute.cpu || '-'} vCPU / ${compute.ram || '-'} GB RAM`, extra);
+    }
+
     renderSizingDetails(sizeConfig) {
         if (!sizeConfig) return '<p>Keine Details verfügbar.</p>';
 
-        let html = '<div class="sysreq-grid">';
+        const parts = [];
 
-        // Compute
         if (sizeConfig.compute) {
-            const compute = sizeConfig.compute;
-
-            // Generische Prüfung auf Multi-VM-Struktur (ähnlich wie in initComponentConfigsFromSystemRequirements)
-            const databaseKeywords = ['mongodb', 'mysql', 'postgresql', 'postgres', 'redis', 'elasticsearch', 'cassandra', 'neo4j', 'couchdb'];
-            const vmTypes = [];
-
-            for (const [key, value] of Object.entries(compute)) {
-                if (value && typeof value === 'object' && (value.cpu || value.ram)) {
-                    // Datenbank-Keywords filtern (werden separat als Database-Komponente angezeigt)
-                    const isDatabase = databaseKeywords.some(db => key.toLowerCase().includes(db));
-                    if (!isDatabase) {
-                        vmTypes.push({ key, config: value });
-                    }
-                }
-            }
-
-            // Multi-VM-Struktur erkannt
-            if (vmTypes.length > 0) {
-                let details = '';
-
-                for (const vmType of vmTypes) {
-                    const formattedName = this.formatVMTypeName(vmType.key);
-                    const config = vmType.config;
-                    let nodeCount = config.nodes || config.count || 1;
-                    let haType = null;
-
-                    // Check for system-level HA
-                    if (sizeConfig.ha) {
-                        const haConfig = this.extractHAConfig(sizeConfig.ha);
-                        if (haConfig && haConfig.nodeCount > 1 && !haConfig.hasMultipleRoles) {
-                            nodeCount = haConfig.nodeCount;
-                            haType = haConfig.haType;
-                        }
-                    }
-
-                    // Build display string
-                    let displayText = `${config.cpu || '-'} vCPU / ${config.ram || '-'} GB RAM`;
-                    if (nodeCount > 1) {
-                        displayText += ` (${nodeCount} Nodes${haType ? ` - ${haType}` : ''})`;
-                    }
-
-                    details += `<div class="sysreq-item-detail"><strong>${formattedName}:</strong> ${displayText}</div>`;
-                }
-
-                html += `
-                    <div class="sysreq-item">
-                        <div class="sysreq-item-icon">${IconMapper.toFontAwesome('💻', 'component')}</div>
-                        <div class="sysreq-item-content">
-                            <div class="sysreq-item-label">Compute</div>
-                            ${details}
-                        </div>
-                    </div>
-                `;
-            } else {
-                // Standard-Struktur (direkte cpu/ram Properties)
-                // Build node info (compute.nodes or HA config)
-                let nodeInfo = '';
-                if (compute.nodes && compute.nodes > 1) {
-                    nodeInfo = `<div class="sysreq-item-detail">Nodes: ${compute.nodes}</div>`;
-                }
-
-                // Check for HA configuration (takes precedence)
-                if (sizeConfig.ha) {
-                    const haConfig = this.extractHAConfig(sizeConfig.ha);
-                    if (haConfig && haConfig.nodeCount > 1) {
-                        nodeInfo = `<div class="sysreq-item-detail">${haConfig.nodeCount} Nodes${haConfig.haType ? ` (${haConfig.haType})` : ''}</div>`;
-                    }
-                }
-
-                html += `
-                    <div class="sysreq-item">
-                        <div class="sysreq-item-icon">${IconMapper.toFontAwesome('💻', 'component')}</div>
-                        <div class="sysreq-item-content">
-                            <div class="sysreq-item-label">Compute</div>
-                            <div class="sysreq-item-value">${compute.cpu || '-'} vCPU / ${compute.ram || '-'} GB RAM</div>
-                            ${compute.workers ? `<div class="sysreq-item-detail">Workers: ${compute.workers}</div>` : ''}
-                            ${nodeInfo}
-                        </div>
-                    </div>
-                `;
-            }
+            parts.push(this._renderSizingCompute(sizeConfig.compute, sizeConfig));
         }
 
-        // Database
         if (sizeConfig.database) {
             const db = sizeConfig.database;
-
-            // Check for HA/Cluster info from compute.sql.nodes
-            let haInfo = '';
-            if (sizeConfig.compute && sizeConfig.compute.sql && sizeConfig.compute.sql.nodes > 1) {
-                haInfo = `<div class="sysreq-item-detail">Nodes: ${sizeConfig.compute.sql.nodes} (HA)</div>`;
-            }
-
-            // Show database note if available (e.g., "3 DBs: Site Config, Logging, Monitoring")
-            const noteHtml = db.note ? `<div class="sysreq-item-detail">${db.note}</div>` : '';
-
-            html += `
-                <div class="sysreq-item">
-                    <div class="sysreq-item-icon">${IconMapper.toFontAwesome('🗄️', 'component')}</div>
-                    <div class="sysreq-item-content">
-                        <div class="sysreq-item-label">Datenbank</div>
-                        <div class="sysreq-item-value">${db.type || '-'}</div>
-                        <div class="sysreq-item-detail">Größe: ${db.size || '-'}</div>
-                        ${haInfo}
-                        ${noteHtml}
-                    </div>
-                </div>
-            `;
+            const haInfo = (sizeConfig.compute?.sql?.nodes > 1) ? `<div class="sysreq-item-detail">Nodes: ${sizeConfig.compute.sql.nodes} (HA)</div>` : '';
+            const note  = db.note ? `<div class="sysreq-item-detail">${db.note}</div>` : '';
+            parts.push(this._sysreqItem('🗄️', 'Datenbank', db.type || '-',
+                `<div class="sysreq-item-detail">Größe: ${db.size || '-'}</div>${haInfo}${note}`));
         }
 
-        // Storage
         if (sizeConfig.storage) {
-            const storage = sizeConfig.storage;
-            html += `
-                <div class="sysreq-item">
-                    <div class="sysreq-item-icon">${IconMapper.toFontAwesome('💾', 'component')}</div>
-                    <div class="sysreq-item-content">
-                        <div class="sysreq-item-label">Storage</div>
-                        <div class="sysreq-item-value">${storage.type || '-'}</div>
-                        <div class="sysreq-item-detail">Größe: ${storage.size || '-'}</div>
-                    </div>
-                </div>
-            `;
+            parts.push(this._sysreqItem('💾', 'Storage', sizeConfig.storage.type || '-',
+                `<div class="sysreq-item-detail">Größe: ${sizeConfig.storage.size || '-'}</div>`));
         }
 
-        // OS
-        if (sizeConfig.os && Array.isArray(sizeConfig.os)) {
-            html += `
-                <div class="sysreq-item">
-                    <div class="sysreq-item-icon">${IconMapper.toFontAwesome('🖥️', 'component')}</div>
-                    <div class="sysreq-item-content">
-                        <div class="sysreq-item-label">Betriebssystem</div>
-                        <div class="sysreq-item-value">${sizeConfig.os.join(', ')}</div>
-                    </div>
-                </div>
-            `;
-        }
+        if (sizeConfig.os?.length)      parts.push(this._sysreqItem('🖥️', 'Betriebssystem', sizeConfig.os.join(', ')));
+        if (sizeConfig.php)             parts.push(this._sysreqItem('🐘', 'PHP', sizeConfig.php,
+            sizeConfig.phpMemory ? `<div class="sysreq-item-detail">Memory: ${sizeConfig.phpMemory}</div>` : ''));
+        if (sizeConfig.webServer)       parts.push(this._sysreqItem('🌐', 'Web Server', sizeConfig.webServer));
+        if (sizeConfig.cache)           parts.push(this._sysreqItem('⚡', 'Cache', sizeConfig.cache));
+        if (sizeConfig.queue)           parts.push(this._sysreqItem('📨', 'Message Queue', sizeConfig.queue));
+        if (sizeConfig.search)          parts.push(this._sysreqItem('🔍', 'Suche', sizeConfig.search));
+        if (sizeConfig.architecture)    parts.push(this._sysreqItem('🏗️', 'Architektur', sizeConfig.architecture, '', true));
+        if (sizeConfig.dags)            parts.push(this._sysreqItem('📊', 'DAGs', sizeConfig.dags));
+        if (sizeConfig.python)          parts.push(this._sysreqItem('🐍', 'Python', sizeConfig.python));
+        if (sizeConfig.executor)        parts.push(this._sysreqItem('⚙️', 'Executor', sizeConfig.executor));
+        if (sizeConfig.redis)           parts.push(this._sysreqItem('⚡', 'Redis', sizeConfig.redis));
 
-        // PHP (für Web-Apps)
-        if (sizeConfig.php) {
-            html += `
-                <div class="sysreq-item">
-                    <div class="sysreq-item-icon">${IconMapper.toFontAwesome('🐘', 'component')}</div>
-                    <div class="sysreq-item-content">
-                        <div class="sysreq-item-label">PHP</div>
-                        <div class="sysreq-item-value">${sizeConfig.php}</div>
-                        ${sizeConfig.phpMemory ? `<div class="sysreq-item-detail">Memory: ${sizeConfig.phpMemory}</div>` : ''}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Web Server
-        if (sizeConfig.webServer) {
-            html += `
-                <div class="sysreq-item">
-                    <div class="sysreq-item-icon">${IconMapper.toFontAwesome('🌐', 'provider')}</div>
-                    <div class="sysreq-item-content">
-                        <div class="sysreq-item-label">Web Server</div>
-                        <div class="sysreq-item-value">${sizeConfig.webServer}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Cache
-        if (sizeConfig.cache) {
-            html += `
-                <div class="sysreq-item">
-                    <div class="sysreq-item-icon">${IconMapper.toFontAwesome('⚡', 'utility')}</div>
-                    <div class="sysreq-item-content">
-                        <div class="sysreq-item-label">Cache</div>
-                        <div class="sysreq-item-value">${sizeConfig.cache}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Queue/Messaging
-        if (sizeConfig.queue) {
-            html += `
-                <div class="sysreq-item">
-                    <div class="sysreq-item-icon">${IconMapper.toFontAwesome('📨', 'component')}</div>
-                    <div class="sysreq-item-content">
-                        <div class="sysreq-item-label">Message Queue</div>
-                        <div class="sysreq-item-value">${sizeConfig.queue}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Search (Elasticsearch etc.)
-        if (sizeConfig.search) {
-            html += `
-                <div class="sysreq-item">
-                    <div class="sysreq-item-icon">${IconMapper.toFontAwesome('🔍', 'component')}</div>
-                    <div class="sysreq-item-content">
-                        <div class="sysreq-item-label">Suche</div>
-                        <div class="sysreq-item-value">${sizeConfig.search}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Architecture
-        if (sizeConfig.architecture) {
-            html += `
-                <div class="sysreq-item sysreq-item-wide">
-                    <div class="sysreq-item-icon">${IconMapper.toFontAwesome('🏗️', 'component')}</div>
-                    <div class="sysreq-item-content">
-                        <div class="sysreq-item-label">Architektur</div>
-                        <div class="sysreq-item-value">${sizeConfig.architecture}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // DAGs (für Apache Airflow)
-        if (sizeConfig.dags) {
-            html += `
-                <div class="sysreq-item">
-                    <div class="sysreq-item-icon">${IconMapper.toFontAwesome('📊', 'component')}</div>
-                    <div class="sysreq-item-content">
-                        <div class="sysreq-item-label">DAGs</div>
-                        <div class="sysreq-item-value">${sizeConfig.dags}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Python Version
-        if (sizeConfig.python) {
-            html += `
-                <div class="sysreq-item">
-                    <div class="sysreq-item-icon">${IconMapper.toFontAwesome('🐍', 'component')}</div>
-                    <div class="sysreq-item-content">
-                        <div class="sysreq-item-label">Python</div>
-                        <div class="sysreq-item-value">${sizeConfig.python}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Executor (für Apache Airflow)
-        if (sizeConfig.executor) {
-            html += `
-                <div class="sysreq-item">
-                    <div class="sysreq-item-icon">${IconMapper.toFontAwesome('⚙️', 'component')}</div>
-                    <div class="sysreq-item-content">
-                        <div class="sysreq-item-label">Executor</div>
-                        <div class="sysreq-item-value">${sizeConfig.executor}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Redis (für Apache Airflow)
-        if (sizeConfig.redis) {
-            html += `
-                <div class="sysreq-item">
-                    <div class="sysreq-item-icon">${IconMapper.toFontAwesome('⚡', 'utility')}</div>
-                    <div class="sysreq-item-content">
-                        <div class="sysreq-item-label">Redis</div>
-                        <div class="sysreq-item-value">${sizeConfig.redis}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        html += '</div>';
-        return html;
+        return `<div class="sysreq-grid">${parts.join('')}</div>`;
     }
 
     /**
@@ -1574,999 +1081,6 @@ class SovereignArchitectureAdvisor {
         }
     }
 
-    // ─── Settings – delegiert an modules/saa-settings.js ────────────────────
-    openSettings() { return SAASettings.openSettings.call(this); }
-    closeSettings() { return SAASettings.closeSettings.call(this); }
-    updateSettingsDisplay() { return SAASettings.updateSettingsDisplay.call(this); }
-    selectPreset(presetId) { return SAASettings.selectPreset.call(this, presetId); }
-    updateCustomWeights() { return SAASettings.updateCustomWeights.call(this); }
-    updateCustomWeightTotal() { return SAASettings.updateCustomWeightTotal.call(this); }
-    updateMaturitySettings() { return SAASettings.updateMaturitySettings.call(this); }
-    updateOperationsSettings() { return SAASettings.updateOperationsSettings.call(this); }
-    updateProjectEffortSettings() { return SAASettings.updateProjectEffortSettings.call(this); }
-    getPresetLabel() { return SAASettings.getPresetLabel.call(this); }
-    getPresetIcon() { return SAASettings.getPresetIcon.call(this); }
-    getServiceDisplayName(serviceId) { return SAASettings.getServiceDisplayName.call(this, serviceId); }
-    updateFormulaDisplay() { return SAASettings.updateFormulaDisplay.call(this); }
-    toggleApiKeyVisibility() { return SAASettings.toggleApiKeyVisibility.call(this); }
-    validateApiKey(key) { return SAASettings.validateApiKey.call(this, key); }
-
-    openDetailPopup(providerResult) {
-        const overlay = document.getElementById('detailPopupOverlay');
-        const title = document.getElementById('detailPopupTitle');
-        const content = document.getElementById('detailPopupContent');
-
-        if (!overlay || !content) return;
-
-        title.textContent = `${providerResult.provider.name} - Detailanalyse`;
-        content.innerHTML = this.renderProviderDetailContent(providerResult);
-        overlay.classList.add('visible');
-    }
-
-    /**
-     * Öffnet das Detail-Popup für aggregierte Portfolio-Daten
-     */
-    openAggregatedDetailPopup(aggregatedProvider, aggregatedTCO) {
-        const overlay = document.getElementById('detailPopupOverlay');
-        const title = document.getElementById('detailPopupTitle');
-        const content = document.getElementById('detailPopupContent');
-
-        if (!overlay || !content) return;
-
-        title.textContent = `${aggregatedProvider.provider.name} - Portfolio-Detailanalyse`;
-        content.innerHTML = this.renderAggregatedProviderDetailContent(aggregatedProvider, aggregatedTCO);
-        overlay.classList.add('visible');
-    }
-
-    /**
-     * Schließt das Detail-Popup
-     */
-    closeDetailPopup() {
-        const overlay = document.getElementById('detailPopupOverlay');
-        if (overlay) {
-            overlay.classList.remove('visible');
-        }
-    }
-
-    /**
-     * Öffnet das Kriterien-Info-Modal
-     */
-    openCriteriaInfo() {
-        const overlay = document.getElementById('detailPopupOverlay');
-        const title = document.getElementById('detailPopupTitle');
-        const content = document.getElementById('detailPopupContent');
-
-        if (!overlay || !content) return;
-
-        title.textContent = 'Bewertungskriterien & Methodik';
-        content.innerHTML = this.renderCriteriaInfoContent();
-        overlay.classList.add('visible');
-    }
-
-    /**
-     * Rendert den Inhalt des Kriterien-Info-Modals
-     */
-    renderCriteriaInfoContent() {
-        const currentPreset = this.getPresetLabel();
-        const weights = this.weights;
-
-        return `
-            <div class="criteria-info-content">
-                <h4 style="color: var(--btc-accent); margin-top: 0;">Wie funktioniert die Cloud-Bewertung?</h4>
-                <p style="color: var(--text-secondary); margin-bottom: 2rem;">
-                    Die Sovereign Architecture Advisor Analyse bewertet Cloud-Anbieter anhand von vier Hauptkriterien,
-                    die gewichtet in den Gesamt-Score einfließen. Die Gewichtung kann über die Einstellungen angepasst werden.
-                </p>
-
-                <!-- Aktuelles Profil -->
-                <div class="current-profile-box">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                        <span style="font-size: 1.5rem;">${this.getPresetIcon()}</span>
-                        <strong style="font-size: 1.1rem;">Aktuelles Profil: ${currentPreset}</strong>
-                    </div>
-                    <div class="profile-weights-grid">
-                        <div class="weight-display">
-                            <i class="fa-solid fa-lock"></i> Kontrolle: <strong>${weights.control}%</strong>
-                        </div>
-                        <div class="weight-display">
-                            <i class="fa-solid fa-bolt"></i> Leistung: <strong>${weights.performance}%</strong>
-                        </div>
-                        <div class="weight-display">
-                            <i class="fa-solid fa-box"></i> Verfügbarkeit: <strong>${weights.availability}%</strong>
-                        </div>
-                        <div class="weight-display">
-                            <i class="fa-solid fa-coins"></i> Kosten: <strong>${weights.cost}%</strong>
-                        </div>
-                    </div>
-                    <button class="criteria-edit-btn" onclick="app.openSettings()">
-                        <i class="fa-solid fa-sliders"></i> Gewichtung anpassen
-                    </button>
-                </div>
-
-                <!-- Kriterien-Details -->
-                <div class="criteria-sections">
-                    <div class="criteria-section">
-                        <div class="criteria-header">
-                            <i class="fa-solid fa-lock criteria-icon" style="color: #5A67D8;"></i>
-                            <h5>1. Kontrolle & Souveränität (${weights.control}%)</h5>
-                        </div>
-                        <p class="criteria-description">
-                            Bewertet die Datensouveränität und rechtliche Kontrolle über Ihre Infrastruktur.
-                        </p>
-                        <ul class="criteria-factors">
-                            <li><strong>Jurisdiktion:</strong> In welchem Rechtsraum operiert der Anbieter? (EU/Deutschland = höher)</li>
-                            <li><strong>DSGVO-Konformität:</strong> Einhaltung europäischer Datenschutzstandards</li>
-                            <li><strong>Vendor Lock-in:</strong> Wie einfach ist ein Anbieterwechsel möglich?</li>
-                            <li><strong>Transparenz:</strong> Offenheit über Datenverarbeitung und Zugriffe</li>
-                            <li><strong>Eigentümerstruktur:</strong> Staatliche, europäische oder internationale Eigentümer</li>
-                        </ul>
-                        <div class="criteria-example">
-                            <strong>Beispiel:</strong> DELOS Cloud (Score: 95) vs. AWS (Score: 30)
-                            - Souveräne Clouds bieten höhere Datenkontrolle durch EU-Jurisdiktion und DSGVO-Compliance.
-                        </div>
-                    </div>
-
-                    <div class="criteria-section">
-                        <div class="criteria-header">
-                            <i class="fa-solid fa-bolt criteria-icon" style="color: #F59E0B;"></i>
-                            <h5>2. Leistung & Service-Umfang (${weights.performance}%)</h5>
-                        </div>
-                        <p class="criteria-description">
-                            Misst die technische Leistungsfähigkeit und den Reifegrad der Services.
-                        </p>
-                        <ul class="criteria-factors">
-                            <li><strong>Service-Reife:</strong> Sind Services GA (Generally Available) oder noch in Preview/Beta?</li>
-                            <li><strong>Feature-Umfang:</strong> Anzahl und Qualität der verfügbaren Services</li>
-                            <li><strong>Skalierbarkeit:</strong> Automatische Skalierung, globale Verfügbarkeit, Performance</li>
-                            <li><strong>Innovation:</strong> KI/ML-Services, moderne Cloud-native Tools</li>
-                            <li><strong>Ökosystem:</strong> Integration mit Tools, Partner, Marketplace</li>
-                        </ul>
-                        <div class="criteria-example">
-                            <strong>Beispiel:</strong> AWS (Score: 95) vs. kleinere EU-Clouds (Score: 60-70)
-                            - Hyperscaler bieten mehr Services und reifere Technologien.
-                        </div>
-                    </div>
-
-                    <div class="criteria-section">
-                        <div class="criteria-header">
-                            <i class="fa-solid fa-box criteria-icon" style="color: #10B981;"></i>
-                            <h5>3. Verfügbarkeit & Service-Abdeckung (${weights.availability}%)</h5>
-                        </div>
-                        <p class="criteria-description">
-                            Anteil der benötigten Services, die bei einem Anbieter verfügbar sind.
-                        </p>
-                        <ul class="criteria-factors">
-                            <li><strong>Service-Coverage:</strong> Wie viele Ihrer benötigten Services sind verfügbar?</li>
-                            <li><strong>Preview-Services:</strong> Services in Preview zählen zu 50% (erhöhtes Risiko)</li>
-                            <li><strong>Fehlende Services:</strong> Erfordern Self-Build oder Drittanbieter-Integration</li>
-                            <li><strong>SLA-Garantien:</strong> Verfügbarkeitsgarantien und Support-Level</li>
-                        </ul>
-                        <div class="criteria-formula">
-                            <strong>Formel:</strong> Coverage = (Verfügbare Services + Preview × 0.5) / Benötigte Services × 100%
-                        </div>
-                        <div class="criteria-example">
-                            <strong>Beispiel:</strong> 8 verfügbare + 2 Preview von 10 benötigten = (8 + 2×0.5) / 10 = 90% Coverage
-                        </div>
-                    </div>
-
-                    <div class="criteria-section">
-                        <div class="criteria-header">
-                            <i class="fa-solid fa-coins criteria-icon" style="color: #EF4444;"></i>
-                            <h5>4. Kosteneffizienz & TCO (${weights.cost}%)</h5>
-                        </div>
-                        <p class="criteria-description">
-                            Gesamtkosten (Total Cost of Ownership) über drei Dimensionen.
-                        </p>
-                        <ul class="criteria-factors">
-                            <li><strong>Verbrauchskosten:</strong> Monatliche Cloud-Infrastruktur-Kosten (Compute, Storage, etc.)</li>
-                            <li><strong>Betriebsaufwand:</strong> FTE-Kosten für Operations (Monitoring, Updates, Support)</li>
-                            <li><strong>Projektaufwand:</strong> Initiale Setup-Kosten in Personentagen</li>
-                            <li><strong>Self-Build-Aufwand:</strong> Zusätzlicher Aufwand für fehlende Services</li>
-                        </ul>
-                        <div class="criteria-formula">
-                            <strong>Score-Berechnung:</strong> Günstigster Anbieter = 100 Punkte, teuerster = 30 Punkte (linear interpoliert)
-                        </div>
-                        <div class="criteria-example">
-                            <strong>Beispiel:</strong> Anbieter A: 2.500€/Monat (Score: 100) vs. Anbieter B: 5.000€/Monat (Score: ~65)
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Gesamt-Score Berechnung -->
-                <div class="score-calculation-box">
-                    <h4 style="margin-top: 0;"><i class="fa-solid fa-calculator"></i> Gesamt-Score Berechnung</h4>
-                    <div class="formula-display">
-                        Score = (Kontrolle × ${(weights.control / 100).toFixed(2)}) +
-                                (Leistung × ${(weights.performance / 100).toFixed(2)}) +
-                                (Verfügbarkeit × ${(weights.availability / 100).toFixed(2)}) +
-                                (Kosteneffizienz × ${(weights.cost / 100).toFixed(2)})
-                    </div>
-                    ${this.maturitySettings.enabled ? `
-                    <div class="maturity-factor-info">
-                        <strong><i class="fa-solid fa-microscope"></i> Reife-Faktor:</strong>
-                        Der finale Score wird mit einem Reife-Faktor multipliziert, der Preview-Services
-                        (${this.maturitySettings.previewPenalty}% Abzug) und fehlende Services
-                        (${this.maturitySettings.missingPenalty}% Abzug) berücksichtigt.
-                        <br><br>
-                        <em>Beispiel:</em> 2 Preview + 1 fehlend = Faktor ${(1 - (2 * this.maturitySettings.previewPenalty + 1 * this.maturitySettings.missingPenalty) / 100).toFixed(2)}
-                        (Score wird mit 0.93 multipliziert)
-                    </div>
-                    ` : ''}
-                </div>
-
-                <!-- TCO-Einstellungen -->
-                <div class="tco-settings-info">
-                    <h4><i class="fa-solid fa-gears"></i> Aktuelle TCO-Einstellungen</h4>
-                    <div class="settings-status">
-                        <div class="setting-item ${this.operationsSettings.includeInCosts ? 'enabled' : 'disabled'}">
-                            <i class="fa-solid ${this.operationsSettings.includeInCosts ? 'fa-check-circle' : 'fa-circle-xmark'}"></i>
-                            <span>Betriebsaufwand: <strong>${this.operationsSettings.includeInCosts ? 'In Bewertung einbezogen' : 'Nur angezeigt'}</strong></span>
-                        </div>
-                        <div class="setting-item ${this.projectEffortSettings.includeInCosts ? 'enabled' : 'disabled'}">
-                            <i class="fa-solid ${this.projectEffortSettings.includeInCosts ? 'fa-check-circle' : 'fa-circle-xmark'}"></i>
-                            <span>Projektaufwand: <strong>${this.projectEffortSettings.includeInCosts ? 'In Bewertung einbezogen' : 'Nur angezeigt'}</strong></span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Datenquellen -->
-                <div class="data-sources-info">
-                    <h4><i class="fa-solid fa-database"></i> Datenquellen & Methodik</h4>
-                    <ul>
-                        <li><strong>Provider-Daten:</strong> Manuelle Recherche und Analyse der Service-Portfolios (Stand: Januar 2025)</li>
-                        <li><strong>Preis-Schätzungen:</strong> Basierend auf öffentlichen Preis-Rechnern und Durchschnittswerten</li>
-                        <li><strong>Betriebsaufwand:</strong> Erfahrungswerte aus Cloud-Migration-Projekten (FTE-Faktoren)</li>
-                        <li><strong>Service-Bewertungen:</strong> Kombination aus Provider-Level und Service-Level Ratings</li>
-                        <li><strong>Updates:</strong> Regelmäßige Aktualisierung der Provider-Daten und Preise</li>
-                    </ul>
-                </div>
-
-                <!-- Provider-Bewertungen -->
-                <div class="provider-ratings-section">
-                    <h4><i class="fa-solid fa-chart-bar"></i> Cloud-Provider Bewertungen im Detail</h4>
-                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">
-                        Sehen Sie, wie jeder Cloud-Provider bei den einzelnen Kriterien bewertet wurde.
-                    </p>
-                    <button class="show-provider-ratings-btn" onclick="app.toggleProviderRatings()">
-                        <i class="fa-solid fa-table"></i> Provider-Bewertungen anzeigen
-                    </button>
-                    <div id="providerRatingsTable" class="provider-ratings-table-container" style="display: none;">
-                        ${this.renderProviderRatingsTable()}
-                    </div>
-                </div>
-
-                <div style="margin-top: 2rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; border-left: 3px solid var(--btc-accent);">
-                    <strong><i class="fa-solid fa-lightbulb"></i> Tipp:</strong>
-                    Passen Sie die Gewichtung in den Einstellungen an Ihre Prioritäten an.
-                    Für maximale Souveränität wählen Sie das Profil "Maximale Souveränität",
-                    für beste Performance "Performance First".
-                </div>
-            </div>
-        `;
-    }
-
-    /**
-     * Toggle Provider-Ratings Tabelle
-     */
-    toggleProviderRatings() {
-        const container = document.getElementById('providerRatingsTable');
-        const btn = document.querySelector('.show-provider-ratings-btn');
-
-        if (!container || !btn) return;
-
-        const isVisible = container.style.display !== 'none';
-
-        if (isVisible) {
-            container.style.display = 'none';
-            btn.innerHTML = '<i class="fa-solid fa-table"></i> Provider-Bewertungen anzeigen';
-        } else {
-            container.style.display = 'block';
-            btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Provider-Bewertungen verbergen';
-            // Scroll zu Tabelle
-            setTimeout(() => {
-                container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 100);
-        }
-    }
-
-    /**
-     * Rendert die Provider-Bewertungstabelle
-     */
-    renderProviderRatingsTable() {
-        // Verwende die aktuellen Analyse-Ergebnisse oder alle Provider
-        let providersToShow = [];
-
-        if (this.isMultiAppMode && this.aggregatedResults) {
-            // Multi-App: Zeige aggregierte Provider
-            providersToShow = this.aggregatedResults.aggregatedProviders;
-        } else if (this.analysisResults && this.analysisResults.length > 0) {
-            // Single-App: Zeige analysierte Provider
-            providersToShow = this.analysisResults;
-        } else {
-            // Fallback: Zeige alle Provider mit Basis-Daten
-            providersToShow = cloudProviders.map(provider => ({
-                provider: provider,
-                score: {
-                    controlScore: provider.control,
-                    performanceScore: provider.performance,
-                    availabilityScore: 0,
-                    costScore: 0,
-                    total: ((provider.control + provider.performance) / 2).toFixed(1)
-                },
-                serviceAnalysis: {
-                    coverage: 0
-                }
-            }));
-        }
-
-        // Nach Gesamt-Score sortieren
-        const sortedProviders = [...providersToShow].sort((a, b) => {
-            const scoreA = a.aggregatedScore || a.score?.total || 0;
-            const scoreB = b.aggregatedScore || b.score?.total || 0;
-            return scoreB - scoreA;
-        });
-
-        const tableRows = sortedProviders.map((result, index) => {
-            const provider = result.provider;
-            const score = result.score || {};
-            const isTopPick = index === 0;
-
-            // Für aggregierte Ergebnisse (Multi-App)
-            const controlScore = result.aggregatedScore ?
-                Math.round(provider.control) : (score.controlScore || 0);
-            const performanceScore = result.aggregatedScore ?
-                Math.round(provider.performance) : (score.performanceScore || 0);
-            const availabilityScore = result.serviceAnalysis?.coverage || score.availabilityScore || 0;
-            const costScore = score.costScore || 0;
-            const totalScore = result.aggregatedScore || score.total || 0;
-
-            // Kategorie-Namen
-            const categoryNames = {
-                hyperscaler: 'Hyperscaler',
-                sovereign: 'Souverän',
-                eu: 'EU',
-                private: 'Private',
-                hybrid: 'Hybrid'
-            };
-
-            // Farben für Scores
-            const getScoreColor = (score) => {
-                if (score >= 80) return 'var(--btc-success)';
-                if (score >= 60) return 'var(--btc-warning)';
-                return 'var(--btc-danger)';
-            };
-
-            return `
-                <tr class="${isTopPick ? 'top-pick-row' : ''}">
-                    <td class="provider-name-cell">
-                        <div class="provider-name-with-badge">
-                            <div class="provider-logo-mini" style="background: ${provider.color}20; color: ${provider.color};">
-                                ${provider.name.substring(0, 2).toUpperCase()}
-                            </div>
-                            <div>
-                                <strong>${provider.name}</strong>
-                                <div class="provider-category-mini">${categoryNames[provider.category] || provider.category}</div>
-                            </div>
-                            ${isTopPick ? '<span class="top-pick-badge">Top</span>' : ''}
-                        </div>
-                    </td>
-                    <td class="score-cell">
-                        <div class="score-bar-container">
-                            <div class="score-bar" style="width: ${controlScore}%; background: ${getScoreColor(controlScore)};"></div>
-                            <span class="score-value">${Math.round(controlScore)}</span>
-                        </div>
-                        <div class="score-explanation">
-                            ${this.getControlScoreExplanation(provider)}
-                        </div>
-                    </td>
-                    <td class="score-cell">
-                        <div class="score-bar-container">
-                            <div class="score-bar" style="width: ${performanceScore}%; background: ${getScoreColor(performanceScore)};"></div>
-                            <span class="score-value">${Math.round(performanceScore)}</span>
-                        </div>
-                        <div class="score-explanation">
-                            ${this.getPerformanceScoreExplanation(provider)}
-                        </div>
-                    </td>
-                    <td class="score-cell">
-                        <div class="score-bar-container">
-                            <div class="score-bar" style="width: ${availabilityScore}%; background: ${getScoreColor(availabilityScore)};"></div>
-                            <span class="score-value">${Math.round(availabilityScore)}%</span>
-                        </div>
-                        <div class="score-explanation">
-                            ${result.serviceAnalysis ? `${result.serviceAnalysis.available?.length || 0} verfügbar` : 'N/A'}
-                        </div>
-                    </td>
-                    <td class="score-cell">
-                        <div class="score-bar-container">
-                            <div class="score-bar" style="width: ${costScore}%; background: ${getScoreColor(costScore)};"></div>
-                            <span class="score-value">${Math.round(costScore)}</span>
-                        </div>
-                        <div class="score-explanation">
-                            ${result.tcoEstimate ? `~${result.tcoEstimate.monthlyEstimate || 0}€/Monat` : 'N/A'}
-                        </div>
-                    </td>
-                    <td class="total-score-cell">
-                        <div class="total-score-value" style="color: ${getScoreColor(totalScore)};">
-                            ${typeof totalScore === 'number' ? totalScore.toFixed(1) : totalScore}
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-
-        return `
-            <div class="provider-ratings-table-wrapper">
-                <table class="provider-ratings-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 20%;">Cloud-Provider</th>
-                            <th style="width: 16%;">
-                                <i class="fa-solid fa-lock"></i> Kontrolle
-                                <div class="weight-badge">${this.weights.control}%</div>
-                            </th>
-                            <th style="width: 16%;">
-                                <i class="fa-solid fa-bolt"></i> Leistung
-                                <div class="weight-badge">${this.weights.performance}%</div>
-                            </th>
-                            <th style="width: 16%;">
-                                <i class="fa-solid fa-box"></i> Verfügbarkeit
-                                <div class="weight-badge">${this.weights.availability}%</div>
-                            </th>
-                            <th style="width: 16%;">
-                                <i class="fa-solid fa-coins"></i> Kosten
-                                <div class="weight-badge">${this.weights.cost}%</div>
-                            </th>
-                            <th style="width: 16%;">
-                                <i class="fa-solid fa-star"></i> Gesamt-Score
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${tableRows}
-                    </tbody>
-                </table>
-
-                <div class="ratings-legend">
-                    <h5><i class="fa-solid fa-info-circle"></i> Legende</h5>
-                    <div class="legend-grid">
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: var(--btc-success);"></div>
-                            <span>80-100: Sehr gut</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: var(--btc-warning);"></div>
-                            <span>60-79: Gut</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: var(--btc-danger);"></div>
-                            <span>0-59: Verbesserungsbedarf</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    /**
-     * Erklärt den Kontroll-Score eines Providers
-     */
-    getControlScoreExplanation(provider) {
-        const score = provider.control;
-        if (score >= 80) {
-            return 'Souveräne Cloud, EU-Jurisdiktion';
-        } else if (score >= 60) {
-            return 'EU-Anbieter, gute Kontrolle';
-        } else if (score >= 40) {
-            return 'Hybrid-Lösung, mittlere Kontrolle';
-        } else {
-            return 'Hyperscaler, eingeschränkte Kontrolle';
-        }
-    }
-
-    /**
-     * Erklärt den Performance-Score eines Providers
-     */
-    getPerformanceScoreExplanation(provider) {
-        const score = provider.performance;
-        if (score >= 90) {
-            return 'Umfangreiches Service-Portfolio';
-        } else if (score >= 75) {
-            return 'Gutes Service-Angebot';
-        } else if (score >= 60) {
-            return 'Basis-Services verfügbar';
-        } else {
-            return 'Begrenztes Angebot';
-        }
-    }
-
-    /**
-     * Rendert die Kostenaufschlüsselung für die Detailanalyse
-     */
-    renderCostBreakdown(tco) {
-        if (!tco || !tco.consumption?.details) {
-            return '';
-        }
-
-        // Verbrauchskosten-Details
-        const consumptionRows = tco.consumption.details.map(detail => {
-            const levelClass = detail.level === 'low' ? 'low' : detail.level === 'high' ? 'high' : 'medium';
-            return `
-                <tr>
-                    <td>${detail.name || detail.id}</td>
-                    <td><span class="cost-level-badge ${levelClass}">${detail.level}</span></td>
-                    <td style="text-align: right;">${detail.estimate.toLocaleString('de-DE')}€</td>
-                    <td style="color: var(--text-secondary); font-size: 0.8rem;">${detail.breakdown || '-'}</td>
-                </tr>
-            `;
-        }).join('');
-
-        // Betriebskosten-Details
-        const operationsRows = tco.operations?.details?.map(detail => {
-            const levelClass = detail.level === 'low' ? 'low' : detail.level === 'high' ? 'high' : 'medium';
-            return `
-                <tr>
-                    <td>${detail.name || detail.id}${detail.isSelfBuild ? ' <span style="color: var(--btc-warning);">(Self-Build)</span>' : ''}</td>
-                    <td><span class="cost-level-badge ${levelClass}">${detail.level}</span></td>
-                    <td style="text-align: right;">${(detail.fteEstimate * 8000).toLocaleString('de-DE')}€</td>
-                    <td style="color: var(--text-secondary); font-size: 0.8rem;">${detail.fteEstimate} FTE</td>
-                </tr>
-            `;
-        }).join('') || '';
-
-        // Projektaufwand-Details
-        const projectRows = tco.projectEffort?.details?.map(detail => {
-            const levelClass = detail.level === 'low' ? 'low' : detail.level === 'high' ? 'high' : 'medium';
-            return `
-                <tr>
-                    <td>${detail.name || detail.id}</td>
-                    <td><span class="cost-level-badge ${levelClass}">${detail.level}</span></td>
-                    <td style="text-align: right;">${detail.days} PT</td>
-                    <td style="color: var(--text-secondary); font-size: 0.8rem;">~${(detail.days * 800).toLocaleString('de-DE')}€</td>
-                </tr>
-            `;
-        }).join('') || '';
-
-        // Self-Build-Details wenn vorhanden
-        let selfBuildSection = '';
-        if (tco.selfBuild?.required && tco.selfBuild.details?.length > 0) {
-            const selfBuildRows = tco.selfBuild.details.map(detail => `
-                <tr>
-                    <td>🔧 ${detail.solution}</td>
-                    <td><span class="cost-level-badge high">${detail.effort}</span></td>
-                    <td style="text-align: right;">${detail.days} PT</td>
-                    <td style="color: var(--text-secondary); font-size: 0.8rem;">~${(detail.days * 800).toLocaleString('de-DE')}€</td>
-                </tr>
-            `).join('');
-
-            selfBuildSection = `
-                <div class="cost-breakdown-section">
-                    <h5 class="cost-breakdown-title">🔧 Self-Build Aufwand (${tco.selfBuild.totalDays} PT)</h5>
-                    <table class="cost-breakdown-table">
-                        <thead>
-                            <tr>
-                                <th>Lösung</th>
-                                <th>Aufwand</th>
-                                <th style="text-align: right;">Tage</th>
-                                <th>Kosten (800€/PT)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${selfBuildRows}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        // Pricing Info vom Analyzer holen
-        const pricingInfo = this.analyzer?.getPricingInfo?.() || { source: 'Fallback', currency: 'EUR' };
-
-        return `
-            <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('📊', 'utility')} Kostenaufschlüsselung</h4>
-
-            <div class="pricing-info-box" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 12px 16px; margin-bottom: 1rem; font-size: 0.85rem;">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                    <span style="font-size: 1.2rem;">${IconMapper.toFontAwesome('📍', 'utility')}</span>
-                    <div>
-                        <strong>Preisbasis:</strong> ${pricingInfo.source || 'Fallback'} |
-                        <strong>Region:</strong> Frankfurt (DE) |
-                        <strong>Währung:</strong> ${pricingInfo.currency || 'EUR'}
-                        ${pricingInfo.lastUpdated ? `| <strong>Stand:</strong> ${pricingInfo.lastUpdated}` : ''}
-                    </div>
-                </div>
-                <div style="font-size: 0.75rem; color: var(--text-secondary); padding-left: 32px;">
-                    <strong>Quellen:</strong>
-                    <a href="https://calculator.aws/" target="_blank" rel="noopener" style="color: #FF9900; margin-left: 8px;">AWS Pricing</a> |
-                    <a href="https://azure.microsoft.com/pricing/" target="_blank" rel="noopener" style="color: #0078D4; margin-left: 4px;">Azure Pricing</a> |
-                    <a href="https://cloud.google.com/compute/all-pricing" target="_blank" rel="noopener" style="color: #4285F4; margin-left: 4px;">GCP Pricing</a>
-                </div>
-            </div>
-
-            <div class="cost-breakdown-section">
-                <h5 class="cost-breakdown-title">${IconMapper.toFontAwesome('☁️', 'component')} Verbrauchskosten (~${tco.consumption.monthlyEstimate.toLocaleString('de-DE')}€/Monat)</h5>
-                <table class="cost-breakdown-table">
-                    <thead>
-                        <tr>
-                            <th>Service</th>
-                            <th><span class="level-tooltip" data-tip="Ressourcen-Intensität: low = wenig, medium = mittel, high = hoch">Level ${IconMapper.toFontAwesome('ℹ️', 'utility')}</span></th>
-                            <th style="text-align: right;">Kosten/Monat</th>
-                            <th>Details</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${consumptionRows}
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="cost-breakdown-section${!tco.operations?.includedInCosts ? ' operations-excluded' : ''}">
-                <h5 class="cost-breakdown-title">${IconMapper.toFontAwesome('👥', 'utility')} Betriebsaufwand (~${(tco.operations?.monthlyPersonnelCost || 0).toLocaleString('de-DE')}€/Monat, ${tco.operations?.totalFTE || 0} FTE)${!tco.operations?.includedInCosts ? ' <span style="font-size: 0.8em; color: var(--text-secondary);">(nicht in TCO-Berechnung)</span>' : ''}</h5>
-                <table class="cost-breakdown-table">
-                    <thead>
-                        <tr>
-                            <th>Service</th>
-                            <th><span class="level-tooltip" data-tip="Betriebs-Komplexität: very_low = minimal, low = gering, medium = mittel, high = hoch">Level ${IconMapper.toFontAwesome('ℹ️', 'utility')}</span></th>
-                            <th style="text-align: right;">Kosten/Monat</th>
-                            <th>FTE-Anteil</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${operationsRows}
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="cost-breakdown-section${!tco.projectEffort?.includedInCosts ? ' project-effort-excluded' : ''}">
-                <h5 class="cost-breakdown-title">${IconMapper.toFontAwesome('📋', 'utility')} Projektaufwand (~${tco.projectEffort?.totalDays || 0} Personentage)${!tco.projectEffort?.includedInCosts ? ' <span style="font-size: 0.8em; color: var(--text-secondary);">(nicht in TCO-Berechnung)</span>' : ''}</h5>
-                <table class="cost-breakdown-table">
-                    <thead>
-                        <tr>
-                            <th>Service</th>
-                            <th><span class="level-tooltip" data-tip="Implementierungs-Aufwand: low = gering, medium = mittel, high = hoch">Level ${IconMapper.toFontAwesome('ℹ️', 'utility')}</span></th>
-                            <th style="text-align: right;">Aufwand</th>
-                            <th>Kosten (800€/PT)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${projectRows}
-                    </tbody>
-                </table>
-            </div>
-
-            ${selfBuildSection}
-        `;
-    }
-
-    /**
-     * Rendert den Inhalt des Detail-Popups
-     */
-    renderProviderDetailContent(result) {
-        const provider = result.provider;
-        const score = result.score;
-        const tco = result.tcoEstimate;
-        const services = result.serviceAnalysis;
-
-        const categoryIcons = {
-            hyperscaler: '🌐',
-            sovereign: '🏛️',
-            eu: '🇪🇺',
-            private: '🔒',
-            hybrid: '🔄'
-        };
-
-        const categoryNames = {
-            hyperscaler: 'Hyperscaler',
-            sovereign: 'Souveräne Cloud',
-            eu: 'EU-Anbieter',
-            private: 'Private Cloud',
-            hybrid: 'Hybrid-Lösung'
-        };
-
-        return `
-            <div class="provider-detail-header">
-                <div class="provider-detail-logo" style="background: ${provider.color}20; color: ${provider.color};">
-                    ${IconMapper.toFontAwesome(categoryIcons[provider.category] || '☁️', 'provider')}
-                </div>
-                <div class="provider-detail-info">
-                    <h4>${provider.name}</h4>
-                    <p>${categoryNames[provider.category]} | ${provider.description || ''}</p>
-                </div>
-            </div>
-
-            <div class="provider-detail-scores">
-                <div class="detail-score-card">
-                    <div class="detail-score-value">${score.total}</div>
-                    <div class="detail-score-label">Gesamt-Score</div>
-                </div>
-                <div class="detail-score-card">
-                    <div class="detail-score-value">${score.controlScore}</div>
-                    <div class="detail-score-label">Kontrolle</div>
-                </div>
-                <div class="detail-score-card">
-                    <div class="detail-score-value">${score.performanceScore}</div>
-                    <div class="detail-score-label">Leistung</div>
-                </div>
-                <div class="detail-score-card">
-                    <div class="detail-score-value">${Math.round(services.coverage)}%</div>
-                    <div class="detail-score-label">Abdeckung</div>
-                </div>
-            </div>
-
-            <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('💰', 'utility')} TCO-Schätzung</h4>
-            <div class="provider-detail-scores">
-                <div class="detail-score-card">
-                    <div class="detail-score-value">~${(tco.monthlyEstimate || 0).toLocaleString('de-DE')}€</div>
-                    <div class="detail-score-label">Monatliche Gesamtkosten</div>
-                </div>
-                <div class="detail-score-card">
-                    <div class="detail-score-value">~${(tco.consumption?.monthlyEstimate || 0).toLocaleString('de-DE')}€</div>
-                    <div class="detail-score-label">Verbrauchskosten</div>
-                </div>
-                <div class="detail-score-card${!tco.operations?.includedInCosts ? ' operations-excluded' : ''}">
-                    <div class="detail-score-value">~${(tco.operations?.monthlyPersonnelCost || 0).toLocaleString('de-DE')}€</div>
-                    <div class="detail-score-label">Betriebskosten${!tco.operations?.includedInCosts ? ' <span style="font-size: 0.7em; opacity: 0.7;">(nicht in TCO)</span>' : ''}</div>
-                </div>
-                <div class="detail-score-card${!tco.projectEffort?.includedInCosts ? ' project-effort-excluded' : ''}">
-                    <div class="detail-score-value">~${tco.projectDaysEstimate || '-'} PT</div>
-                    <div class="detail-score-label">Projektaufwand${!tco.projectEffort?.includedInCosts ? ' <span style="font-size: 0.7em; opacity: 0.7;">(nicht in TCO)</span>' : ''}</div>
-                </div>
-            </div>
-
-            <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('📋', 'component')} Service-Übersicht (${services.totalRequired} benötigt)</h4>
-            <div class="detail-services-grid">
-                ${(services.available || []).map(s => `
-                    <div class="detail-service-item">
-                        <div class="detail-service-status available"></div>
-                        <div class="detail-service-info">
-                            <div class="detail-service-name">${s.name}</div>
-                            <div class="detail-service-provider">${IconMapper.toFontAwesome('✓', 'utility')} Verfügbar | Kontrolle: ${s.control} | Leistung: ${s.performance}</div>
-                        </div>
-                    </div>
-                `).join('')}
-                ${(services.preview || []).map(s => `
-                    <div class="detail-service-item">
-                        <div class="detail-service-status preview"></div>
-                        <div class="detail-service-info">
-                            <div class="detail-service-name">${s.name}</div>
-                            <div class="detail-service-provider">${IconMapper.toFontAwesome('⚠️', 'utility')} Preview</div>
-                        </div>
-                    </div>
-                `).join('')}
-                ${(services.planned || []).map(s => `
-                    <div class="detail-service-item">
-                        <div class="detail-service-status planned"></div>
-                        <div class="detail-service-info">
-                            <div class="detail-service-name">${s.name || s.id}</div>
-                            <div class="detail-service-provider">${IconMapper.toFontAwesome('📅', 'utility')} Geplant</div>
-                        </div>
-                    </div>
-                `).join('')}
-                ${(services.missing || []).map(s => `
-                    <div class="detail-service-item">
-                        <div class="detail-service-status missing"></div>
-                        <div class="detail-service-info">
-                            <div class="detail-service-name">${s.name || s.id}</div>
-                            <div class="detail-service-provider">${s.selfBuildOption ? `${IconMapper.toFontAwesome('⚠️', 'utility')} Self-Build: ${s.selfBuildOption.name}` : `${IconMapper.toFontAwesome('⚠️', 'utility')} Nicht verfügbar`}</div>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-
-            ${this.renderCostBreakdown(tco)}
-
-            <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('📊', 'utility')} Score-Berechnung (Gewichtung: ${IconMapper.toFontAwesome('🔒', 'utility')}${this.weights.control}% ${IconMapper.toFontAwesome('⚡', 'utility')}${this.weights.performance}% ${IconMapper.toFontAwesome('📦', 'utility')}${this.weights.availability}% ${IconMapper.toFontAwesome('💰', 'utility')}${this.weights.cost}%)</h4>
-            <div class="algorithm-explanation" style="font-size: 0.85rem;">
-                <div class="algorithm-item" style="display: grid; grid-template-columns: 1fr auto auto auto; gap: 0.5rem; align-items: center;">
-                    <div>${IconMapper.toFontAwesome('🔒', 'utility')} <strong>Kontrolle</strong></div>
-                    <div style="text-align: right;">${score.controlScore}</div>
-                    <div style="text-align: right; color: var(--text-secondary);">× ${this.weights.control}%</div>
-                    <div style="text-align: right; font-weight: 600;">= ${score.weightedControl || Math.round(score.controlScore * this.weights.control / 100 * 10) / 10}</div>
-                </div>
-                <div class="algorithm-item" style="display: grid; grid-template-columns: 1fr auto auto auto; gap: 0.5rem; align-items: center;">
-                    <div>${IconMapper.toFontAwesome('⚡', 'utility')} <strong>Leistung</strong></div>
-                    <div style="text-align: right;">${score.performanceScore}</div>
-                    <div style="text-align: right; color: var(--text-secondary);">× ${this.weights.performance}%</div>
-                    <div style="text-align: right; font-weight: 600;">= ${score.weightedPerformance || Math.round(score.performanceScore * this.weights.performance / 100 * 10) / 10}</div>
-                </div>
-                <div class="algorithm-item" style="display: grid; grid-template-columns: 1fr auto auto auto; gap: 0.5rem; align-items: center;">
-                    <div>${IconMapper.toFontAwesome('📦', 'utility')} <strong>Verfügbarkeit</strong></div>
-                    <div style="text-align: right;">${score.availabilityScore || Math.round(services.coverage)}</div>
-                    <div style="text-align: right; color: var(--text-secondary);">× ${this.weights.availability}%</div>
-                    <div style="text-align: right; font-weight: 600;">= ${score.weightedAvailability || Math.round(services.coverage * this.weights.availability / 100 * 10) / 10}</div>
-                </div>
-                <div class="algorithm-item" style="display: grid; grid-template-columns: 1fr auto auto auto; gap: 0.5rem; align-items: center;">
-                    <div>${IconMapper.toFontAwesome('💰', 'utility')} <strong>Kosten</strong> <span style="font-size: 0.75rem; color: var(--text-secondary);">(~${(score.monthlyCost || tco.monthlyEstimate || 0).toLocaleString('de-DE')}€/Mon.)</span></div>
-                    <div style="text-align: right;">${score.costScore}</div>
-                    <div style="text-align: right; color: var(--text-secondary);">× ${this.weights.cost}%</div>
-                    <div style="text-align: right; font-weight: 600;">= ${score.weightedCost || Math.round(score.costScore * this.weights.cost / 100 * 10) / 10}</div>
-                </div>
-                <div class="algorithm-item" style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center; border-top: 2px solid var(--border); padding-top: 0.5rem; margin-top: 0.5rem;">
-                    <div><strong>Basis-Score</strong></div>
-                    <div style="text-align: right; font-weight: 600;">${score.base}</div>
-                </div>
-                <div class="algorithm-item" style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center;">
-                    <div>Reife-Faktor <span style="font-size: 0.75rem; color: var(--text-secondary);">(${services.preview.length} Preview, ${services.missing.length} fehlend)</span></div>
-                    <div style="text-align: right;">× ${score.maturityFactor}</div>
-                </div>
-                <div class="algorithm-item" style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center; background: var(--btc-accent); color: white; padding: 0.75rem; border-radius: 6px; margin-top: 0.5rem;">
-                    <div><strong>Gesamt-Score</strong></div>
-                    <div style="text-align: right; font-size: 1.25rem; font-weight: 700;">${score.total}</div>
-                </div>
-            </div>
-        `;
-    }
-
-    /**
-     * Rendert aggregierte Portfolio-Details
-     */
-    renderAggregatedProviderDetailContent(aggregatedProvider, aggregatedTCO) {
-        const provider = aggregatedProvider.provider;
-        const aggregatedScore = aggregatedProvider.aggregatedScore;
-        const serviceAnalysis = aggregatedProvider.serviceAnalysis;
-        const appScores = aggregatedProvider.appScores;
-        const tco = aggregatedTCO;
-
-        const categoryIcons = {
-            hyperscaler: '🌐',
-            sovereign: '🏛️',
-            eu: '🇪🇺',
-            private: '🔒',
-            hybrid: '🔄'
-        };
-
-        const categoryNames = {
-            hyperscaler: 'Hyperscaler',
-            sovereign: 'Souveräne Cloud',
-            eu: 'EU-Anbieter',
-            private: 'Private Cloud',
-            hybrid: 'Hybrid-Lösung'
-        };
-
-        // TCO-Details per App gruppieren
-        const tcoByApp = {};
-        if (aggregatedProvider.tcoEstimate?.consumption?.details) {
-            aggregatedProvider.tcoEstimate.consumption.details.forEach(detail => {
-                const appName = detail.appName || 'Unbekannt';
-                if (!tcoByApp[appName]) {
-                    tcoByApp[appName] = [];
-                }
-                tcoByApp[appName].push(detail);
-            });
-        }
-
-        return `
-            <div class="provider-detail-header">
-                <div class="provider-detail-logo" style="background: ${provider.color}20; color: ${provider.color};">
-                    ${IconMapper.toFontAwesome(categoryIcons[provider.category] || '☁️', 'provider')}
-                </div>
-                <div class="provider-detail-info">
-                    <h4>${provider.name}</h4>
-                    <p>${categoryNames[provider.category]} | Portfolio-Analyse über ${appScores.length} Anwendungen</p>
-                </div>
-            </div>
-
-            <div class="provider-detail-scores">
-                <div class="detail-score-card">
-                    <div class="detail-score-value">${aggregatedScore.toFixed(1)}</div>
-                    <div class="detail-score-label">Portfolio-Score</div>
-                </div>
-                <div class="detail-score-card">
-                    <div class="detail-score-value">${Math.round(serviceAnalysis.coverage)}%</div>
-                    <div class="detail-score-label">Abdeckung</div>
-                </div>
-                <div class="detail-score-card">
-                    <div class="detail-score-value">${appScores.length}</div>
-                    <div class="detail-score-label">Anwendungen</div>
-                </div>
-                <div class="detail-score-card">
-                    <div class="detail-score-value">${serviceAnalysis.totalRequired}</div>
-                    <div class="detail-score-label">Komponenten</div>
-                </div>
-            </div>
-
-            <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('💰', 'utility')} Aggregierte TCO-Schätzung</h4>
-            <div class="provider-detail-scores">
-                <div class="detail-score-card">
-                    <div class="detail-score-value">~${tco.totalMonthly.toLocaleString('de-DE')}€</div>
-                    <div class="detail-score-label">Gesamt-TCO/Monat</div>
-                </div>
-                <div class="detail-score-card">
-                    <div class="detail-score-value">~${tco.monthlyInfrastructure.toLocaleString('de-DE')}€</div>
-                    <div class="detail-score-label">Infrastruktur</div>
-                </div>
-                <div class="detail-score-card${!tco.includedInCosts ? ' operations-excluded' : ''}">
-                    <div class="detail-score-value">~${tco.monthlyOperations.toLocaleString('de-DE')}€</div>
-                    <div class="detail-score-label">Betrieb${!tco.includedInCosts ? ' <span style="font-size: 0.7em; opacity: 0.7;">(nicht in TCO)</span>' : ''}</div>
-                </div>
-                <div class="detail-score-card${!tco.projectEffortIncluded ? ' project-effort-excluded' : ''}">
-                    <div class="detail-score-value">~${tco.totalProjectDays || '-'} PT</div>
-                    <div class="detail-score-label">Projektaufwand${!tco.projectEffortIncluded ? ' <span style="font-size: 0.7em; opacity: 0.7;">(nicht in TCO)</span>' : ''}</div>
-                </div>
-            </div>
-
-            <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('📊', 'utility')} Scores pro Anwendung</h4>
-            <div class="app-scores-breakdown">
-                ${appScores.map((appScore, index) => `
-                    <div class="app-score-item" style="padding: 0.75rem; background: var(--bg-secondary); border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s ease;"
-                         onclick="app.scrollToAppBreakdown(${index})"
-                         onmouseover="this.style.background='var(--bg-tertiary)'; this.style.transform='translateX(4px)'"
-                         onmouseout="this.style.background='var(--bg-secondary)'; this.style.transform='translateX(0)'">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <strong>${appScore.appName}</strong>
-                                <span style="color: var(--text-secondary); margin-left: 0.5rem; font-size: 0.85rem;">(${appScore.weight} Komponenten)</span>
-                                <span style="color: var(--btc-primary); margin-left: 0.5rem; font-size: 0.75rem;">→ Details</span>
-                            </div>
-                            <div style="font-size: 1.1rem; font-weight: 600; color: var(--btc-accent);">${appScore.score.toFixed(1)}</div>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-
-            <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('☁️', 'component')} Infrastrukturkosten nach Anwendung</h4>
-            ${Object.keys(tcoByApp).map(appName => `
-                <div class="cost-breakdown-section">
-                    <h5 class="cost-breakdown-title">${appName}</h5>
-                    <table class="cost-breakdown-table">
-                        <thead>
-                            <tr>
-                                <th>Service</th>
-                                <th><span class="level-tooltip" data-tip="Ressourcen-Intensität: low = wenig, medium = mittel, high = hoch">Level ${IconMapper.toFontAwesome('ℹ️', 'utility')}</span></th>
-                                <th style="text-align: right;">Kosten/Monat</th>
-                                <th>Details</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${tcoByApp[appName].map(detail => {
-                                const levelClass = detail.level === 'low' ? 'low' : detail.level === 'high' ? 'high' : 'medium';
-                                return `
-                                    <tr>
-                                        <td>${detail.name || detail.id}</td>
-                                        <td><span class="cost-level-badge ${levelClass}">${detail.level}</span></td>
-                                        <td style="text-align: right;">${detail.estimate.toLocaleString('de-DE')}€</td>
-                                        <td style="color: var(--text-secondary); font-size: 0.8rem;">${detail.breakdown || '-'}</td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `).join('')}
-
-            <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('📋', 'component')} Aggregierte Service-Übersicht</h4>
-            <div class="detail-services-grid">
-                ${serviceAnalysis.available.map(s => `
-                    <div class="detail-service-item">
-                        <div class="detail-service-status available"></div>
-                        <div class="detail-service-info">
-                            <div class="detail-service-name">${s.name || s}</div>
-                            <div class="detail-service-provider">${IconMapper.toFontAwesome('✓', 'utility')} Verfügbar</div>
-                        </div>
-                    </div>
-                `).join('')}
-                ${serviceAnalysis.preview.map(s => `
-                    <div class="detail-service-item">
-                        <div class="detail-service-status preview"></div>
-                        <div class="detail-service-info">
-                            <div class="detail-service-name">${s.name || s}</div>
-                            <div class="detail-service-provider">${IconMapper.toFontAwesome('⚠️', 'utility')} Preview</div>
-                        </div>
-                    </div>
-                `).join('')}
-                ${serviceAnalysis.missing.map(s => `
-                    <div class="detail-service-item">
-                        <div class="detail-service-status missing"></div>
-                        <div class="detail-service-info">
-                            <div class="detail-service-name">${s.name || s}</div>
-                            <div class="detail-service-provider">${IconMapper.toFontAwesome('⚠️', 'utility')} Nicht verfügbar</div>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    }
-
     updateStepDisplay() {
         // Update step indicators
         document.querySelectorAll('.wizard-step').forEach((step) => {
@@ -2722,94 +1236,17 @@ class SovereignArchitectureAdvisor {
         // Session-State speichern nach Multi-App-Analyse
         this.saveSessionState();
     }
+}
 
-    // ─── SAAResults – delegiert an modules/saa-results.js ────────────────────
-    renderAnalysisResults() { return SAAResults.renderAnalysisResults.call(this); }
-    renderAggregatedAnalysisResults() { return SAAResults.renderAggregatedAnalysisResults.call(this); }
-    renderAggregatedProviderCard(result, index, aggregatedTCO) { return SAAResults.renderAggregatedProviderCard.call(this, result, index, aggregatedTCO); }
-    renderAppBreakdownItem(app, index) { return SAAResults.renderAppBreakdownItem.call(this, app, index); }
-    toggleAppBreakdown(index) { return SAAResults.toggleAppBreakdown.call(this, index); }
-    scrollToAppBreakdown(index) { return SAAResults.scrollToAppBreakdown.call(this, index); }
-    renderTCOOverview(result) { return SAAResults.renderTCOOverview.call(this, result); }
-    renderRecommendationCard(result, index, appIndex = null) { return SAAResults.renderRecommendationCard.call(this, result, index, appIndex); }
-    bindDetailButtons() { return SAAResults.bindDetailButtons.call(this); }
-    renderComparisonTableForApp(app) { return SAAResults.renderComparisonTableForApp.call(this, app); }
-    renderCustomScoresNotice() { return SAAResults.renderCustomScoresNotice.call(this); }
-    renderComparisonTable() { return SAAResults.renderComparisonTable.call(this); }
-    buildServiceTooltip(service) { return SAAResults.buildServiceTooltip.call(this, service); }
-    formatServiceTooltipHTML(service) { return SAAResults.formatServiceTooltipHTML.call(this, service); }
-    renderRatingIndicators(service) { return SAAResults.renderRatingIndicators.call(this, service); }
-    initTooltips() { return SAAResults.initTooltips.call(this); }
-    formatRecommendationText(text) { return SAAResults.formatRecommendationText.call(this, text); }
-    formatPortfolioRecommendationText(topProvider, metrics, aggregatedTCO) { return SAAResults.formatPortfolioRecommendationText.call(this, topProvider, metrics, aggregatedTCO); }
+// ── Module-Methoden via Prototype-Mixin einbinden (kein .call(this) nötig) ──
+Object.assign(SovereignArchitectureAdvisor.prototype, SAAState);
+Object.assign(SovereignArchitectureAdvisor.prototype, SAAComponents);
+Object.assign(SovereignArchitectureAdvisor.prototype, SAAResults);
+Object.assign(SovereignArchitectureAdvisor.prototype, SAASettings);
+Object.assign(SovereignArchitectureAdvisor.prototype, SAAMultiApp);
+Object.assign(SovereignArchitectureAdvisor.prototype, SAAPdf);
 
-    reset() {
-        this.currentStep = 0;
-        this.selectedComponents.clear();
-        this.componentConfigs = {};
-        this.applicationData = null;
-        this.analysisResults = null;
-        this.strategyWeight = 50;
-        this.systemConfig = null;
-        this.selectedSizing = 'medium';
-
-        document.getElementById('appSearchInput').value = '';
-        document.getElementById('researchResult').style.display = 'none';
-
-        this.updateStepDisplay();
-    }
-
-    hardReset() {
-        sessionStorage.removeItem('saa_session_state');
-        this.reset();
-    }
-
-    // ─── PDF Export – delegiert an modules/saa-pdf.js ──────────────────────────
-    exportToPDF()                                { return SAAPdf.exportToPDF.call(this); }
-    exportPortfolioPDF()                         { return SAAPdf.exportPortfolioPDF.call(this); }
-    renderPortfolioPDFProviderCard(r, i, tco)    { return SAAPdf.renderPortfolioPDFProviderCard.call(this, r, i, tco); }
-    renderPDFProviderCard(r, i, cl, ol)          { return SAAPdf.renderPDFProviderCard.call(this, r, i, cl, ol); }
-
-    // MULTI-APPLICATION SUPPORT METHODS
-    // ═══════════════════════════════════════════════════════════════════════════════
-
-    // ─── SAAMultiApp – delegiert an modules/saa-multiapp.js ────────────────────
-    migrateToMultiApp() { return SAAMultiApp.migrateToMultiApp.call(this); }
-    parseApplicationList(inputText) { return SAAMultiApp.parseApplicationList.call(this, inputText); }
-    startMultiAppMode(inputText) { return SAAMultiApp.startMultiAppMode.call(this, inputText); }
-    loadTemplate(templateName) { return SAAMultiApp.loadTemplate.call(this, templateName); }
-    formatVMTypeName(key) { return SAAMultiApp.formatVMTypeName.call(this, key); }
-    getDatabaseComponentId(databaseKeyword) { return SAAMultiApp.getDatabaseComponentId.call(this, databaseKeyword); }
-    extractHAConfig(haConfig) { return SAAMultiApp.extractHAConfig.call(this, haConfig); }
-    parseStorageSize(sizeString) { return SAAMultiApp.parseStorageSize.call(this, sizeString); }
-    parseDBSize(sizeString) { return SAAMultiApp.parseDBSize.call(this, sizeString); }
-    parseStorageConfig(sysReq, configs, selectedComponents) { return SAAMultiApp.parseStorageConfig.call(this, sysReq, configs, selectedComponents); }
-    parseDatabaseConfig(sysReq, configs, selectedComponents) { return SAAMultiApp.parseDatabaseConfig.call(this, sysReq, configs, selectedComponents); }
-    initComponentConfigsFromSystemRequirements(appData, sizing, appInstance) { return SAAMultiApp.initComponentConfigsFromSystemRequirements.call(this, appData, sizing, appInstance); }
-    convertConfigsToAnalysisFormat(configs) { return SAAMultiApp.convertConfigsToAnalysisFormat.call(this, configs); }
-    renderAppMappingTable(parsedApps) { return SAAMultiApp.renderAppMappingTable.call(this, parsedApps); }
-    onAppTypeChange(event) { return SAAMultiApp.onAppTypeChange.call(this, event); }
-    onAppSizingChange(event) { return SAAMultiApp.onAppSizingChange.call(this, event); }
-    showAppTypeDropdown(input, dropdown, suggestions) { return SAAMultiApp.showAppTypeDropdown.call(this, input, dropdown, suggestions); }
-    filterAppTypeDropdown(input, dropdown, suggestions) { return SAAMultiApp.filterAppTypeDropdown.call(this, input, dropdown, suggestions); }
-    handleAppTypeKeyboard(e, input, dropdown) { return SAAMultiApp.handleAppTypeKeyboard.call(this, e, input, dropdown); }
-    calculateSimilarity(s1, s2) { return SAAMultiApp.calculateSimilarity.call(this, s1, s2); }
-    levenshteinDistance(s1, s2) { return SAAMultiApp.levenshteinDistance.call(this, s1, s2); }
-    removeAppFromMapping(appId) { return SAAMultiApp.removeAppFromMapping.call(this, appId); }
-    removeAppFromConfig(appId) { return SAAMultiApp.removeAppFromConfig.call(this, appId); }
-    updateMappingSummary() { return SAAMultiApp.updateMappingSummary.call(this); }
-    addManualApp() { return SAAMultiApp.addManualApp.call(this); }
-    goToNextApp() { return SAAMultiApp.goToNextApp.call(this); }
-    goToPrevApp() { return SAAMultiApp.goToPrevApp.call(this); }
-    renderCurrentAppConfig() { return SAAMultiApp.renderCurrentAppConfig.call(this); }
-    updateAppNavigation() { return SAAMultiApp.updateAppNavigation.call(this); }
-    updateAppTabs() { return SAAMultiApp.updateAppTabs.call(this); }
-    escapeHtml(text) { return SAAMultiApp.escapeHtml.call(this, text); }
-    getSizeLabel(sizing) { return SAAMultiApp.getSizeLabel.call(this, sizing); }
-
-
-// App global verfügbar machen
-let app;
+// App global verfügbar machen (für HTML onclick-Handler)
 document.addEventListener('DOMContentLoaded', () => {
-    app = new SovereignArchitectureAdvisor();
+    window.app = new SovereignArchitectureAdvisor();
 });

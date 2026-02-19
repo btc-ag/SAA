@@ -1,8 +1,9 @@
 // SAAMultiApp Module
 // Verantwortlich für: Multi-App-Workflow, App-Mapping-Table, App-Konfiguration, Portfolio-Parsing
-// Wird aufgerufen via SAAMultiApp.METHOD.call(app) aus saa-app.js
 
-const SAAMultiApp = {
+import { knownApplications } from '../saa-apps-data.js';
+
+export const SAAMultiApp = {
     /**
      * Migration von Single-App zu Multi-App Modus
      */

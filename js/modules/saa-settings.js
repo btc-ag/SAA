@@ -1,8 +1,9 @@
 // SAA Settings Module
 // Verantwortlich für: Settings-Modal, Algorithm-Presets, Gewichte, API-Key
-// Wird aufgerufen via SAASettings.METHOD.call(app) aus saa-app.js
 
-const SAASettings = {
+import { IconMapper } from './saa-utils.js';
+
+export const SAASettings = {
     /**
      * Öffnet den Settings-Dialog
      */

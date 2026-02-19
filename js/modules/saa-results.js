@@ -1,8 +1,10 @@
 // SAAResults Module
 // Verantwortlich für: Ergebnis-Rendering, Provider-Cards, TCO-Übersicht, Vergleichstabelle
-// Wird aufgerufen via SAAResults.METHOD.call(app) aus saa-app.js
 
-const SAAResults = {
+import { architectureComponents, cloudProviders, selfBuildOptions } from '../saa-data.js';
+import { IconMapper } from './saa-utils.js';
+
+export const SAAResults = {
     renderAnalysisResults() {
         if (!this.analysisResults) return;
 
@@ -1328,7 +1330,985 @@ const SAAResults = {
         }
 
         return this.formatRecommendationText(text);
-    }
+    },
 
+
+    // ── Popup, Detail-Rendering & Provider-Ratings ────────────────────────
+
+    openDetailPopup(providerResult) {
+        const overlay = document.getElementById('detailPopupOverlay');
+        const title = document.getElementById('detailPopupTitle');
+        const content = document.getElementById('detailPopupContent');
+
+        if (!overlay || !content) return;
+
+        title.textContent = `${providerResult.provider.name} - Detailanalyse`;
+        content.innerHTML = this.renderProviderDetailContent(providerResult);
+        overlay.classList.add('visible');
+    },
+
+    /**
+     * Öffnet das Detail-Popup für aggregierte Portfolio-Daten
+     */
+    openAggregatedDetailPopup(aggregatedProvider, aggregatedTCO) {
+        const overlay = document.getElementById('detailPopupOverlay');
+        const title = document.getElementById('detailPopupTitle');
+        const content = document.getElementById('detailPopupContent');
+
+        if (!overlay || !content) return;
+
+        title.textContent = `${aggregatedProvider.provider.name} - Portfolio-Detailanalyse`;
+        content.innerHTML = this.renderAggregatedProviderDetailContent(aggregatedProvider, aggregatedTCO);
+        overlay.classList.add('visible');
+    },
+
+    /**
+     * Schließt das Detail-Popup
+     */
+    closeDetailPopup() {
+        const overlay = document.getElementById('detailPopupOverlay');
+        if (overlay) {
+            overlay.classList.remove('visible');
+        }
+    },
+
+    /**
+     * Öffnet das Kriterien-Info-Modal
+     */
+    openCriteriaInfo() {
+        const overlay = document.getElementById('detailPopupOverlay');
+        const title = document.getElementById('detailPopupTitle');
+        const content = document.getElementById('detailPopupContent');
+
+        if (!overlay || !content) return;
+
+        title.textContent = 'Bewertungskriterien & Methodik';
+        content.innerHTML = this.renderCriteriaInfoContent();
+        overlay.classList.add('visible');
+    },
+
+    /**
+     * Rendert den Inhalt des Kriterien-Info-Modals
+     */
+    renderCriteriaInfoContent() {
+        const currentPreset = this.getPresetLabel();
+        const weights = this.weights;
+
+        return `
+            <div class="criteria-info-content">
+                <h4 style="color: var(--btc-accent); margin-top: 0;">Wie funktioniert die Cloud-Bewertung?</h4>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                    Die Sovereign Architecture Advisor Analyse bewertet Cloud-Anbieter anhand von vier Hauptkriterien,
+                    die gewichtet in den Gesamt-Score einfließen. Die Gewichtung kann über die Einstellungen angepasst werden.
+                </p>
+
+                <!-- Aktuelles Profil -->
+                <div class="current-profile-box">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <span style="font-size: 1.5rem;">${this.getPresetIcon()}</span>
+                        <strong style="font-size: 1.1rem;">Aktuelles Profil: ${currentPreset}</strong>
+                    </div>
+                    <div class="profile-weights-grid">
+                        <div class="weight-display">
+                            <i class="fa-solid fa-lock"></i> Kontrolle: <strong>${weights.control}%</strong>
+                        </div>
+                        <div class="weight-display">
+                            <i class="fa-solid fa-bolt"></i> Leistung: <strong>${weights.performance}%</strong>
+                        </div>
+                        <div class="weight-display">
+                            <i class="fa-solid fa-box"></i> Verfügbarkeit: <strong>${weights.availability}%</strong>
+                        </div>
+                        <div class="weight-display">
+                            <i class="fa-solid fa-coins"></i> Kosten: <strong>${weights.cost}%</strong>
+                        </div>
+                    </div>
+                    <button class="criteria-edit-btn" onclick="app.openSettings()">
+                        <i class="fa-solid fa-sliders"></i> Gewichtung anpassen
+                    </button>
+                </div>
+
+                <!-- Kriterien-Details -->
+                <div class="criteria-sections">
+                    <div class="criteria-section">
+                        <div class="criteria-header">
+                            <i class="fa-solid fa-lock criteria-icon" style="color: #5A67D8;"></i>
+                            <h5>1. Kontrolle & Souveränität (${weights.control}%)</h5>
+                        </div>
+                        <p class="criteria-description">
+                            Bewertet die Datensouveränität und rechtliche Kontrolle über Ihre Infrastruktur.
+                        </p>
+                        <ul class="criteria-factors">
+                            <li><strong>Jurisdiktion:</strong> In welchem Rechtsraum operiert der Anbieter? (EU/Deutschland = höher)</li>
+                            <li><strong>DSGVO-Konformität:</strong> Einhaltung europäischer Datenschutzstandards</li>
+                            <li><strong>Vendor Lock-in:</strong> Wie einfach ist ein Anbieterwechsel möglich?</li>
+                            <li><strong>Transparenz:</strong> Offenheit über Datenverarbeitung und Zugriffe</li>
+                            <li><strong>Eigentümerstruktur:</strong> Staatliche, europäische oder internationale Eigentümer</li>
+                        </ul>
+                        <div class="criteria-example">
+                            <strong>Beispiel:</strong> DELOS Cloud (Score: 95) vs. AWS (Score: 30)
+                            - Souveräne Clouds bieten höhere Datenkontrolle durch EU-Jurisdiktion und DSGVO-Compliance.
+                        </div>
+                    </div>
+
+                    <div class="criteria-section">
+                        <div class="criteria-header">
+                            <i class="fa-solid fa-bolt criteria-icon" style="color: #F59E0B;"></i>
+                            <h5>2. Leistung & Service-Umfang (${weights.performance}%)</h5>
+                        </div>
+                        <p class="criteria-description">
+                            Misst die technische Leistungsfähigkeit und den Reifegrad der Services.
+                        </p>
+                        <ul class="criteria-factors">
+                            <li><strong>Service-Reife:</strong> Sind Services GA (Generally Available) oder noch in Preview/Beta?</li>
+                            <li><strong>Feature-Umfang:</strong> Anzahl und Qualität der verfügbaren Services</li>
+                            <li><strong>Skalierbarkeit:</strong> Automatische Skalierung, globale Verfügbarkeit, Performance</li>
+                            <li><strong>Innovation:</strong> KI/ML-Services, moderne Cloud-native Tools</li>
+                            <li><strong>Ökosystem:</strong> Integration mit Tools, Partner, Marketplace</li>
+                        </ul>
+                        <div class="criteria-example">
+                            <strong>Beispiel:</strong> AWS (Score: 95) vs. kleinere EU-Clouds (Score: 60-70)
+                            - Hyperscaler bieten mehr Services und reifere Technologien.
+                        </div>
+                    </div>
+
+                    <div class="criteria-section">
+                        <div class="criteria-header">
+                            <i class="fa-solid fa-box criteria-icon" style="color: #10B981;"></i>
+                            <h5>3. Verfügbarkeit & Service-Abdeckung (${weights.availability}%)</h5>
+                        </div>
+                        <p class="criteria-description">
+                            Anteil der benötigten Services, die bei einem Anbieter verfügbar sind.
+                        </p>
+                        <ul class="criteria-factors">
+                            <li><strong>Service-Coverage:</strong> Wie viele Ihrer benötigten Services sind verfügbar?</li>
+                            <li><strong>Preview-Services:</strong> Services in Preview zählen zu 50% (erhöhtes Risiko)</li>
+                            <li><strong>Fehlende Services:</strong> Erfordern Self-Build oder Drittanbieter-Integration</li>
+                            <li><strong>SLA-Garantien:</strong> Verfügbarkeitsgarantien und Support-Level</li>
+                        </ul>
+                        <div class="criteria-formula">
+                            <strong>Formel:</strong> Coverage = (Verfügbare Services + Preview × 0.5) / Benötigte Services × 100%
+                        </div>
+                        <div class="criteria-example">
+                            <strong>Beispiel:</strong> 8 verfügbare + 2 Preview von 10 benötigten = (8 + 2×0.5) / 10 = 90% Coverage
+                        </div>
+                    </div>
+
+                    <div class="criteria-section">
+                        <div class="criteria-header">
+                            <i class="fa-solid fa-coins criteria-icon" style="color: #EF4444;"></i>
+                            <h5>4. Kosteneffizienz & TCO (${weights.cost}%)</h5>
+                        </div>
+                        <p class="criteria-description">
+                            Gesamtkosten (Total Cost of Ownership) über drei Dimensionen.
+                        </p>
+                        <ul class="criteria-factors">
+                            <li><strong>Verbrauchskosten:</strong> Monatliche Cloud-Infrastruktur-Kosten (Compute, Storage, etc.)</li>
+                            <li><strong>Betriebsaufwand:</strong> FTE-Kosten für Operations (Monitoring, Updates, Support)</li>
+                            <li><strong>Projektaufwand:</strong> Initiale Setup-Kosten in Personentagen</li>
+                            <li><strong>Self-Build-Aufwand:</strong> Zusätzlicher Aufwand für fehlende Services</li>
+                        </ul>
+                        <div class="criteria-formula">
+                            <strong>Score-Berechnung:</strong> Günstigster Anbieter = 100 Punkte, teuerster = 30 Punkte (linear interpoliert)
+                        </div>
+                        <div class="criteria-example">
+                            <strong>Beispiel:</strong> Anbieter A: 2.500€/Monat (Score: 100) vs. Anbieter B: 5.000€/Monat (Score: ~65)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gesamt-Score Berechnung -->
+                <div class="score-calculation-box">
+                    <h4 style="margin-top: 0;"><i class="fa-solid fa-calculator"></i> Gesamt-Score Berechnung</h4>
+                    <div class="formula-display">
+                        Score = (Kontrolle × ${(weights.control / 100).toFixed(2)}) +
+                                (Leistung × ${(weights.performance / 100).toFixed(2)}) +
+                                (Verfügbarkeit × ${(weights.availability / 100).toFixed(2)}) +
+                                (Kosteneffizienz × ${(weights.cost / 100).toFixed(2)})
+                    </div>
+                    ${this.maturitySettings.enabled ? `
+                    <div class="maturity-factor-info">
+                        <strong><i class="fa-solid fa-microscope"></i> Reife-Faktor:</strong>
+                        Der finale Score wird mit einem Reife-Faktor multipliziert, der Preview-Services
+                        (${this.maturitySettings.previewPenalty}% Abzug) und fehlende Services
+                        (${this.maturitySettings.missingPenalty}% Abzug) berücksichtigt.
+                        <br><br>
+                        <em>Beispiel:</em> 2 Preview + 1 fehlend = Faktor ${(1 - (2 * this.maturitySettings.previewPenalty + 1 * this.maturitySettings.missingPenalty) / 100).toFixed(2)}
+                        (Score wird mit 0.93 multipliziert)
+                    </div>
+                    ` : ''}
+                </div>
+
+                <!-- TCO-Einstellungen -->
+                <div class="tco-settings-info">
+                    <h4><i class="fa-solid fa-gears"></i> Aktuelle TCO-Einstellungen</h4>
+                    <div class="settings-status">
+                        <div class="setting-item ${this.operationsSettings.includeInCosts ? 'enabled' : 'disabled'}">
+                            <i class="fa-solid ${this.operationsSettings.includeInCosts ? 'fa-check-circle' : 'fa-circle-xmark'}"></i>
+                            <span>Betriebsaufwand: <strong>${this.operationsSettings.includeInCosts ? 'In Bewertung einbezogen' : 'Nur angezeigt'}</strong></span>
+                        </div>
+                        <div class="setting-item ${this.projectEffortSettings.includeInCosts ? 'enabled' : 'disabled'}">
+                            <i class="fa-solid ${this.projectEffortSettings.includeInCosts ? 'fa-check-circle' : 'fa-circle-xmark'}"></i>
+                            <span>Projektaufwand: <strong>${this.projectEffortSettings.includeInCosts ? 'In Bewertung einbezogen' : 'Nur angezeigt'}</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datenquellen -->
+                <div class="data-sources-info">
+                    <h4><i class="fa-solid fa-database"></i> Datenquellen & Methodik</h4>
+                    <ul>
+                        <li><strong>Provider-Daten:</strong> Manuelle Recherche und Analyse der Service-Portfolios (Stand: Januar 2025)</li>
+                        <li><strong>Preis-Schätzungen:</strong> Basierend auf öffentlichen Preis-Rechnern und Durchschnittswerten</li>
+                        <li><strong>Betriebsaufwand:</strong> Erfahrungswerte aus Cloud-Migration-Projekten (FTE-Faktoren)</li>
+                        <li><strong>Service-Bewertungen:</strong> Kombination aus Provider-Level und Service-Level Ratings</li>
+                        <li><strong>Updates:</strong> Regelmäßige Aktualisierung der Provider-Daten und Preise</li>
+                    </ul>
+                </div>
+
+                <!-- Provider-Bewertungen -->
+                <div class="provider-ratings-section">
+                    <h4><i class="fa-solid fa-chart-bar"></i> Cloud-Provider Bewertungen im Detail</h4>
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                        Sehen Sie, wie jeder Cloud-Provider bei den einzelnen Kriterien bewertet wurde.
+                    </p>
+                    <button class="show-provider-ratings-btn" onclick="app.toggleProviderRatings()">
+                        <i class="fa-solid fa-table"></i> Provider-Bewertungen anzeigen
+                    </button>
+                    <div id="providerRatingsTable" class="provider-ratings-table-container" style="display: none;">
+                        ${this.renderProviderRatingsTable()}
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; border-left: 3px solid var(--btc-accent);">
+                    <strong><i class="fa-solid fa-lightbulb"></i> Tipp:</strong>
+                    Passen Sie die Gewichtung in den Einstellungen an Ihre Prioritäten an.
+                    Für maximale Souveränität wählen Sie das Profil "Maximale Souveränität",
+                    für beste Performance "Performance First".
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * Toggle Provider-Ratings Tabelle
+     */
+    toggleProviderRatings() {
+        const container = document.getElementById('providerRatingsTable');
+        const btn = document.querySelector('.show-provider-ratings-btn');
+
+        if (!container || !btn) return;
+
+        const isVisible = container.style.display !== 'none';
+
+        if (isVisible) {
+            container.style.display = 'none';
+            btn.innerHTML = '<i class="fa-solid fa-table"></i> Provider-Bewertungen anzeigen';
+        } else {
+            container.style.display = 'block';
+            btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Provider-Bewertungen verbergen';
+            // Scroll zu Tabelle
+            setTimeout(() => {
+                container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+    },
+
+    /**
+     * Rendert die Provider-Bewertungstabelle
+     */
+    renderProviderRatingsTable() {
+        // Verwende die aktuellen Analyse-Ergebnisse oder alle Provider
+        let providersToShow = [];
+
+        if (this.isMultiAppMode && this.aggregatedResults) {
+            // Multi-App: Zeige aggregierte Provider
+            providersToShow = this.aggregatedResults.aggregatedProviders;
+        } else if (this.analysisResults && this.analysisResults.length > 0) {
+            // Single-App: Zeige analysierte Provider
+            providersToShow = this.analysisResults;
+        } else {
+            // Fallback: Zeige alle Provider mit Basis-Daten
+            providersToShow = cloudProviders.map(provider => ({
+                provider: provider,
+                score: {
+                    controlScore: provider.control,
+                    performanceScore: provider.performance,
+                    availabilityScore: 0,
+                    costScore: 0,
+                    total: ((provider.control + provider.performance) / 2).toFixed(1)
+                },
+                serviceAnalysis: {
+                    coverage: 0
+                }
+            }));
+        }
+
+        // Nach Gesamt-Score sortieren
+        const sortedProviders = [...providersToShow].sort((a, b) => {
+            const scoreA = a.aggregatedScore || a.score?.total || 0;
+            const scoreB = b.aggregatedScore || b.score?.total || 0;
+            return scoreB - scoreA;
+        });
+
+        const tableRows = sortedProviders.map((result, index) => {
+            const provider = result.provider;
+            const score = result.score || {};
+            const isTopPick = index === 0;
+
+            // Für aggregierte Ergebnisse (Multi-App)
+            const controlScore = result.aggregatedScore ?
+                Math.round(provider.control) : (score.controlScore || 0);
+            const performanceScore = result.aggregatedScore ?
+                Math.round(provider.performance) : (score.performanceScore || 0);
+            const availabilityScore = result.serviceAnalysis?.coverage || score.availabilityScore || 0;
+            const costScore = score.costScore || 0;
+            const totalScore = result.aggregatedScore || score.total || 0;
+
+            // Kategorie-Namen
+            const categoryNames = {
+                hyperscaler: 'Hyperscaler',
+                sovereign: 'Souverän',
+                eu: 'EU',
+                private: 'Private',
+                hybrid: 'Hybrid'
+            };
+
+            // Farben für Scores
+            const getScoreColor = (score) => {
+                if (score >= 80) return 'var(--btc-success)';
+                if (score >= 60) return 'var(--btc-warning)';
+                return 'var(--btc-danger)';
+            };
+
+            return `
+                <tr class="${isTopPick ? 'top-pick-row' : ''}">
+                    <td class="provider-name-cell">
+                        <div class="provider-name-with-badge">
+                            <div class="provider-logo-mini" style="background: ${provider.color}20; color: ${provider.color};">
+                                ${provider.name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                                <strong>${provider.name}</strong>
+                                <div class="provider-category-mini">${categoryNames[provider.category] || provider.category}</div>
+                            </div>
+                            ${isTopPick ? '<span class="top-pick-badge">Top</span>' : ''}
+                        </div>
+                    </td>
+                    <td class="score-cell">
+                        <div class="score-bar-container">
+                            <div class="score-bar" style="width: ${controlScore}%; background: ${getScoreColor(controlScore)};"></div>
+                            <span class="score-value">${Math.round(controlScore)}</span>
+                        </div>
+                        <div class="score-explanation">
+                            ${this.getControlScoreExplanation(provider)}
+                        </div>
+                    </td>
+                    <td class="score-cell">
+                        <div class="score-bar-container">
+                            <div class="score-bar" style="width: ${performanceScore}%; background: ${getScoreColor(performanceScore)};"></div>
+                            <span class="score-value">${Math.round(performanceScore)}</span>
+                        </div>
+                        <div class="score-explanation">
+                            ${this.getPerformanceScoreExplanation(provider)}
+                        </div>
+                    </td>
+                    <td class="score-cell">
+                        <div class="score-bar-container">
+                            <div class="score-bar" style="width: ${availabilityScore}%; background: ${getScoreColor(availabilityScore)};"></div>
+                            <span class="score-value">${Math.round(availabilityScore)}%</span>
+                        </div>
+                        <div class="score-explanation">
+                            ${result.serviceAnalysis ? `${result.serviceAnalysis.available?.length || 0} verfügbar` : 'N/A'}
+                        </div>
+                    </td>
+                    <td class="score-cell">
+                        <div class="score-bar-container">
+                            <div class="score-bar" style="width: ${costScore}%; background: ${getScoreColor(costScore)};"></div>
+                            <span class="score-value">${Math.round(costScore)}</span>
+                        </div>
+                        <div class="score-explanation">
+                            ${result.tcoEstimate ? `~${result.tcoEstimate.monthlyEstimate || 0}€/Monat` : 'N/A'}
+                        </div>
+                    </td>
+                    <td class="total-score-cell">
+                        <div class="total-score-value" style="color: ${getScoreColor(totalScore)};">
+                            ${typeof totalScore === 'number' ? totalScore.toFixed(1) : totalScore}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        return `
+            <div class="provider-ratings-table-wrapper">
+                <table class="provider-ratings-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">Cloud-Provider</th>
+                            <th style="width: 16%;">
+                                <i class="fa-solid fa-lock"></i> Kontrolle
+                                <div class="weight-badge">${this.weights.control}%</div>
+                            </th>
+                            <th style="width: 16%;">
+                                <i class="fa-solid fa-bolt"></i> Leistung
+                                <div class="weight-badge">${this.weights.performance}%</div>
+                            </th>
+                            <th style="width: 16%;">
+                                <i class="fa-solid fa-box"></i> Verfügbarkeit
+                                <div class="weight-badge">${this.weights.availability}%</div>
+                            </th>
+                            <th style="width: 16%;">
+                                <i class="fa-solid fa-coins"></i> Kosten
+                                <div class="weight-badge">${this.weights.cost}%</div>
+                            </th>
+                            <th style="width: 16%;">
+                                <i class="fa-solid fa-star"></i> Gesamt-Score
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+
+                <div class="ratings-legend">
+                    <h5><i class="fa-solid fa-info-circle"></i> Legende</h5>
+                    <div class="legend-grid">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: var(--btc-success);"></div>
+                            <span>80-100: Sehr gut</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: var(--btc-warning);"></div>
+                            <span>60-79: Gut</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: var(--btc-danger);"></div>
+                            <span>0-59: Verbesserungsbedarf</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * Erklärt den Kontroll-Score eines Providers
+     */
+    getControlScoreExplanation(provider) {
+        const score = provider.control;
+        if (score >= 80) {
+            return 'Souveräne Cloud, EU-Jurisdiktion';
+        } else if (score >= 60) {
+            return 'EU-Anbieter, gute Kontrolle';
+        } else if (score >= 40) {
+            return 'Hybrid-Lösung, mittlere Kontrolle';
+        } else {
+            return 'Hyperscaler, eingeschränkte Kontrolle';
+        }
+    },
+
+    /**
+     * Erklärt den Performance-Score eines Providers
+     */
+    getPerformanceScoreExplanation(provider) {
+        const score = provider.performance;
+        if (score >= 90) {
+            return 'Umfangreiches Service-Portfolio';
+        } else if (score >= 75) {
+            return 'Gutes Service-Angebot';
+        } else if (score >= 60) {
+            return 'Basis-Services verfügbar';
+        } else {
+            return 'Begrenztes Angebot';
+        }
+    },
+
+    /**
+     * Rendert die Kostenaufschlüsselung für die Detailanalyse
+     */
+    renderCostBreakdown(tco) {
+        if (!tco || !tco.consumption?.details) {
+            return '';
+        }
+
+        // Verbrauchskosten-Details
+        const consumptionRows = tco.consumption.details.map(detail => {
+            const levelClass = detail.level === 'low' ? 'low' : detail.level === 'high' ? 'high' : 'medium';
+            return `
+                <tr>
+                    <td>${detail.name || detail.id}</td>
+                    <td><span class="cost-level-badge ${levelClass}">${detail.level}</span></td>
+                    <td style="text-align: right;">${detail.estimate.toLocaleString('de-DE')}€</td>
+                    <td style="color: var(--text-secondary); font-size: 0.8rem;">${detail.breakdown || '-'}</td>
+                </tr>
+            `;
+        }).join('');
+
+        // Betriebskosten-Details
+        const operationsRows = tco.operations?.details?.map(detail => {
+            const levelClass = detail.level === 'low' ? 'low' : detail.level === 'high' ? 'high' : 'medium';
+            return `
+                <tr>
+                    <td>${detail.name || detail.id}${detail.isSelfBuild ? ' <span style="color: var(--btc-warning);">(Self-Build)</span>' : ''}</td>
+                    <td><span class="cost-level-badge ${levelClass}">${detail.level}</span></td>
+                    <td style="text-align: right;">${(detail.fteEstimate * 8000).toLocaleString('de-DE')}€</td>
+                    <td style="color: var(--text-secondary); font-size: 0.8rem;">${detail.fteEstimate} FTE</td>
+                </tr>
+            `;
+        }).join('') || '';
+
+        // Projektaufwand-Details
+        const projectRows = tco.projectEffort?.details?.map(detail => {
+            const levelClass = detail.level === 'low' ? 'low' : detail.level === 'high' ? 'high' : 'medium';
+            return `
+                <tr>
+                    <td>${detail.name || detail.id}</td>
+                    <td><span class="cost-level-badge ${levelClass}">${detail.level}</span></td>
+                    <td style="text-align: right;">${detail.days} PT</td>
+                    <td style="color: var(--text-secondary); font-size: 0.8rem;">~${(detail.days * 800).toLocaleString('de-DE')}€</td>
+                </tr>
+            `;
+        }).join('') || '';
+
+        // Self-Build-Details wenn vorhanden
+        let selfBuildSection = '';
+        if (tco.selfBuild?.required && tco.selfBuild.details?.length > 0) {
+            const selfBuildRows = tco.selfBuild.details.map(detail => `
+                <tr>
+                    <td>🔧 ${detail.solution}</td>
+                    <td><span class="cost-level-badge high">${detail.effort}</span></td>
+                    <td style="text-align: right;">${detail.days} PT</td>
+                    <td style="color: var(--text-secondary); font-size: 0.8rem;">~${(detail.days * 800).toLocaleString('de-DE')}€</td>
+                </tr>
+            `).join('');
+
+            selfBuildSection = `
+                <div class="cost-breakdown-section">
+                    <h5 class="cost-breakdown-title">🔧 Self-Build Aufwand (${tco.selfBuild.totalDays} PT)</h5>
+                    <table class="cost-breakdown-table">
+                        <thead>
+                            <tr>
+                                <th>Lösung</th>
+                                <th>Aufwand</th>
+                                <th style="text-align: right;">Tage</th>
+                                <th>Kosten (800€/PT)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${selfBuildRows}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // Pricing Info vom Analyzer holen
+        const pricingInfo = this.analyzer?.getPricingInfo?.() || { source: 'Fallback', currency: 'EUR' };
+
+        return `
+            <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('📊', 'utility')} Kostenaufschlüsselung</h4>
+
+            <div class="pricing-info-box" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 12px 16px; margin-bottom: 1rem; font-size: 0.85rem;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <span style="font-size: 1.2rem;">${IconMapper.toFontAwesome('📍', 'utility')}</span>
+                    <div>
+                        <strong>Preisbasis:</strong> ${pricingInfo.source || 'Fallback'} |
+                        <strong>Region:</strong> Frankfurt (DE) |
+                        <strong>Währung:</strong> ${pricingInfo.currency || 'EUR'}
+                        ${pricingInfo.lastUpdated ? `| <strong>Stand:</strong> ${pricingInfo.lastUpdated}` : ''}
+                    </div>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); padding-left: 32px;">
+                    <strong>Quellen:</strong>
+                    <a href="https://calculator.aws/" target="_blank" rel="noopener" style="color: #FF9900; margin-left: 8px;">AWS Pricing</a> |
+                    <a href="https://azure.microsoft.com/pricing/" target="_blank" rel="noopener" style="color: #0078D4; margin-left: 4px;">Azure Pricing</a> |
+                    <a href="https://cloud.google.com/compute/all-pricing" target="_blank" rel="noopener" style="color: #4285F4; margin-left: 4px;">GCP Pricing</a>
+                </div>
+            </div>
+
+            <div class="cost-breakdown-section">
+                <h5 class="cost-breakdown-title">${IconMapper.toFontAwesome('☁️', 'component')} Verbrauchskosten (~${tco.consumption.monthlyEstimate.toLocaleString('de-DE')}€/Monat)</h5>
+                <table class="cost-breakdown-table">
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th><span class="level-tooltip" data-tip="Ressourcen-Intensität: low = wenig, medium = mittel, high = hoch">Level ${IconMapper.toFontAwesome('ℹ️', 'utility')}</span></th>
+                            <th style="text-align: right;">Kosten/Monat</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${consumptionRows}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="cost-breakdown-section${!tco.operations?.includedInCosts ? ' operations-excluded' : ''}">
+                <h5 class="cost-breakdown-title">${IconMapper.toFontAwesome('👥', 'utility')} Betriebsaufwand (~${(tco.operations?.monthlyPersonnelCost || 0).toLocaleString('de-DE')}€/Monat, ${tco.operations?.totalFTE || 0} FTE)${!tco.operations?.includedInCosts ? ' <span style="font-size: 0.8em; color: var(--text-secondary);">(nicht in TCO-Berechnung)</span>' : ''}</h5>
+                <table class="cost-breakdown-table">
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th><span class="level-tooltip" data-tip="Betriebs-Komplexität: very_low = minimal, low = gering, medium = mittel, high = hoch">Level ${IconMapper.toFontAwesome('ℹ️', 'utility')}</span></th>
+                            <th style="text-align: right;">Kosten/Monat</th>
+                            <th>FTE-Anteil</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${operationsRows}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="cost-breakdown-section${!tco.projectEffort?.includedInCosts ? ' project-effort-excluded' : ''}">
+                <h5 class="cost-breakdown-title">${IconMapper.toFontAwesome('📋', 'utility')} Projektaufwand (~${tco.projectEffort?.totalDays || 0} Personentage)${!tco.projectEffort?.includedInCosts ? ' <span style="font-size: 0.8em; color: var(--text-secondary);">(nicht in TCO-Berechnung)</span>' : ''}</h5>
+                <table class="cost-breakdown-table">
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th><span class="level-tooltip" data-tip="Implementierungs-Aufwand: low = gering, medium = mittel, high = hoch">Level ${IconMapper.toFontAwesome('ℹ️', 'utility')}</span></th>
+                            <th style="text-align: right;">Aufwand</th>
+                            <th>Kosten (800€/PT)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${projectRows}
+                    </tbody>
+                </table>
+            </div>
+
+            ${selfBuildSection}
+        `;
+    },
+
+    /**
+     * Rendert den Inhalt des Detail-Popups
+     */
+    renderProviderDetailContent(result) {
+        const provider = result.provider;
+        const score = result.score;
+        const tco = result.tcoEstimate;
+        const services = result.serviceAnalysis;
+
+        const categoryIcons = {
+            hyperscaler: '🌐',
+            sovereign: '🏛️',
+            eu: '🇪🇺',
+            private: '🔒',
+            hybrid: '🔄'
+        };
+
+        const categoryNames = {
+            hyperscaler: 'Hyperscaler',
+            sovereign: 'Souveräne Cloud',
+            eu: 'EU-Anbieter',
+            private: 'Private Cloud',
+            hybrid: 'Hybrid-Lösung'
+        };
+
+        return `
+            <div class="provider-detail-header">
+                <div class="provider-detail-logo" style="background: ${provider.color}20; color: ${provider.color};">
+                    ${IconMapper.toFontAwesome(categoryIcons[provider.category] || '☁️', 'provider')}
+                </div>
+                <div class="provider-detail-info">
+                    <h4>${provider.name}</h4>
+                    <p>${categoryNames[provider.category]} | ${provider.description || ''}</p>
+                </div>
+            </div>
+
+            <div class="provider-detail-scores">
+                <div class="detail-score-card">
+                    <div class="detail-score-value">${score.total}</div>
+                    <div class="detail-score-label">Gesamt-Score</div>
+                </div>
+                <div class="detail-score-card">
+                    <div class="detail-score-value">${score.controlScore}</div>
+                    <div class="detail-score-label">Kontrolle</div>
+                </div>
+                <div class="detail-score-card">
+                    <div class="detail-score-value">${score.performanceScore}</div>
+                    <div class="detail-score-label">Leistung</div>
+                </div>
+                <div class="detail-score-card">
+                    <div class="detail-score-value">${Math.round(services.coverage)}%</div>
+                    <div class="detail-score-label">Abdeckung</div>
+                </div>
+            </div>
+
+            <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('💰', 'utility')} TCO-Schätzung</h4>
+            <div class="provider-detail-scores">
+                <div class="detail-score-card">
+                    <div class="detail-score-value">~${(tco.monthlyEstimate || 0).toLocaleString('de-DE')}€</div>
+                    <div class="detail-score-label">Monatliche Gesamtkosten</div>
+                </div>
+                <div class="detail-score-card">
+                    <div class="detail-score-value">~${(tco.consumption?.monthlyEstimate || 0).toLocaleString('de-DE')}€</div>
+                    <div class="detail-score-label">Verbrauchskosten</div>
+                </div>
+                <div class="detail-score-card${!tco.operations?.includedInCosts ? ' operations-excluded' : ''}">
+                    <div class="detail-score-value">~${(tco.operations?.monthlyPersonnelCost || 0).toLocaleString('de-DE')}€</div>
+                    <div class="detail-score-label">Betriebskosten${!tco.operations?.includedInCosts ? ' <span style="font-size: 0.7em; opacity: 0.7;">(nicht in TCO)</span>' : ''}</div>
+                </div>
+                <div class="detail-score-card${!tco.projectEffort?.includedInCosts ? ' project-effort-excluded' : ''}">
+                    <div class="detail-score-value">~${tco.projectDaysEstimate || '-'} PT</div>
+                    <div class="detail-score-label">Projektaufwand${!tco.projectEffort?.includedInCosts ? ' <span style="font-size: 0.7em; opacity: 0.7;">(nicht in TCO)</span>' : ''}</div>
+                </div>
+            </div>
+
+            <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('📋', 'component')} Service-Übersicht (${services.totalRequired} benötigt)</h4>
+            <div class="detail-services-grid">
+                ${(services.available || []).map(s => `
+                    <div class="detail-service-item">
+                        <div class="detail-service-status available"></div>
+                        <div class="detail-service-info">
+                            <div class="detail-service-name">${s.name}</div>
+                            <div class="detail-service-provider">${IconMapper.toFontAwesome('✓', 'utility')} Verfügbar | Kontrolle: ${s.control} | Leistung: ${s.performance}</div>
+                        </div>
+                    </div>
+                `).join('')}
+                ${(services.preview || []).map(s => `
+                    <div class="detail-service-item">
+                        <div class="detail-service-status preview"></div>
+                        <div class="detail-service-info">
+                            <div class="detail-service-name">${s.name}</div>
+                            <div class="detail-service-provider">${IconMapper.toFontAwesome('⚠️', 'utility')} Preview</div>
+                        </div>
+                    </div>
+                `).join('')}
+                ${(services.planned || []).map(s => `
+                    <div class="detail-service-item">
+                        <div class="detail-service-status planned"></div>
+                        <div class="detail-service-info">
+                            <div class="detail-service-name">${s.name || s.id}</div>
+                            <div class="detail-service-provider">${IconMapper.toFontAwesome('📅', 'utility')} Geplant</div>
+                        </div>
+                    </div>
+                `).join('')}
+                ${(services.missing || []).map(s => `
+                    <div class="detail-service-item">
+                        <div class="detail-service-status missing"></div>
+                        <div class="detail-service-info">
+                            <div class="detail-service-name">${s.name || s.id}</div>
+                            <div class="detail-service-provider">${s.selfBuildOption ? `${IconMapper.toFontAwesome('⚠️', 'utility')} Self-Build: ${s.selfBuildOption.name}` : `${IconMapper.toFontAwesome('⚠️', 'utility')} Nicht verfügbar`}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+
+            ${this.renderCostBreakdown(tco)}
+
+            <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('📊', 'utility')} Score-Berechnung (Gewichtung: ${IconMapper.toFontAwesome('🔒', 'utility')}${this.weights.control}% ${IconMapper.toFontAwesome('⚡', 'utility')}${this.weights.performance}% ${IconMapper.toFontAwesome('📦', 'utility')}${this.weights.availability}% ${IconMapper.toFontAwesome('💰', 'utility')}${this.weights.cost}%)</h4>
+            <div class="algorithm-explanation" style="font-size: 0.85rem;">
+                <div class="algorithm-item" style="display: grid; grid-template-columns: 1fr auto auto auto; gap: 0.5rem; align-items: center;">
+                    <div>${IconMapper.toFontAwesome('🔒', 'utility')} <strong>Kontrolle</strong></div>
+                    <div style="text-align: right;">${score.controlScore}</div>
+                    <div style="text-align: right; color: var(--text-secondary);">× ${this.weights.control}%</div>
+                    <div style="text-align: right; font-weight: 600;">= ${score.weightedControl || Math.round(score.controlScore * this.weights.control / 100 * 10) / 10}</div>
+                </div>
+                <div class="algorithm-item" style="display: grid; grid-template-columns: 1fr auto auto auto; gap: 0.5rem; align-items: center;">
+                    <div>${IconMapper.toFontAwesome('⚡', 'utility')} <strong>Leistung</strong></div>
+                    <div style="text-align: right;">${score.performanceScore}</div>
+                    <div style="text-align: right; color: var(--text-secondary);">× ${this.weights.performance}%</div>
+                    <div style="text-align: right; font-weight: 600;">= ${score.weightedPerformance || Math.round(score.performanceScore * this.weights.performance / 100 * 10) / 10}</div>
+                </div>
+                <div class="algorithm-item" style="display: grid; grid-template-columns: 1fr auto auto auto; gap: 0.5rem; align-items: center;">
+                    <div>${IconMapper.toFontAwesome('📦', 'utility')} <strong>Verfügbarkeit</strong></div>
+                    <div style="text-align: right;">${score.availabilityScore || Math.round(services.coverage)}</div>
+                    <div style="text-align: right; color: var(--text-secondary);">× ${this.weights.availability}%</div>
+                    <div style="text-align: right; font-weight: 600;">= ${score.weightedAvailability || Math.round(services.coverage * this.weights.availability / 100 * 10) / 10}</div>
+                </div>
+                <div class="algorithm-item" style="display: grid; grid-template-columns: 1fr auto auto auto; gap: 0.5rem; align-items: center;">
+                    <div>${IconMapper.toFontAwesome('💰', 'utility')} <strong>Kosten</strong> <span style="font-size: 0.75rem; color: var(--text-secondary);">(~${(score.monthlyCost || tco.monthlyEstimate || 0).toLocaleString('de-DE')}€/Mon.)</span></div>
+                    <div style="text-align: right;">${score.costScore}</div>
+                    <div style="text-align: right; color: var(--text-secondary);">× ${this.weights.cost}%</div>
+                    <div style="text-align: right; font-weight: 600;">= ${score.weightedCost || Math.round(score.costScore * this.weights.cost / 100 * 10) / 10}</div>
+                </div>
+                <div class="algorithm-item" style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center; border-top: 2px solid var(--border); padding-top: 0.5rem; margin-top: 0.5rem;">
+                    <div><strong>Basis-Score</strong></div>
+                    <div style="text-align: right; font-weight: 600;">${score.base}</div>
+                </div>
+                <div class="algorithm-item" style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center;">
+                    <div>Reife-Faktor <span style="font-size: 0.75rem; color: var(--text-secondary);">(${services.preview.length} Preview, ${services.missing.length} fehlend)</span></div>
+                    <div style="text-align: right;">× ${score.maturityFactor}</div>
+                </div>
+                <div class="algorithm-item" style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center; background: var(--btc-accent); color: white; padding: 0.75rem; border-radius: 6px; margin-top: 0.5rem;">
+                    <div><strong>Gesamt-Score</strong></div>
+                    <div style="text-align: right; font-size: 1.25rem; font-weight: 700;">${score.total}</div>
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * Rendert aggregierte Portfolio-Details
+     */
+    renderAggregatedProviderDetailContent(aggregatedProvider, aggregatedTCO) {
+        const provider = aggregatedProvider.provider;
+        const aggregatedScore = aggregatedProvider.aggregatedScore;
+        const serviceAnalysis = aggregatedProvider.serviceAnalysis;
+        const appScores = aggregatedProvider.appScores;
+        const tco = aggregatedTCO;
+
+        const categoryIcons = {
+            hyperscaler: '🌐',
+            sovereign: '🏛️',
+            eu: '🇪🇺',
+            private: '🔒',
+            hybrid: '🔄'
+        };
+
+        const categoryNames = {
+            hyperscaler: 'Hyperscaler',
+            sovereign: 'Souveräne Cloud',
+            eu: 'EU-Anbieter',
+            private: 'Private Cloud',
+            hybrid: 'Hybrid-Lösung'
+        };
+
+        // TCO-Details per App gruppieren
+        const tcoByApp = {};
+        if (aggregatedProvider.tcoEstimate?.consumption?.details) {
+            aggregatedProvider.tcoEstimate.consumption.details.forEach(detail => {
+                const appName = detail.appName || 'Unbekannt';
+                if (!tcoByApp[appName]) {
+                    tcoByApp[appName] = [];
+                }
+                tcoByApp[appName].push(detail);
+            });
+        }
+
+        return `
+            <div class="provider-detail-header">
+                <div class="provider-detail-logo" style="background: ${provider.color}20; color: ${provider.color};">
+                    ${IconMapper.toFontAwesome(categoryIcons[provider.category] || '☁️', 'provider')}
+                </div>
+                <div class="provider-detail-info">
+                    <h4>${provider.name}</h4>
+                    <p>${categoryNames[provider.category]} | Portfolio-Analyse über ${appScores.length} Anwendungen</p>
+                </div>
+            </div>
+
+            <div class="provider-detail-scores">
+                <div class="detail-score-card">
+                    <div class="detail-score-value">${aggregatedScore.toFixed(1)}</div>
+                    <div class="detail-score-label">Portfolio-Score</div>
+                </div>
+                <div class="detail-score-card">
+                    <div class="detail-score-value">${Math.round(serviceAnalysis.coverage)}%</div>
+                    <div class="detail-score-label">Abdeckung</div>
+                </div>
+                <div class="detail-score-card">
+                    <div class="detail-score-value">${appScores.length}</div>
+                    <div class="detail-score-label">Anwendungen</div>
+                </div>
+                <div class="detail-score-card">
+                    <div class="detail-score-value">${serviceAnalysis.totalRequired}</div>
+                    <div class="detail-score-label">Komponenten</div>
+                </div>
+            </div>
+
+            <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('💰', 'utility')} Aggregierte TCO-Schätzung</h4>
+            <div class="provider-detail-scores">
+                <div class="detail-score-card">
+                    <div class="detail-score-value">~${tco.totalMonthly.toLocaleString('de-DE')}€</div>
+                    <div class="detail-score-label">Gesamt-TCO/Monat</div>
+                </div>
+                <div class="detail-score-card">
+                    <div class="detail-score-value">~${tco.monthlyInfrastructure.toLocaleString('de-DE')}€</div>
+                    <div class="detail-score-label">Infrastruktur</div>
+                </div>
+                <div class="detail-score-card${!tco.includedInCosts ? ' operations-excluded' : ''}">
+                    <div class="detail-score-value">~${tco.monthlyOperations.toLocaleString('de-DE')}€</div>
+                    <div class="detail-score-label">Betrieb${!tco.includedInCosts ? ' <span style="font-size: 0.7em; opacity: 0.7;">(nicht in TCO)</span>' : ''}</div>
+                </div>
+                <div class="detail-score-card${!tco.projectEffortIncluded ? ' project-effort-excluded' : ''}">
+                    <div class="detail-score-value">~${tco.totalProjectDays || '-'} PT</div>
+                    <div class="detail-score-label">Projektaufwand${!tco.projectEffortIncluded ? ' <span style="font-size: 0.7em; opacity: 0.7;">(nicht in TCO)</span>' : ''}</div>
+                </div>
+            </div>
+
+            <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('📊', 'utility')} Scores pro Anwendung</h4>
+            <div class="app-scores-breakdown">
+                ${appScores.map((appScore, index) => `
+                    <div class="app-score-item" style="padding: 0.75rem; background: var(--bg-secondary); border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s ease;"
+                         onclick="app.scrollToAppBreakdown(${index})"
+                         onmouseover="this.style.background='var(--bg-tertiary)'; this.style.transform='translateX(4px)'"
+                         onmouseout="this.style.background='var(--bg-secondary)'; this.style.transform='translateX(0)'">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>${appScore.appName}</strong>
+                                <span style="color: var(--text-secondary); margin-left: 0.5rem; font-size: 0.85rem;">(${appScore.weight} Komponenten)</span>
+                                <span style="color: var(--btc-primary); margin-left: 0.5rem; font-size: 0.75rem;">→ Details</span>
+                            </div>
+                            <div style="font-size: 1.1rem; font-weight: 600; color: var(--btc-accent);">${appScore.score.toFixed(1)}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('☁️', 'component')} Infrastrukturkosten nach Anwendung</h4>
+            ${Object.keys(tcoByApp).map(appName => `
+                <div class="cost-breakdown-section">
+                    <h5 class="cost-breakdown-title">${appName}</h5>
+                    <table class="cost-breakdown-table">
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th><span class="level-tooltip" data-tip="Ressourcen-Intensität: low = wenig, medium = mittel, high = hoch">Level ${IconMapper.toFontAwesome('ℹ️', 'utility')}</span></th>
+                                <th style="text-align: right;">Kosten/Monat</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tcoByApp[appName].map(detail => {
+                                const levelClass = detail.level === 'low' ? 'low' : detail.level === 'high' ? 'high' : 'medium';
+                                return `
+                                    <tr>
+                                        <td>${detail.name || detail.id}</td>
+                                        <td><span class="cost-level-badge ${levelClass}">${detail.level}</span></td>
+                                        <td style="text-align: right;">${detail.estimate.toLocaleString('de-DE')}€</td>
+                                        <td style="color: var(--text-secondary); font-size: 0.8rem;">${detail.breakdown || '-'}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `).join('')}
+
+            <h4 style="margin: 1.5rem 0 1rem; color: var(--btc-heading);">${IconMapper.toFontAwesome('📋', 'component')} Aggregierte Service-Übersicht</h4>
+            <div class="detail-services-grid">
+                ${serviceAnalysis.available.map(s => `
+                    <div class="detail-service-item">
+                        <div class="detail-service-status available"></div>
+                        <div class="detail-service-info">
+                            <div class="detail-service-name">${s.name || s}</div>
+                            <div class="detail-service-provider">${IconMapper.toFontAwesome('✓', 'utility')} Verfügbar</div>
+                        </div>
+                    </div>
+                `).join('')}
+                ${serviceAnalysis.preview.map(s => `
+                    <div class="detail-service-item">
+                        <div class="detail-service-status preview"></div>
+                        <div class="detail-service-info">
+                            <div class="detail-service-name">${s.name || s}</div>
+                            <div class="detail-service-provider">${IconMapper.toFontAwesome('⚠️', 'utility')} Preview</div>
+                        </div>
+                    </div>
+                `).join('')}
+                ${serviceAnalysis.missing.map(s => `
+                    <div class="detail-service-item">
+                        <div class="detail-service-status missing"></div>
+                        <div class="detail-service-info">
+                            <div class="detail-service-name">${s.name || s}</div>
+                            <div class="detail-service-provider">${IconMapper.toFontAwesome('⚠️', 'utility')} Nicht verfügbar</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
 
 };

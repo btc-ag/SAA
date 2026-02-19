@@ -2075,3 +2075,5 @@ class SizingDetector {
         return { sizing: 'medium', confidence: 0.3, keyword: 'standard' };
     }
 }
+
+export { selfBuildOptions, architectureModes, deploymentPatterns, cloudProviders, architectureComponents, detectDeploymentPattern, ApplicationMatcher, SizingDetector };

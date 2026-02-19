@@ -1676,3 +1676,5 @@ const componentCategories = {
     advanced: { name: 'Advanced', color: '#14b8a6' }
 };
 
+export { knownApplications };
+

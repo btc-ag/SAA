@@ -1,8 +1,9 @@
 // SAA PDF Export Module
 // Verantwortlich für: PDF-Export (Single-App und Multi-App/Portfolio)
-// Wird aufgerufen via SAAPdf.METHOD.call(app) aus saa-app.js
 
-const SAAPdf = {
+import { architectureComponents } from '../saa-data.js';
+
+export const SAAPdf = {
     /**
      * Exportiert die Analyse als PDF
      */

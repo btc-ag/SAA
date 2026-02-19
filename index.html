@@ -808,22 +808,8 @@
         });
     </script>
 
-    <!-- Data Modules -->
-    <script src="js/saa-data.js" defer></script>
-    <script src="js/saa-apps-data.js" defer></script>
-    <!-- Cloud Pricing Module (Real prices for German regions) -->
-    <script src="js/cloud-pricing.js" defer></script>
-    <!-- Analysis Engine -->
-    <script src="js/saa-analysis.js" defer></script>
-    <!-- Main Application -->
-    <!-- App Modules (Reihenfolge wichtig) -->
-    <script src="js/modules/saa-pdf.js" defer></script>
-    <script src="js/modules/saa-settings.js" defer></script>
-    <script src="js/modules/saa-components.js" defer></script>
-    <script src="js/modules/saa-results.js" defer></script>
-    <script src="js/modules/saa-multiapp.js" defer></script>
-    <!-- App Orchestrator -->
-    <script src="js/saa-app.js" defer></script>
+    <!-- ES-Module-Entry-Point (import-Graph übernimmt Ladereihenfolge) -->
+    <script type="module" src="js/saa-app.js"></script>
 
 </body>
 </html>
