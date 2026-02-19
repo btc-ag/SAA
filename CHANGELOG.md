@@ -5,7 +5,7 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0] - 2026-02-19 - Cloud Pricing API Integration
+## [2.0.0] - 2026-02-19 - Cloud Pricing API, Kubernetes-Redesign & UX
 
 ### Added
 - Cloud Pricing API Integration mit realen Preisen für die Frankfurt-Region
@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Block Storage Pricing mit korrektem Tier-Mapping
 - TCO-Sektion mit realem Frankfurt-Kostenbeispiel
 - Neue `css/criteria-styles.css` für die Kriterienseite
+- **Kubernetes Cluster** in Schnellauswahl aufgenommen
 
 ### Changed
 - Preisberechnung vollständig zentralisiert in `CloudPricing`
@@ -25,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sovereign Cloud Links aktualisiert
 - Projektstruktur bereinigt: JS-Files → `js/`, CSS-Files → `css/`, Assets → `assets/`
 - Versionsnummer im Footer verlinkt auf CHANGELOG
+- Schnellauswahl: Apps direkt aus Datenbank geladen (kein 1,5s Recherche-Delay); Sizing S/M/L auf Step 0 auswählbar
+- „Neue Analyse" kehrt korrekt zu Step 0 (Modus/Schnellauswahl) zurück
+- Jira und Kubernetes App aus Schnellauswahl entfernt
+- GitLab Medium/Large: Multi-Node Compute-Specs (3 bzw. 5 Worker Nodes) passend zur Kubernetes-Referenzarchitektur
 
 ### Fixed
 - Kubernetes-Konfiguration: `kubernetes`-Komponente berechnet nur noch den Managed Control Plane; `compute`-VMs werden korrekt als Worker Nodes mit S/M/L-Specs und explizitem Node-Count abgerechnet (kein Doppel-Billing mehr)
@@ -32,6 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `getBaseServicePrice` mit Sovereign Cloud Handling ergänzt
 - `selectedComponents` als Set beim Laden des Multi-App-Zustands korrekt wiederhergestellt
 - Nicht-iterierbare `selectedComponents` beim Laden des Zustands abgesichert
+- `reset()` setzte fälschlicherweise auf Step 1 (leer in Single-App-Modus), jetzt Step 0
+- `hardReset()` löscht `componentConfigs` und SessionStorage bei neuer App-Auswahl
+- „Gewählte Konfiguration"-Badge mit fehlerhaften Werten entfernt
 
 ## [1.2.2] - 2026-02-18 - Bugfix: Kubernetes-Komponente in Multi-App
 
