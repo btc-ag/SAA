@@ -459,6 +459,7 @@ class SovereignArchitectureAdvisor {
             searchBtn.addEventListener('click', () => this.searchApplication());
         }
 
+
         // Search Input Enter + Dropdown
         const searchInput = document.getElementById('appSearchInput');
         if (searchInput) {
@@ -486,6 +487,10 @@ class SovereignArchitectureAdvisor {
         document.querySelectorAll('.quick-suggestion').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const app = e.target.dataset.app;
+                const template = e.target.dataset.template;
+
+                // Neuer App-Start → State vollständig zurücksetzen
+                if (app) this.hardReset();
 
                 if (app === 'custom') {
                     // Benutzerdefinierte App: Direkt zur manuellen Auswahl
@@ -493,7 +498,7 @@ class SovereignArchitectureAdvisor {
                     document.getElementById('researchResult').style.display = 'none';
                     document.getElementById('appSearchInput').value = 'Benutzerdefinierte Anwendung';
                     this.nextStep();
-                } else {
+                } else if (app) {
                     document.getElementById('appSearchInput').value = app;
                     this.searchApplication();
                 }
@@ -5406,6 +5411,7 @@ class SovereignArchitectureAdvisor {
     reset() {
         this.currentStep = 1;
         this.selectedComponents.clear();
+        this.componentConfigs = {};
         this.applicationData = null;
         this.analysisResults = null;
         this.strategyWeight = 50;
@@ -5416,6 +5422,11 @@ class SovereignArchitectureAdvisor {
         document.getElementById('researchResult').style.display = 'none';
 
         this.updateStepDisplay();
+    }
+
+    hardReset() {
+        sessionStorage.removeItem('saa_session_state');
+        this.reset();
     }
 
     /**
