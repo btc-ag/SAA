@@ -11,7 +11,7 @@ Ein interaktiver Wizard zur Bewertung und Empfehlung souveräner Cloud-Architekt
 - **Architektur-Modus**: Cloud-native oder Klassisch wählen — Komponenten-Auswahl passt sich live an
 - **Multi-Kriterien-Analyse**: Gewichtung von Kontrolle, Performance, Verfügbarkeit und Kosten
 - **Transparente Bewertung**: Detaillierte Dokumentation der Bewertungskriterien und Scoring-Methodik
-- **TCO-Schätzung**: Kosteneinschätzung auf Basis realer Cloud-Preise (Frankfurt-Region)
+- **TCO-Schätzung**: Zweischichtiges Betriebskosten-Modell — Infrastruktur-Betrieb pro Komponente + Applikationsbetrieb (Plattformbetrieb) abhängig von Architektur-Modus, Komplexität und Sizing
 - **Detailvergleich**: Übersichtliche Tabelle aller Anbieter mit Service-Verfügbarkeit
 - **PDF-Export**: Analyse-Ergebnisse als druckbares Dokument exportieren
 - **Responsive Design**: Vollständig optimiert für Desktop, Tablet und Mobile mit Burger-Menü Navigation
@@ -58,6 +58,9 @@ Ein interaktiver Wizard zur Bewertung und Empfehlung souveräner Cloud-Architekt
 - Ranking aller Anbieter nach gewichtetem Score
 - Service-Abdeckung mit Verfügbarkeits-Status
 - TCO-Breakdown mit realen Cloud-Preisen (Frankfurt-Region)
+- **Zweischichtiges Betriebskosten-Modell** im TCO:
+  - *Infrastruktur-Betrieb*: Aufwand je gewählter Komponente (Patching, Monitoring, Konfiguration)
+  - *Applikationsbetrieb (Plattformbetrieb)*: Modus-abhängiger Fixaufwand für HA, Deployment und Incident Response — deutlich geringer bei Cloud-native/PaaS-Architektur (0,1 FTE Basis) als bei klassischer VM-Architektur (0,3 FTE Basis)
 - Detaillierte Vergleichstabelle
 
 ### 5. Bewertungskriterien-Dokumentation

@@ -16,10 +16,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Klassisch: `serverless`/`kubernetes` → `compute` + `loadbalancer`
 - **`recommendedArchitecture`** für alle 134 Apps in der Datenbank: Kubernetes/Container-Apps → `cloud_native`, klassische VM-Apps → `classic`; beim App-Laden automatisch vorausgewählt
 - **PaaS / Serverless** als neue Compute-Komponente (App Service, Cloud Run, Lambda und ähnliche Plattform-Dienste)
+- **Applikationsbetrieb als eigenständige Betriebskosten-Schicht**: Neben den infrastrukturkomponentenbezogenen Betriebskosten (Patching, Monitoring je Service) erscheint jetzt ein separater Eintrag „Applikationsbetrieb (Plattformbetrieb)" im TCO-Betriebsaufwand — für Aufgaben, die unabhängig von der Infrastruktur anfallen: HA-Management, Deployment-Prozesse, Incident Response auf Applikationsebene
+  - **Formel**: `FTE = baseFTE(Modus) × Komplexitätsfaktor × Sizing-Faktor`
+  - **Modus**: Classic = 0,3 FTE Basis, Cloud-native = 0,1 FTE Basis (Plattform übernimmt Patching/Skalierung/HA)
+  - **Komplexität** (komponentenbasiert): low = ×0,6 / medium = ×1,0 / high = ×1,5 (Kubernetes, Block+File Storage, ≥8 Services → high)
+  - **Sizing**: Small = ×0,7 / Medium = ×1,0 / Large = ×1,4
+  - Vollständig multi-app-fähig: Architektur-Modus und Sizing werden pro App-Instanz separat getrackt
 - Intelligente Infrastrukturkostenberechnung mit Unterstützung für Cloud-native/PaaS-Architekturmodelle
 - Workload-Typ-Erkennung mit passender Architekturempfehlung
 - System-Konfiguration Zusammenfassung in der Ergebnisansicht
 - Architektur-Modus-Anzeige mit Transformation-Details in den Analyseergebnissen
+
+### Applikationsbetrieb (Feature-Beschreibung)
+
+Der Betriebsaufwand einer Cloud-Applikation besteht aus zwei grundlegend verschiedenen Schichten:
+
+**Infrastruktur-Betrieb** (bisher bereits abgebildet): Pro gewählter Komponente fällt Aufwand für Konfiguration, Monitoring und Wartung an — ein Managed Kubernetes-Cluster erfordert anderen Aufwand als eine einfache VM.
+
+**Applikations-Betrieb** (neu): Unabhängig davon, welche Infrastruktur-Komponenten gewählt wurden, gibt es Aufgaben, die immer anfallen: HA-Konzept und Failover-Tests, Deployment-Prozesse und Release-Management, Incident Response auf Applikationsebene, Backup-Strategie und Recovery-Tests. Der Umfang dieses Aufwands hängt davon ab, wie viel die Plattform selbst übernimmt.
+
+Bei **klassischer VM-Architektur** trägt das Team die volle Last: Patching, Skalierung, Hochverfügbarkeit — alles manuell. Basis: 0,3 FTE/Jahr für eine mittelkomplexe App mittlerer Größe.
+
+Bei **Cloud-nativer / PaaS-Architektur** übernimmt der Anbieter wesentliche Betriebsaufgaben (Auto-Scaling, Rolling Deploys, Managed HA). Der verbleibende Aufwand ist signifikant geringer. Basis: 0,1 FTE/Jahr — das entspricht ca. einem halben Arbeitstag pro Monat für Plattform-Management und Incident Response.
+
+**Effekt im TCO-Vergleich**: Für eine mittelgroße App (Medium-Sizing, mittlere Komplexität) ergibt sich in Classic-Architektur ca. 0,3 FTE Applikationsbetrieb, in Cloud-native ca. 0,1 FTE — ein Unterschied von ~0,2 FTE bzw. ~1.600 €/Jahr (bei 8.000 €/FTE-Monat). Bei Enterprise-Apps mit hoher Komplexität und Large-Sizing wächst der Unterschied auf ~0,63 FTE (Classic: 0,63 FTE vs. Cloud-native: 0,21 FTE).
 
 ### Architektur-Modus (Feature-Beschreibung)
 
