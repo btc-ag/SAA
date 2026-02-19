@@ -5,6 +5,62 @@ import { architectureComponents, detectDeploymentPattern } from '../saa-data.js'
 import { knownApplications, componentCategories } from '../saa-apps-data.js';
 import { IconMapper } from './saa-utils.js';
 
+/**
+ * Leitet cloud-native Komponenten dynamisch aus einer Basis-Menge ab.
+ * Kein App-spezifisches Wissen nötig – nur musterbasierte Regeln.
+ */
+function inferCloudNativeComponents(base) {
+    const result = new Set(base);
+    const has = (id) => result.has(id);
+
+    // Kubernetes-Apps: Managed K8s ist bereits cloud-native → keine Komponenten-Änderung
+    if (has('kubernetes')) {
+        return result;
+    }
+
+    // API / Microservice-Apps (compute + messaging ODER serverless vorhanden):
+    // compute → serverless, loadbalancer fällt weg (Serverless-Plattform übernimmt Routing)
+    if (has('compute') && (has('messaging') || has('serverless'))) {
+        result.delete('compute');
+        result.add('serverless');
+        result.delete('loadbalancer');
+        return result;
+    }
+
+    // Web-/Backend-Apps (compute ohne messaging):
+    // PaaS-Plattform (App Service / Cloud Run) übernimmt den Load Balancer
+    if (has('compute')) {
+        result.delete('loadbalancer');
+        // compute bleibt – symbolisiert jetzt die managed App-Plattform
+        return result;
+    }
+
+    return result; // z.B. reine DB- oder Storage-Apps: unverändert
+}
+
+/**
+ * Leitet klassische VM-Komponenten dynamisch aus einer Basis-Menge ab.
+ */
+function inferClassicComponents(base) {
+    const result = new Set(base);
+
+    // Serverless → VMs hinter Load Balancer
+    if (result.has('serverless')) {
+        result.delete('serverless');
+        result.add('compute');
+        if (!result.has('loadbalancer')) result.add('loadbalancer');
+    }
+
+    // Kubernetes → klassische VMs hinter Load Balancer (Self-managed)
+    if (result.has('kubernetes')) {
+        result.delete('kubernetes');
+        result.add('compute');
+        if (!result.has('loadbalancer')) result.add('loadbalancer');
+    }
+
+    return result;
+}
+
 export const SAAComponents = {
     renderComponents() {
         // Container auswählen basierend auf Modus
@@ -86,25 +142,6 @@ export const SAAComponents = {
                         <div>
                             <div style="font-weight: 500; font-size: 0.9rem;">Klassisch</div>
                             <div style="font-size: 0.75rem; color: var(--text-secondary);">VMs, volle Kontrolle</div>
-                        </div>
-                    </label>
-                    <label class="architecture-mode-option" style="
-                        display: flex;
-                        align-items: center;
-                        gap: 0.5rem;
-                        padding: 0.5rem 1rem;
-                        border: 2px solid var(--border-color);
-                        border-radius: 8px;
-                        cursor: pointer;
-                        transition: all 0.2s;
-                        background: var(--surface-primary);
-                    ">
-                        <input type="radio" name="architectureMode" value="auto"
-                            style="accent-color: var(--primary-color);">
-                        <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--text-secondary);"></i>
-                        <div>
-                            <div style="font-weight: 500; font-size: 0.9rem;">Empfohlen</div>
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">App-Standard anwenden</div>
                         </div>
                     </label>
                     ${this._archOriginal ? `
@@ -265,14 +302,7 @@ export const SAAComponents = {
         // Event Listener für Architektur-Modus Toggle
         container.querySelectorAll('input[name="architectureMode"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
-                const value = e.target.value;
-                if (value === 'auto') {
-                    // Empfohlenen Modus aus App-Config setzen
-                    const recommended = this.applicationData?.recommendedArchitecture || 'classic';
-                    this.architectureSettings.mode = recommended;
-                } else {
-                    this.architectureSettings.mode = value;
-                }
+                this.architectureSettings.mode = e.target.value;
                 this.applyArchitectureModeToComponents();
                 this.renderComponents();
                 if (this.analysisResults) this.runAnalysis();
@@ -306,29 +336,12 @@ export const SAAComponents = {
         const baseIds = Array.from(base).map(id => id.replace(/-\d+$/, ''));
         const pattern = detectDeploymentPattern(baseIds, appId);
 
-        // Transformation berechnen
-        const patternConfig = pattern ? pattern[mode] : null;
-        const transformed = new Set(base);
-
-        // Nur gültige Komponenten-IDs (nicht Service-IDs) anfassen
-        const validComponentIds = new Set(architectureComponents.map(c => c.id));
-
-        if (patternConfig) {
-            // replaceServices: Komponenten ersetzen (nur wenn Ziel auch eine Komponente ist)
-            for (const [oldId, newId] of Object.entries(patternConfig.replaceServices || {})) {
-                if (transformed.has(oldId)) {
-                    transformed.delete(oldId);
-                    if (validComponentIds.has(newId)) transformed.add(newId);
-                }
-            }
-            // addServices: Komponenten hinzufügen (nur gültige Komponenten-IDs)
-            for (const id of (patternConfig.addServices || [])) {
-                if (validComponentIds.has(id)) transformed.add(id);
-            }
-            // removeServices: Komponenten entfernen (graceful – silently skip unknown IDs)
-            for (const id of (patternConfig.removeServices || [])) {
-                transformed.delete(id);
-            }
+        // Transformation berechnen – dynamische Intelligenz statt statischer Daten
+        let transformed;
+        if (mode === 'cloud_native') {
+            transformed = inferCloudNativeComponents(base);
+        } else {
+            transformed = inferClassicComponents(base);
         }
 
         // Delta anwenden (manuelle Nutzer-Änderungen bleiben erhalten)
