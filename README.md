@@ -25,7 +25,7 @@ Ein interaktiver Wizard zur Bewertung und Empfehlung souveräner Cloud-Architekt
 
 ### Souveräne / EU Clouds
 - STACKIT (Schwarz IT)
-- Open Telekom Cloud (T-Systems)
+- T Cloud Public (Deutsche Telekom, ehem. Open Telekom Cloud)
 - IONOS Cloud (United Internet)
 - AWS European Sovereign Cloud (ESC)
 - Microsoft Cloud for Sovereignty (DELOS)

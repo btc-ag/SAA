@@ -1347,8 +1347,8 @@ const cloudProviders = [
     },
     {
         id: 'otc',
-        name: 'Open Telekom Cloud',
-        fullName: 'Open Telekom Cloud (T-Systems)',
+        name: 'T Cloud Public',
+        fullName: 'T Cloud Public (Deutsche Telekom)',
         control: 55,
         performance: 55,
         category: 'eu',
