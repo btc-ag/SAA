@@ -5,6 +5,14 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-03-19
+
+### Changed
+- **T Cloud Public** (ehem. Open Telekom Cloud): Umbenennung zum 02.02.2026 in name, fullName, evaluation-criteria.html und README nachgezogen
+- **AWS ESC**: Beschreibung auf GA-Status (15.01.2026) und vollständiges Zertifizierungspaket (BSI C5, SOC 2 Type 1, 7 ISO-Normen) aktualisiert
+- **Microsoft DELOS Cloud**: Beschreibung um Geo-Redundanz (zweites Ops-Center Leipzig, Frühjahr 2026) ergänzt
+- **T Cloud Public**: Beschreibung auf Industrial AI Cloud (Feb 2026, NVIDIA Blackwell) und Feature-Parity-Roadmap aktualisiert
+
 ## [3.0.0] - 2026-02-19 - Architektur-Modus Live-Transformation, Moderne Architekturmodelle & intelligente Kostenberechnung
 
 ### Added
