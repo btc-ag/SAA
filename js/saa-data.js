@@ -895,7 +895,7 @@ const cloudProviders = [
         performance: 92,
         category: 'sovereign',
         color: '#3b82f6',
-        description: 'Europäische Souveränität mit AWS-Technologie. Separate Partition mit eigenem IAM und Billing.',
+        description: 'Seit Januar 2026 in GA: Europäische Souveränität mit AWS-Technologie, physisch isoliert. BSI C5, SOC 2 Type 1 und 7 ISO-Zertifizierungen bereits erreicht.',
         services: {
             // Gleiche Service-Levels wie Standard AWS - Preisaufschlag durch Provider-Faktor 1.15
             compute: svc('EC2', true, 'production', {
@@ -1042,7 +1042,7 @@ const cloudProviders = [
         performance: 62,
         category: 'sovereign',
         color: '#3b82f6',
-        description: 'Deutsche Treuhänder-Cloud für Verwaltung und Kritische Infrastruktur. Separate Umgebung mit eigenem Support.',
+        description: 'Deutsche Treuhänder-Cloud für Verwaltung und Kritische Infrastruktur. Seit Frühjahr 2026 georedundant (zwei Ops-Center DE). Separate Umgebung mit eigenem Support.',
         services: {
             compute: svc('Virtual Machines', true, 'production', {
                 consumption: 'high', operations: 'low', projectEffort: 'low',
@@ -1353,7 +1353,7 @@ const cloudProviders = [
         performance: 55,
         category: 'eu',
         color: '#10b981',
-        description: 'Enterprise-Cloud der Telekom auf Huawei-Basis.',
+        description: 'Enterprise-Cloud der Telekom auf Huawei-Basis. Industrial AI Cloud seit Feb 2026 live (NVIDIA Blackwell, größte souveräne AI-Infrastruktur Europas), 80% Hyperscaler-Feature-Parity.',
         services: {
             compute: svc('ECS', true, 'production', {
                 consumption: 'medium', operations: 'low', projectEffort: 'low',
