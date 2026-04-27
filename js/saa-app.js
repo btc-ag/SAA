@@ -3,8 +3,9 @@
  * Orchestrator: Navigation, Suche, Analyse, System-Requirements
  */
 
-import { cloudProviders, architectureComponents, SizingDetector } from './saa-data.js';
+import { cloudProviders, architectureComponents } from './saa-data.js';
 import { ApplicationMatcher } from './modules/application-matcher.js';
+import { SizingDetector } from './modules/sizing-detector.js';
 import { knownApplications } from './saa-apps-data.js';
 import { CloudAnalyzer, ApplicationResearcher, MultiAppAnalyzer } from './saa-analysis.js';
 import { IconMapper } from './modules/saa-utils.js';
