@@ -18,7 +18,7 @@ Der SAA-Codebase hat post-v4.0.0 etwa 19.4k LOC JavaScript und 7k LOC CSS. Die g
 
 Der Git-Verlauf bestätigt das Symptom: ≥6 `fix:`-Commits mit „Multi-App" im Titel allein zwischen v3.0.0 und v4.0.0 (Kubernetes, Block-Storage, restoreSet, Architektur-Modus, …) — alle Wurzelproblem identisch: Zwei State-Welten, eine wird vergessen.
 
-Daneben sechs separate Hygiene-Themen: Sovereignty-Logik (SOV-8-Weights, EU-CSF-Formel) hardcoded in `saa-analysis.js`, `saa-data.js` mit Side-Effect-Merge und vier Klassen-Definitionen, 21 hardcodierte `providerId === '...'`-Branches, Render+Compute vermischt in `saa-results.js`, und `saa-styles.css` mit 5532 Zeilen in einer Datei.
+Daneben sechs separate Hygiene-Themen: Sovereignty-Logik (SOV-8-Weights, EU-CSF-Formel) hardcoded in `saa-analysis.js`, `saa-data.js` mit Side-Effect-Merge und vier Klassen-Definitionen, 3 hardcodierte `providerId === '...'`-Branches in `_estimateDatabaseNoSQL` (DynamoDB/CosmosDB/Firestore), Render+Compute vermischt in `saa-results.js`, und `saa-styles.css` mit 5532 Zeilen in einer Datei.
 
 ## 2. Zielarchitektur
 
@@ -82,7 +82,7 @@ Der Side-Effect-Merge `cloudProviders.forEach(p => { p.c3a = PROVIDER_C3A_DATA[p
 
 ### 2.6 Provider-Branches → Lookup-Tabelle
 
-Die ~21 `providerId === 'aws'`-Stellen in `saa-analysis.js` (DynamoDB/Cosmos/Firestore-NoSQL-Mapping etc.) werden zu einer Lookup-Tabelle in `cloud-pricing.js` oder einem neuen `js/modules/provider-service-mapping.js`:
+Die 3 `providerId === 'aws|azure|gcp'`-Stellen in `_estimateDatabaseNoSQL` (`saa-analysis.js:829-833` — DynamoDB/Cosmos/Firestore-NoSQL-Mapping) werden zu einer Lookup-Tabelle in einem neuen `js/modules/provider-service-mapping.js`:
 
 ```js
 export const PROVIDER_NOSQL_SERVICES = {
@@ -248,7 +248,7 @@ Keine. SAA hat keine konsumierenden Drittsysteme. Tool wird via GitHub Pages dep
 - ✅ Keine Datei in `css/` > 1700 Zeilen
 - ✅ Alle Smoke-Test-Punkte aus Phase 4 grün
 - ✅ Sovereignty-Werte: Smoke-Test 10 Provider × 2 Modi == SCC byte-identisch
-- ✅ `provider-service-mapping.js` ersetzt alle 21 `providerId === '...'`-Branches in `saa-analysis.js`
+- ✅ `provider-service-mapping.js` ersetzt die 3 `providerId === '...'`-Branches in `_estimateDatabaseNoSQL` (`saa-analysis.js:829-833`)
 
 ## 6. Out of Scope
 
