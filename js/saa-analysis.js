@@ -8,19 +8,58 @@
 import { selfBuildOptions } from './saa-data.js';
 import { CloudPricing } from './cloud-pricing.js';
 import { aggregateC3A } from './modules/c3a-framework.js';
+import { aggregateSov7 } from './modules/sov7-compliance.js';
 import { getAuditMode } from './modules/audit-mode.js';
 
 /**
- * Liefert den Provider-Level-Kontrolle-Wert (Hybrid):
- * Wenn der Provider C3A-Daten hat, wird der C3A-Aggregat-Wert (mit aktuellem
- * Audit-Mode) als Baseline genutzt. Sonst der statische `provider.control`-Wert.
+ * SOV-8 Experten-Scores (analog SCC v4.0.0). BSI-C3A-Mandat deckt SOV-8
+ * (Operative Souveränität) nicht ab — Experten-Einschätzung der BTC.
+ */
+const SOV8_EXPERT_SCORES = Object.freeze({
+    'aws': 60,
+    'azure': 65,
+    'gcp': 55,
+    'aws-sovereign': 70,
+    'delos': 65,
+    'stackit': 85,
+    'ionos': 75,
+    'otc': 76,
+    'sap-ci': 76,
+    'openstack': 50
+});
+
+/**
+ * EU Cloud Sovereignty Framework — Gewichte SOV-1...8 (analog SCC).
+ */
+const SOV_WEIGHTS = Object.freeze({
+    sov1: 0.15, sov2: 0.10, sov3: 0.10, sov4: 0.15,
+    sov5: 0.20, sov6: 0.15, sov7: 0.10, sov8: 0.05
+});
+
+/**
+ * Berechnet den Kontrolle-Score nach EU-CSF (gewichteter Durchschnitt SOV-1...8).
+ * SOV-1...6 stammen aus C3A-Aggregation (mode-abhängig), SOV-7 aus SOV-7-Compliance,
+ * SOV-8 aus Experten-Score. Identische Formel wie im SCC v4.0.0.
  * @param {Object} provider
  * @returns {number}
  */
 function getC3AAdjustedControl(provider) {
     if (!provider || !provider.c3a) return provider?.control ?? 50;
-    const agg = aggregateC3A(provider.c3a, getAuditMode());
-    return (agg && agg.total != null) ? agg.total : provider.control;
+    const c3aAgg = aggregateC3A(provider.c3a, getAuditMode());
+    const sov7   = provider.sov7 ? aggregateSov7(provider.sov7) : null;
+    const sov8   = SOV8_EXPERT_SCORES[provider.id] ?? 50;
+    if (!c3aAgg || sov7 == null) return provider.control ?? 50;
+    const sovScores = {
+        sov1: c3aAgg.sov1, sov2: c3aAgg.sov2, sov3: c3aAgg.sov3,
+        sov4: c3aAgg.sov4, sov5: c3aAgg.sov5, sov6: c3aAgg.sov6,
+        sov7, sov8
+    };
+    const totalWeight = Object.values(SOV_WEIGHTS).reduce((s, w) => s + w, 0);
+    let weightedSum = 0;
+    for (const [key, weight] of Object.entries(SOV_WEIGHTS)) {
+        weightedSum += (sovScores[key] || 0) * weight;
+    }
+    return Math.round(weightedSum / totalWeight);
 }
 
 class CloudAnalyzer {

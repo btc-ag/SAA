@@ -19,13 +19,15 @@ Diese Major-Release stellt die Souveränitäts-Bewertung des SAA auf eine vollst
 - **Neue Sektionen in `evaluation-criteria.html`:** „BSI C3A v1.0 — Operationalisierung der Souveränität" (1.1) und „SOV-7 Sicherheits-Compliance" (1.2), beide in Drawer- und Desktop-Navigation eingebunden.
 
 ### Changed (BREAKING — methodisch)
-- **Kontrolle-Score auditierbar berechnet:** Die `getC3AAdjustedControl()`-Funktion in `js/saa-analysis.js` ersetzt den statischen `provider.control`-Integer durch den aktuellen C3A-Aggregat-Wert (mit Audit-Mode), wenn der Provider C3A-Daten hat. Custom-Scores aus Settings überschreiben weiterhin alle anderen Werte.
-- **Werte verschieben sich:** Mit der Umstellung ändern sich die Provider-Level-Kontrolle-Scores teils deutlich:
-  - IONOS Cloud: 65 → 90 (BSI-IT-Grundschutz wird jetzt voll bewertet)
-  - T Cloud Public: 55 → 76 (BSI C5 + DE-Bezug konsequent gewichtet)
-  - AWS / Azure / GCP: 42-44 → 34 (US-Konzern-Risiken klarer abgebildet)
-  - DELOS Cloud: 85 → 77 (Treuhänder-Modell, aber MS-Software bleibt restriktiv)
-  - SAP Cloud Infrastructure: neu mit 83 (C1) / 79 (C2)
+- **Kontrolle-Score auditierbar nach EU-CSF berechnet:** Die `getC3AAdjustedControl()`-Funktion in `js/saa-analysis.js` ersetzt den statischen `provider.control`-Integer durch den **EU-CSF-gewichteten Mittelwert über SOV-1...8** — identische Formel wie SCC v4.0.0. SOV-1...6 stammen aus der C3A-Aggregation (mode-abhängig, C1/C2), SOV-7 aus dem SOV-7-Compliance-Katalog (ISO 27001, BSI C5, KRITIS, ...), SOV-8 aus dem Experten-Score (BSI-Mandat deckt SOV-8 nicht ab). Gewichtung gemäß EU CSF: 15/10/10/15/20/15/10/5. Custom-Scores aus Settings überschreiben weiterhin alle anderen Werte.
+- **Werte verschieben sich** (Kontrolle-Score, exakt wie im SCC v4.0.0):
+  - IONOS Cloud: 65 → **87 (C1) / 83 (C2)** — BSI-IT-Grundschutz wird jetzt voll bewertet
+  - T Cloud Public: 55 → **74 (C1) / 69 (C2)** — BSI C5 + DE-Bezug konsequent gewichtet
+  - AWS / Azure / GCP: 42-44 → **36 / 37 / 36** — US-Konzern-Risiken klarer abgebildet (mode-unabhängig)
+  - DELOS Cloud: 85 → **76** — Treuhänder-Modell, aber MS-Software bleibt restriktiv (mode-unabhängig)
+  - AWS European Sovereign Cloud: → **77 (C1) / 68 (C2)**
+  - OpenStack Private Cloud: → **87 (C1) / 74 (C2)**
+  - SAP Cloud Infrastructure (NEU): **81 (C1) / 77 (C2)**
 
 ### Notes
 - Service-Level-Bewertungen (22 Services je Provider) bleiben unverändert; nur der Provider-Level-Aggregat-Wert wird C3A-basiert.
