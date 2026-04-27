@@ -7,7 +7,7 @@ import { cloudProviders, architectureComponents } from './saa-data.js';
 import { ApplicationMatcher } from './modules/application-matcher.js';
 import { SizingDetector } from './modules/sizing-detector.js';
 import { knownApplications } from './saa-apps-data.js';
-import { CloudAnalyzer, ApplicationResearcher, MultiAppAnalyzer } from './saa-analysis.js';
+import { CloudAnalyzer, ApplicationResearcher, PortfolioAnalyzer } from './saa-analysis.js';
 import { IconMapper } from './modules/saa-utils.js';
 import { SAAState } from './modules/saa-state.js';
 import { SAAComponents } from './modules/saa-components.js';
@@ -1371,7 +1371,7 @@ class SovereignArchitectureAdvisor {
         }
 
         // Portfolio-Analyse (analysiert alle Apps und aggregiert)
-        const multiAnalyzer = new MultiAppAnalyzer(cloudProviders, architectureComponents);
+        const multiAnalyzer = new PortfolioAnalyzer(cloudProviders, architectureComponents);
         this.aggregatedResults = multiAnalyzer.analyzePortfolio(
             this.applications,
             this.weights,

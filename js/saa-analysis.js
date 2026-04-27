@@ -1784,9 +1784,10 @@ class ApplicationResearcher {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * MultiAppAnalyzer - Analysiert mehrere Anwendungen gleichzeitig und aggregiert Ergebnisse
+ * PortfolioAnalyzer — analysiert eine oder mehrere Anwendungen und aggregiert.
+ * Single-App = Portfolio mit length 1.
  */
-class MultiAppAnalyzer {
+class PortfolioAnalyzer {
     constructor(cloudProviders, architectureComponents) {
         this.providers = cloudProviders;
         this.components = architectureComponents;
@@ -2062,4 +2063,4 @@ class MultiAppAnalyzer {
     }
 }
 
-export { CloudAnalyzer, ApplicationResearcher, MultiAppAnalyzer };
+export { CloudAnalyzer, ApplicationResearcher, PortfolioAnalyzer };
