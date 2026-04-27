@@ -5460,3 +5460,73 @@ input:checked + .toggle-slider:before {
     border-color: var(--border-color);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
 }
+
+/* ============================================================
+ * Audit-Strenge-Toggle (BSI C3A C1 vs. C2) — v4.0.0
+ * ============================================================ */
+.audit-mode-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+    padding: 0.3rem 0.45rem;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    flex-wrap: wrap;
+}
+[data-theme="dark"] .audit-mode-toggle {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.10);
+}
+.audit-mode-toggle-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary, #6e6e73);
+    margin: 0 0.3rem 0 0.4rem;
+    white-space: nowrap;
+}
+.audit-mode-btn {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary, #6e6e73);
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+}
+.audit-mode-btn i { font-size: 0.75rem; }
+.audit-mode-btn:hover {
+    color: var(--text-primary, #000);
+    background: rgba(255, 255, 255, 0.5);
+}
+[data-theme="dark"] .audit-mode-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+.audit-mode-btn.is-active {
+    background: var(--btc-primary, #5AA6E7);
+    color: white;
+    border-color: var(--btc-primary, #5AA6E7);
+    box-shadow: 0 2px 8px rgba(90, 166, 231, 0.3);
+}
+.audit-mode-btn.is-active:hover {
+    background: var(--btc-primary, #5AA6E7);
+    color: white;
+}
+@media (max-width: 640px) {
+    .audit-mode-toggle {
+        margin-left: 0;
+        width: 100%;
+        justify-content: stretch;
+    }
+    .audit-mode-toggle-label { display: none; }
+    .audit-mode-btn { flex: 1; justify-content: center; }
+}

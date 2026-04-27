@@ -7,6 +7,21 @@
 
 import { selfBuildOptions } from './saa-data.js';
 import { CloudPricing } from './cloud-pricing.js';
+import { aggregateC3A } from './modules/c3a-framework.js';
+import { getAuditMode } from './modules/audit-mode.js';
+
+/**
+ * Liefert den Provider-Level-Kontrolle-Wert (Hybrid):
+ * Wenn der Provider C3A-Daten hat, wird der C3A-Aggregat-Wert (mit aktuellem
+ * Audit-Mode) als Baseline genutzt. Sonst der statische `provider.control`-Wert.
+ * @param {Object} provider
+ * @returns {number}
+ */
+function getC3AAdjustedControl(provider) {
+    if (!provider || !provider.c3a) return provider?.control ?? 50;
+    const agg = aggregateC3A(provider.c3a, getAuditMode());
+    return (agg && agg.total != null) ? agg.total : provider.control;
+}
 
 class CloudAnalyzer {
     constructor(providers, components) {
@@ -299,7 +314,8 @@ class CloudAnalyzer {
         const planned = [];
 
         // Berechne Skalierungsfaktoren für Custom Scores vorab
-        const providerControlCustom = this.getEffectiveScore(provider.id, 'control', provider.control);
+        // Hybrid-Control: C3A-aggregiert wenn verfügbar, sonst statischer Wert; Custom-Score überschreibt beides
+        const providerControlCustom = this.getEffectiveScore(provider.id, 'control', getC3AAdjustedControl(provider));
         const providerPerformanceCustom = this.getEffectiveScore(provider.id, 'performance', provider.performance);
         const controlScaleFactor = provider.control > 0 ? providerControlCustom / provider.control : 1;
         const performanceScaleFactor = provider.performance > 0 ? providerPerformanceCustom / provider.performance : 1;
@@ -387,8 +403,8 @@ class CloudAnalyzer {
         const serviceControlScore = serviceAnalysis.avgServiceControl;
         const servicePerformanceScore = serviceAnalysis.avgServicePerformance;
 
-        // Custom Scores verwenden, falls vorhanden
-        const providerControl = this.getEffectiveScore(provider.id, 'control', provider.control);
+        // Custom Scores verwenden, falls vorhanden; sonst C3A-aggregiert (Hybrid)
+        const providerControl = this.getEffectiveScore(provider.id, 'control', getC3AAdjustedControl(provider));
         const providerPerformance = this.getEffectiveScore(provider.id, 'performance', provider.performance);
 
         // Kombination aus Provider-Level und Service-Level (60% Service, 40% Provider)

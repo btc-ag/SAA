@@ -190,7 +190,20 @@
                     </div>
                 </nav>
                 <h1 class="header-title">Sovereign Architecture Advisor</h1>
-                <p class="header-subtitle">Analysieren Sie Ihre Anwendungsarchitektur und finden Sie die optimale Cloud-Lösung</p>
+                <p class="header-subtitle">Analysieren Sie Ihre Anwendungsarchitektur und finden Sie die optimale Cloud-Lösung — mit auditierbarer Souveränitäts-Bewertung nach <strong>BSI C3A v1.0</strong> und EU Cloud Sovereignty Framework.</p>
+                <div class="audit-mode-toggle" id="auditModeToggle" role="radiogroup" aria-label="BSI C3A Audit-Strenge">
+                    <span class="audit-mode-toggle-label">Audit-Strenge:</span>
+                    <button type="button" class="audit-mode-btn is-active" data-mode="c1" role="radio" aria-checked="true"
+                            title="C1 — EU-Bezug genügt: Kriterien gelten als erfüllt, wenn EU- oder DE-Variante umgesetzt ist">
+                        <i class="fa-solid fa-globe"></i>
+                        <span>EU (C1)</span>
+                    </button>
+                    <button type="button" class="audit-mode-btn" data-mode="c2" role="radio" aria-checked="false"
+                            title="C2 — Deutscher Bezug erforderlich: Kriterien mit C1/C2-Varianten gelten nur als voll erfüllt, wenn die DE-Variante explizit umgesetzt ist (BSI-Strenge für Bundesverwaltung/KRITIS)">
+                        <i class="fa-solid fa-flag"></i>
+                        <span>Deutschland (C2)</span>
+                    </button>
+                </div>
             </div>
         </header>
 

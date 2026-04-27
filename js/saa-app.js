@@ -13,6 +13,7 @@ import { SAAResults } from './modules/saa-results.js';
 import { SAASettings } from './modules/saa-settings.js';
 import { SAAMultiApp } from './modules/saa-multiapp.js';
 import { SAAPdf } from './modules/saa-pdf.js';
+import { getAuditMode, setAuditMode } from './modules/audit-mode.js';
 
 
 // Umami-Tracking-Helfer (no-op falls Umami nicht geladen)
@@ -198,9 +199,49 @@ class SovereignArchitectureAdvisor {
         this.loadSettings(); // Lade gespeicherte Einstellungen
         this.loadSessionState(); // Lade Session-State (bei F5)
         this.bindEvents();
+        this.initAuditModeToggle();
         this.updateStepDisplay(); // Erst Step Display setzen
         this.initTooltipSystem();
         // renderComponents() wird erst bei Step 2 aufgerufen
+    }
+
+    /**
+     * Initialisiert den BSI-C3A Audit-Strenge-Toggle (C1 = EU, C2 = Deutschland).
+     * Bei Mode-Wechsel wird die laufende Analyse neu gerechnet.
+     */
+    initAuditModeToggle() {
+        const container = document.getElementById('auditModeToggle');
+        if (!container) return;
+        const buttons = container.querySelectorAll('.audit-mode-btn');
+        const currentMode = getAuditMode();
+
+        // Initialen Zustand setzen (aus localStorage)
+        buttons.forEach(btn => {
+            const isActive = btn.dataset.mode === currentMode;
+            btn.classList.toggle('is-active', isActive);
+            btn.setAttribute('aria-checked', isActive ? 'true' : 'false');
+        });
+
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.mode;
+                if (!setAuditMode(mode)) return;
+                buttons.forEach(b => {
+                    const active = b.dataset.mode === mode;
+                    b.classList.toggle('is-active', active);
+                    b.setAttribute('aria-checked', active ? 'true' : 'false');
+                });
+                track('audit-mode', { mode });
+                // Falls Analyse bereits gelaufen ist, neu rechnen mit neuem Mode
+                if (this.currentStep === 3) {
+                    if (this.isMultiAppMode) {
+                        this.runMultiAppAnalysis();
+                    } else if (this.applicationData || this.selectedComponents.size > 0) {
+                        this.runAnalysis();
+                    }
+                }
+            });
+        });
     }
 
     /**

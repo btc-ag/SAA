@@ -5,6 +5,33 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-04-27
+
+Diese Major-Release stellt die Souveränitäts-Bewertung des SAA auf eine vollständig
+**auditierbare** Basis nach BSI C3A v1.0 (27.04.2026) um — analog zur SCC v4.0.0.
+
+### Added
+- **BSI C3A v1.0 Integration:** ~30 prüfbare Kriterien aus SOV-1 bis SOV-6, mit C1/C2-Varianten (EU vs. Deutschland) und Additional Criteria. Kriterien-Katalog 1:1 aus dem SCC-Schwesterprojekt übernommen (`js/modules/c3a-framework.js`).
+- **SOV-7 Compliance-Katalog:** 10 prüfbare Sicherheits-/Compliance-Kriterien (ISO 27001, BSI C5/IT-Grundschutz, ISO 27017/27018/27701, SOC 2 Type 2, KRITIS, NIS2, EU-/DE-SOC) — schließt die SOV-7-Lücke des BSI-Mandats (`js/modules/sov7-compliance.js`).
+- **Audit-Strenge-Toggle (C1 / C2)** im Header: Wechsel zwischen EU- und deutschem Bezug mit `localStorage`-Persistenz. Im DE-Modus werden Kriterien mit nur EU-Variante BSI-konform auf 50 Punkte reduziert (`js/modules/audit-mode.js`).
+- **SAP Cloud Infrastructure (SAP CI)** als 10. Cloud-Provider hinzugefügt (Walldorf/St. Leon-Rot, OpenStack-basiert, ISO 27001 auf IT-Grundschutz April 2026, KRITIS-fähig). Vollständige Bewertung aller 22 Service-Kategorien.
+- **Pro-Provider C3A/SOV-7-Bewertungen mit Quellenbelegen:** Pro Provider ~30 C3A-Bewertungen + 10 SOV-7-Bewertungen + URL-Quellen, übernommen aus SCC v4.0.0 (`js/data/provider-c3a-data.js`).
+- **Neue Sektionen in `evaluation-criteria.html`:** „BSI C3A v1.0 — Operationalisierung der Souveränität" (1.1) und „SOV-7 Sicherheits-Compliance" (1.2), beide in Drawer- und Desktop-Navigation eingebunden.
+
+### Changed (BREAKING — methodisch)
+- **Kontrolle-Score auditierbar berechnet:** Die `getC3AAdjustedControl()`-Funktion in `js/saa-analysis.js` ersetzt den statischen `provider.control`-Integer durch den aktuellen C3A-Aggregat-Wert (mit Audit-Mode), wenn der Provider C3A-Daten hat. Custom-Scores aus Settings überschreiben weiterhin alle anderen Werte.
+- **Werte verschieben sich:** Mit der Umstellung ändern sich die Provider-Level-Kontrolle-Scores teils deutlich:
+  - IONOS Cloud: 65 → 90 (BSI-IT-Grundschutz wird jetzt voll bewertet)
+  - T Cloud Public: 55 → 76 (BSI C5 + DE-Bezug konsequent gewichtet)
+  - AWS / Azure / GCP: 42-44 → 34 (US-Konzern-Risiken klarer abgebildet)
+  - DELOS Cloud: 85 → 77 (Treuhänder-Modell, aber MS-Software bleibt restriktiv)
+  - SAP Cloud Infrastructure: neu mit 83 (C1) / 79 (C2)
+
+### Notes
+- Service-Level-Bewertungen (22 Services je Provider) bleiben unverändert; nur der Provider-Level-Aggregat-Wert wird C3A-basiert.
+- Der Audit-Mode-Wechsel löst bei aktiver Analyse (Step 3) einen automatischen Re-Render aus.
+- Methodische Begründung: Das BSI hat die Trennung explizit so vorgesehen — *„C3A presupposes that the cloud service provider meets the C5 criteria"* — Sicherheits-/Compliance-Aspekte werden ausdrücklich nicht in C3A geprüft, sondern über C5/IT-Grundschutz. Der neue SOV-7-Katalog schließt diese Lücke.
+
 ## [3.1.0] - 2026-03-19
 
 ### Changed

@@ -2,7 +2,12 @@
  * Sovereign Architecture Advisor - Data Module
  * Cloud Provider Data mit Service-Level Bewertungen
  * Kontrolle, Leistung, Kosten + Begründungen
+ *
+ * Ab v4.0.0 zusätzlich: BSI C3A v1.0 + SOV-7 Compliance-Bewertungen je Provider,
+ * importiert aus dem SCC-Schwesterprojekt via provider-c3a-data.js.
  */
+
+import { PROVIDER_C3A_DATA } from './data/provider-c3a-data.js';
 
 // Helper: Service erstellen mit allen Bewertungen
 const svc = (name, available, maturity, opts = {}) => ({
@@ -1631,8 +1636,169 @@ const cloudProviders = [
                 performanceReason: 'Nicht verfügbar.'
             })
         }
+    },
+
+    // ============== SAP Cloud Infrastructure (BTP/IaaS) ==============
+    // Neu in v4.0.0: deutscher Enterprise-IaaS-Anbieter auf OpenStack-Basis
+    // RZs in Walldorf/St. Leon-Rot mit ISO 27001 auf IT-Grundschutz (April 2026),
+    // KRITIS-fähig, 3 unabhängige Verfügbarkeitszonen.
+    {
+        id: 'sap-ci',
+        name: 'SAP Cloud Infrastructure',
+        fullName: 'SAP Cloud Infrastructure (BTP/IaaS)',
+        control: 82,
+        performance: 60,
+        category: 'eu',
+        color: '#0070f2',
+        description: 'IaaS-Cloud der SAP SE auf OpenStack-Basis für hochsensible Workloads in deutschen Rechenzentren. ISO 27001 auf IT-Grundschutz (BSI-zertifiziert April 2026), C5 Type II, KRITIS-fähig, VS-NfD-Hardware.',
+        services: {
+            compute: svc('SAP CI Compute', true, 'production', {
+                consumption: 'medium', operations: 'medium', projectEffort: 'low',
+                control: 90, performance: 75,
+                controlReason: 'SAP-eigene RZ Walldorf/St. Leon-Rot, OpenStack-basiert, ISO 27001 auf IT-Grundschutz.',
+                performanceReason: 'Solide Standard-VMs, weniger Skalierung als Hyperscaler.'
+            }),
+            kubernetes: svc('SAP Kubernetes Service (Gardener)', true, 'production', {
+                consumption: 'medium', operations: 'medium', projectEffort: 'medium',
+                control: 90, performance: 75,
+                controlReason: 'Gardener ist Open Source, von SAP entwickelt, unter Apache-Lizenz.',
+                performanceReason: 'Reife K8s-Plattform mit Multi-Cloud-Fähigkeiten.'
+            }),
+            serverless: svc('-', false, 'none', {
+                control: 0, performance: 0,
+                controlReason: 'Kein nativer Serverless-Service auf SAP CI dokumentiert. Alternative: Knative auf Gardener.',
+                performanceReason: 'Nicht verfügbar.',
+                selfBuildOption: 'serverless'
+            }),
+            database_sql: svc('SAP HANA Cloud / PostgreSQL', true, 'production', {
+                consumption: 'high', operations: 'low', projectEffort: 'low',
+                control: 85, performance: 80,
+                controlReason: 'Managed in SAP-eigenen RZs, KRITIS-fähig.',
+                performanceReason: 'HANA Cloud sehr leistungsstark; Standard-PostgreSQL solide.'
+            }),
+            database_nosql: svc('Begrenzt', true, 'preview', {
+                consumption: 'medium', operations: 'medium', projectEffort: 'medium',
+                control: 80, performance: 60,
+                controlReason: 'NoSQL-Optionen weniger ausgereift als bei Hyperscalern.',
+                performanceReason: 'Teilweise als Self-Build über Compute.'
+            }),
+            storage_object: svc('SAP Object Store', true, 'production', {
+                consumption: 'low', operations: 'low', projectEffort: 'low',
+                control: 90, performance: 75,
+                controlReason: 'S3-kompatibel, in SAP-RZs Deutschland.',
+                performanceReason: 'Solide Performance, regionale Verfügbarkeit.'
+            }),
+            storage_block: svc('SAP Block Storage', true, 'production', {
+                consumption: 'medium', operations: 'low', projectEffort: 'low',
+                control: 90, performance: 75,
+                controlReason: 'OpenStack Cinder, deutsche RZs.',
+                performanceReason: 'Standard SSD/HDD-Optionen.'
+            }),
+            storage_file: svc('SAP File Storage', true, 'production', {
+                consumption: 'medium', operations: 'low', projectEffort: 'low',
+                control: 90, performance: 70,
+                controlReason: 'NFS auf SAP-Infrastruktur, deutsche RZs.',
+                performanceReason: 'Solide Performance.'
+            }),
+            loadbalancer: svc('SAP Load Balancer', true, 'production', {
+                consumption: 'low', operations: 'low', projectEffort: 'low',
+                control: 90, performance: 75,
+                controlReason: 'OpenStack Octavia, in SAP-RZs.',
+                performanceReason: 'Standard-Load-Balancing.'
+            }),
+            cdn: svc('-', false, 'none', {
+                control: 0, performance: 0,
+                controlReason: 'Kein nativer CDN-Service auf SAP CI. Alternative: externe CDN-Anbieter.',
+                performanceReason: 'Nicht verfügbar.',
+                selfBuildOption: 'cdn'
+            }),
+            dns: svc('SAP DNS Service', true, 'production', {
+                consumption: 'low', operations: 'low', projectEffort: 'low',
+                control: 90, performance: 75,
+                controlReason: 'OpenStack Designate, deutsche RZs.',
+                performanceReason: 'Solide DNS-Auflösung in EU.'
+            }),
+            messaging: svc('SAP Messaging (Limited)', true, 'preview', {
+                consumption: 'medium', operations: 'medium', projectEffort: 'medium',
+                control: 85, performance: 60,
+                controlReason: 'Begrenzte Messaging-Optionen, primär Self-Build mit Kafka/RabbitMQ.',
+                performanceReason: 'Über Compute self-managed.'
+            }),
+            cache: svc('SAP Cache (Limited)', true, 'preview', {
+                consumption: 'medium', operations: 'medium', projectEffort: 'medium',
+                control: 85, performance: 60,
+                controlReason: 'Self-Build mit Redis/Memcached über Compute.',
+                performanceReason: 'Solide bei Eigenbetrieb.'
+            }),
+            container_registry: svc('SAP Container Registry', true, 'production', {
+                consumption: 'low', operations: 'low', projectEffort: 'low',
+                control: 90, performance: 75,
+                controlReason: 'Harbor/Docker Registry in SAP-RZs.',
+                performanceReason: 'Standard-Registry-Performance.'
+            }),
+            secrets: svc('SAP Vault', true, 'production', {
+                consumption: 'low', operations: 'low', projectEffort: 'low',
+                control: 90, performance: 75,
+                controlReason: 'HashiCorp Vault auf SAP-Infrastruktur.',
+                performanceReason: 'Solide Secrets-Verwaltung.'
+            }),
+            monitoring: svc('SAP Monitoring', true, 'production', {
+                consumption: 'medium', operations: 'low', projectEffort: 'low',
+                control: 90, performance: 75,
+                controlReason: 'Prometheus/Grafana Stack in SAP-RZs.',
+                performanceReason: 'Reife Open-Source-Tools.'
+            }),
+            logging: svc('SAP Logging', true, 'production', {
+                consumption: 'medium', operations: 'low', projectEffort: 'low',
+                control: 90, performance: 75,
+                controlReason: 'ELK/Loki Stack in SAP-RZs.',
+                performanceReason: 'Solide zentrale Logging-Lösung.'
+            }),
+            ai_ml: svc('-', false, 'none', {
+                control: 0, performance: 0,
+                controlReason: 'Kein nativer AI/ML-Service auf SAP CI. SAP AI Core ist separater BTP-Service.',
+                performanceReason: 'Nicht verfügbar als IaaS-Service.',
+                selfBuildOption: 'ai_ml'
+            }),
+            identity: svc('SAP IAS / Keycloak', true, 'production', {
+                consumption: 'low', operations: 'low', projectEffort: 'low',
+                control: 90, performance: 80,
+                controlReason: 'SAP Identity Authentication Service oder Keycloak; SAML/OIDC.',
+                performanceReason: 'Bewährte Enterprise-IAM.'
+            }),
+            static_hosting: svc('SAP Static Hosting (Limited)', true, 'preview', {
+                consumption: 'low', operations: 'low', projectEffort: 'low',
+                control: 85, performance: 60,
+                controlReason: 'Begrenzte Optionen, primär über Object Store + CDN-Kombination.',
+                performanceReason: 'Standard.'
+            }),
+            app_service: svc('-', false, 'none', {
+                control: 0, performance: 0,
+                controlReason: 'Kein nativer PaaS-App-Service auf SAP CI. Alternative: Cloud Foundry über BTP.',
+                performanceReason: 'Nicht verfügbar.'
+            }),
+            api_gateway: svc('SAP API Management', true, 'production', {
+                consumption: 'medium', operations: 'low', projectEffort: 'low',
+                control: 90, performance: 80,
+                controlReason: 'SAP API Management auf SAP-Infrastruktur.',
+                performanceReason: 'Reife Enterprise-API-Plattform.'
+            })
+        }
     }
 ];
+
+// ====== Provider-C3A/SOV-7-Bewertungen mergen (v4.0.0) ======
+// Pro Provider werden c3a, sov7 und sources aus PROVIDER_C3A_DATA als zusätzliche
+// Felder gemergt. Die statischen control-Werte bleiben bestehen — Phase 2 löst
+// sie optional durch eine berechnete Hybrid-Variante ab.
+cloudProviders.forEach(p => {
+    const c3aData = PROVIDER_C3A_DATA[p.id];
+    if (c3aData) {
+        p.c3a = c3aData.c3a;
+        p.sov7 = c3aData.sov7;
+        p.sources = c3aData.sources;
+    }
+});
 
 // Architektur-Komponenten mit Konfigurations-Optionen
 const architectureComponents = [
