@@ -2,7 +2,7 @@
 // Verantwortlich für: Multi-App-Workflow, App-Mapping-Table, App-Konfiguration, Portfolio-Parsing
 
 import { knownApplications } from '../saa-apps-data.js';
-import { ApplicationInstance } from '../saa-data.js';
+import { ApplicationInstance } from './application-instance.js';
 
 export const SAAMultiApp = {
     /**
