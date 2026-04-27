@@ -11,6 +11,7 @@
 import { aggregateC3A } from './c3a-framework.js';
 import { aggregateSov7 } from './sov7-compliance.js';
 import { getAuditMode } from './audit-mode.js';
+import { PROVIDER_C3A_DATA } from '../data/provider-c3a-data.js';
 
 /**
  * EU Cloud Sovereignty Framework — Gewichte SOV-1...8.
@@ -88,6 +89,13 @@ export function calculateControlFromSov(sovScores) {
  */
 export function getC3AAdjustedControl(provider, mode = getAuditMode()) {
     if (!provider) return 50;
+    // Lazy-Lookup: wenn Provider noch keine C3A-Daten hat, aus zentraler Tabelle ergänzen
+    if (!provider.c3a && PROVIDER_C3A_DATA[provider.id]) {
+        const data = PROVIDER_C3A_DATA[provider.id];
+        provider.c3a = data.c3a;
+        provider.sov7 = data.sov7;
+        provider.sources = data.sources;
+    }
     if (!provider.c3a) return provider.control ?? 50;
     const sov = aggregateProviderSovScores(provider, mode);
     if (!sov) return provider.control ?? 50;

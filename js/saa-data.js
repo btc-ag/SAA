@@ -7,8 +7,6 @@
  * importiert aus dem SCC-Schwesterprojekt via provider-c3a-data.js.
  */
 
-import { PROVIDER_C3A_DATA } from './data/provider-c3a-data.js';
-
 // Helper: Service erstellen mit allen Bewertungen
 const svc = (name, available, maturity, opts = {}) => ({
     name,
@@ -1769,19 +1767,6 @@ const cloudProviders = [
         }
     }
 ];
-
-// ====== Provider-C3A/SOV-7-Bewertungen mergen (v4.0.0) ======
-// Pro Provider werden c3a, sov7 und sources aus PROVIDER_C3A_DATA als zusätzliche
-// Felder gemergt. Die statischen control-Werte bleiben bestehen — Phase 2 löst
-// sie optional durch eine berechnete Hybrid-Variante ab.
-cloudProviders.forEach(p => {
-    const c3aData = PROVIDER_C3A_DATA[p.id];
-    if (c3aData) {
-        p.c3a = c3aData.c3a;
-        p.sov7 = c3aData.sov7;
-        p.sources = c3aData.sources;
-    }
-});
 
 // Architektur-Komponenten mit Konfigurations-Optionen
 const architectureComponents = [
