@@ -16,6 +16,7 @@ import { SAASettings } from './modules/saa-settings.js';
 import { SAAMultiApp } from './modules/saa-multiapp.js';
 import { SAAPdf } from './modules/saa-pdf.js';
 import { getAuditMode, setAuditMode } from './modules/audit-mode.js';
+import { ApplicationInstance } from './modules/application-instance.js';
 
 
 // Umami-Tracking-Helfer (no-op falls Umami nicht geladen)
@@ -105,7 +106,23 @@ class SovereignArchitectureAdvisor {
         this.appMatcher = new ApplicationMatcher(knownApplications);
         this.sizingDetector = new SizingDetector();
 
+        // Always-Portfolio: starte mit genau 1 ApplicationInstance, currentAppIndex=0.
+        // Single-App-Modus = isMultiAppMode=false + applications.length===1.
+        if (this.applications.length === 0) {
+            this.applications.push(new ApplicationInstance(null, 'Anwendung'));
+        }
+        this.currentAppIndex = 0;
+
         this.init();
+    }
+
+    /**
+     * Liefert die aktuell aktive ApplicationInstance.
+     * Im Always-Portfolio-Modell ist dies sowohl im Single- als auch im
+     * Multi-App-Modus die Single Source of Truth für State.
+     */
+    get currentApp() {
+        return this.applications[this.currentAppIndex] ?? null;
     }
 
     // ========== BACKWARD COMPATIBILITY GETTERS/SETTERS ==========
