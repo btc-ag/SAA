@@ -1839,6 +1839,18 @@ class PortfolioAnalyzer {
     }
 
     /**
+     * Convenience: analysiert eine einzelne App und liefert dieselbe
+     * Portfolio-Datenstruktur wie analyzePortfolio.
+     * `perAppResults.length === 1`, `aggregatedProviders` trivial.
+     *
+     * @param {Object} app - {selectedComponents, systemConfig, ...} (analog ApplicationInstance)
+     * @returns {Object} Portfolio-shaped result
+     */
+    analyzeOne(app, weights, maturitySettings, operationsSettings, projectEffortSettings) {
+        return this.analyzePortfolio([app], weights, maturitySettings, operationsSettings, projectEffortSettings);
+    }
+
+    /**
      * Aggregiert Provider-Scores über alle Apps
      * Verwendet gewichteten Durchschnitt basierend auf Komponentenanzahl
      */
