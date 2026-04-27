@@ -284,24 +284,7 @@ const deploymentPatterns = {
     }
 };
 
-/**
- * Ermittelt das passende Deployment Pattern für gegebene Komponenten
- * @param {Array} components - Liste der Komponenten-IDs
- * @param {string} appId - Optional: App-ID für spezifische Erkennung
- * @returns {Object|null} Das erkannte Pattern oder null
- */
-function detectDeploymentPattern(components, appId = null) {
-    // Reihenfolge ist wichtig: Spezifischere Patterns zuerst
-    const patternOrder = ['static_website', 'api_service', 'container_workload', 'enterprise_legacy', 'web_application', 'database_centric'];
-
-    for (const patternId of patternOrder) {
-        const pattern = deploymentPatterns[patternId];
-        if (pattern.detection(components, appId)) {
-            return { id: patternId, ...pattern };
-        }
-    }
-    return null;
-}
+// detectDeploymentPattern → siehe js/modules/deployment-pattern.js
 
 // Cloud Provider mit detaillierten Service-Bewertungen
 const cloudProviders = [
@@ -1978,4 +1961,4 @@ const architectureComponents = [
 
 // SizingDetector → siehe js/modules/sizing-detector.js
 
-export { selfBuildOptions, architectureModes, deploymentPatterns, cloudProviders, architectureComponents, detectDeploymentPattern };
+export { selfBuildOptions, architectureModes, deploymentPatterns, cloudProviders, architectureComponents };

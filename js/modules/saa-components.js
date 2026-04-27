@@ -1,7 +1,8 @@
 // SAAComponents Module
 // Komponenten-Auswahl, Config-Panels, VM/DB/Storage-Konfiguration
 
-import { architectureComponents, detectDeploymentPattern } from '../saa-data.js';
+import { architectureComponents } from '../saa-data.js';
+import { detectDeploymentPattern } from './deployment-pattern.js';
 import { knownApplications, componentCategories } from '../saa-apps-data.js';
 import { IconMapper } from './saa-utils.js';
 
