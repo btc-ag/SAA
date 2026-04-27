@@ -3,11 +3,24 @@
 
 import { architectureComponents } from '../saa-data.js';
 
+// Umami-Tracking-Helfer (no-op falls Umami nicht geladen)
+function track(eventName, data) {
+    if (typeof window.umami !== 'undefined' && typeof window.umami.track === 'function') {
+        try { window.umami.track(eventName, data); } catch (e) { /* ignore */ }
+    }
+}
+
 export const SAAPdf = {
     /**
      * Exportiert die Analyse als PDF
      */
     exportToPDF() {
+        // Track: PDF-Export ausgelöst (wichtige Conversion)
+        track('export-pdf', {
+            mode: this.isMultiAppMode ? 'multi' : 'single',
+            appCount: this.isMultiAppMode ? (this.applications || []).length : 1
+        });
+
         // Check if we're in Multi-App Mode or Single-App Mode
         if (this.isMultiAppMode && this.aggregatedResults) {
             // Multi-App Mode: Export Portfolio Overview

@@ -15,6 +15,13 @@ import { SAAMultiApp } from './modules/saa-multiapp.js';
 import { SAAPdf } from './modules/saa-pdf.js';
 
 
+// Umami-Tracking-Helfer (no-op falls Umami nicht geladen)
+function track(eventName, data) {
+    if (typeof window.umami !== 'undefined' && typeof window.umami.track === 'function') {
+        try { window.umami.track(eventName, data); } catch (e) { /* ignore */ }
+    }
+}
+
 class SovereignArchitectureAdvisor {
     constructor() {
         this.currentStep = 0; // Start bei Step 0 (Auswahl)
@@ -450,6 +457,7 @@ class SovereignArchitectureAdvisor {
             this.currentAppIndex = 0;
             this.aggregatedResults = null;
             this._analysisResults = null;
+            track('app-mode', { mode: 'single' });
             document.getElementById('singleModeBtn').classList.add('active');
             document.getElementById('multiModeBtn').classList.remove('active');
             document.getElementById('singleAppInputMode').style.display = 'block';
@@ -460,6 +468,7 @@ class SovereignArchitectureAdvisor {
         document.getElementById('multiModeBtn')?.addEventListener('click', () => {
             this.isMultiAppMode = true;
             this._analysisResults = null;
+            track('app-mode', { mode: 'multi' });
             document.getElementById('multiModeBtn').classList.add('active');
             document.getElementById('singleModeBtn').classList.remove('active');
             document.getElementById('singleAppInputMode').style.display = 'none';
@@ -700,12 +709,21 @@ class SovereignArchitectureAdvisor {
 
         if (!input.value.trim()) return;
 
+        const query = input.value.trim();
+
         // Loading State
         searchBtn.classList.add('loading');
         searchBtn.disabled = true;
 
         try {
-            const result = await this.researcher.research(input.value);
+            const result = await this.researcher.research(query);
+
+            // Track: was wird gesucht und ob es gefunden wurde
+            track('search-app', {
+                query: query,
+                found: !!result.success,
+                componentCount: result.success ? (result.application.components || []).length : 0
+            });
 
             if (result.success) {
                 this.applicationData = result.application;
@@ -1135,6 +1153,12 @@ class SovereignArchitectureAdvisor {
 
         this.currentStep = targetStep;
         this.updateStepDisplay();
+
+        // Track: Schritt-Wechsel im Funnel
+        track('step-change', {
+            step: targetStep,
+            mode: this.isMultiAppMode ? 'multi' : 'single'
+        });
 
         // Session-State speichern nach Schritt-Wechsel
         this.saveSessionState();
