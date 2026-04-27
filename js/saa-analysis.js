@@ -8,6 +8,7 @@
 import { selfBuildOptions } from './saa-data.js';
 import { CloudPricing } from './cloud-pricing.js';
 import { getC3AAdjustedControl } from './modules/sovereignty-engine.js';
+import { getNosqlServiceKey } from './modules/provider-service-mapping.js';
 
 class CloudAnalyzer {
     constructor(providers, components) {
@@ -773,13 +774,11 @@ class CloudAnalyzer {
             const nosqlSizeGB = db.size || 50;
             let pricePerGB = 1.0;
             if (useRealPricing && this.cloudPricing.database?.nosql?.[providerId]) {
-                if (nosqlType.toLowerCase().includes('dynamo') && providerId === 'aws')
-                    pricePerGB = this.cloudPricing.database.nosql.aws.dynamodb.storagePerGB;
-                else if (nosqlType.toLowerCase().includes('cosmos') && providerId === 'azure')
-                    pricePerGB = this.cloudPricing.database.nosql.azure.cosmosdb.storagePerGB;
-                else if (nosqlType.toLowerCase().includes('firestore') && providerId === 'gcp')
-                    pricePerGB = this.cloudPricing.database.nosql.gcp.firestore.storagePerGB;
-                source = 'CloudPricing API';
+                const serviceKey = getNosqlServiceKey(providerId, nosqlType);
+                if (serviceKey) {
+                    pricePerGB = this.cloudPricing.database.nosql[providerId][serviceKey].storagePerGB;
+                    source = 'CloudPricing API';
+                }
             } else {
                 if (nosqlType.toLowerCase().includes('redis'))      pricePerGB = 1.5;
                 else if (nosqlType.toLowerCase().includes('cosmos')) pricePerGB = 1.8;
