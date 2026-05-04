@@ -5,6 +5,40 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.4] - 2026-05-04
+
+Coverage-Hot-Spots geschlossen, CI-Threshold-Gate aktiv, Badges im README.
+
+### Added
+
+- **`tests/smoke-cloud-pricing.mjs`** — 89 Tests für die Public-API der CloudPricing-Engine. Alle 8 Public-Methoden (`calculateComputeCost`, `calculateDatabaseCost`, `calculateStorageCost`, `calculateKubernetesCost`, `getRegion`, `getPricingForService`, `calculateObservabilityCost`, `calculateStandardWorkload`) sind jetzt direkt getestet, inkl. sovereign-Premium-Faktoren und SAP-Detection.
+- **`tests/smoke-analysis-branches.mjs`** — 143 Tests für bisher uncovered Branches in `saa-analysis.js`. Maturity-Levels (low/high/excellent), Operations-Settings (classic/cloud_native), Project-Effort, Architecture-Settings, Custom-Score-Override, alle `_estimate*`-Methoden mit `useRealPricing=false`, `calculateOperationsCosts/ProjectEffort/SelfBuild/TCOLevel`, `detectArchitecturePattern` mit verschiedenen Component-Kombinationen.
+- **CI-Coverage-Threshold:** `.c8rc.json` und `package.json` mit `--check-coverage`. CI scheitert, wenn Coverage unter Lines 45 / Branches 75 / Functions 75 fällt (jeweils ~5pt Puffer unter aktuellen Werten).
+- **README-Badges** (statisch, shields.io): Tests `1011 passing`, Lines `49%`, Branches `79%`, Functions `80%`.
+
+### Coverage Vorher → Nachher
+
+| Metrik | v4.1.3 | v4.1.4 | Δ |
+|---|---:|---:|---:|
+| Tests | 779 | **1011** | +232 |
+| Lines | 43.48% | **49.80%** | +6.32 |
+| Branches | 69.85% | **79.23%** | +9.38 |
+| Functions | 58.12% | **80.00%** | +21.88 |
+
+Per-File-Hot-Spot-Closure:
+- `cloud-pricing.js`: 10% Funcs → **100%** Funcs (largest gain)
+- `saa-analysis.js`: 51% Branches → **75.25%** Branches, 56% Funcs → **92.95%** Funcs
+
+### Erkenntnisse beim Branch-Audit
+
+- `_estimateCompute` hat eine SAP-Auto-Detection via `database.type`-Substring (HANA/SAP) — bisher ungeprüft.
+- Sovereign-Mappings (`aws-sovereign`, `delos`, `azure-confidential`) haben separate Premium-Faktoren (1.15/1.18/1.20) in jeder calculate-Methode.
+- `_estimateMessaging` und `_estimateServerless` haben Fallback-Pfade ohne `instances` — bisher ungeprüft.
+- `calculateOperationsCosts` mit `architectureSettings → _getAppComplexity` (low/medium/high) hatte komplette uncovered Branches.
+- `getRegion()` hat einen Default-Fallback statt null-Return.
+
+Keine echten Bugs — alle Pfade verhalten sich plausibel.
+
 ## [4.1.3] - 2026-05-04
 
 Coverage-Report eingeführt. Erste Single-Dependency-Setup im Projekt: `c8` für V8 native Coverage.
