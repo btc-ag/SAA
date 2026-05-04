@@ -153,7 +153,7 @@ export const SAAComponents = {
                             <div style="font-size: 0.75rem; color: var(--text-secondary);">VMs, volle Kontrolle</div>
                         </div>
                     </label>
-                    ${this.currentApp._archOriginal ? `
+                    ${this.currentApp.hasArchitectureSnapshot() ? `
                     <button onclick="app.resetArchitectureMode()" style="
                         display: flex;
                         align-items: center;
@@ -320,77 +320,58 @@ export const SAAComponents = {
 
     /**
      * Wendet den aktuellen Architektur-Modus auf selectedComponents + componentConfigs an.
-     * Ausgangspunkt ist immer _archOriginal (Snapshot vor erster Transformation).
-     * Manuelle Nutzer-Änderungen (_archDelta) werden on top erhalten.
+     * Ausgangspunkt ist immer der Architektur-Snapshot (vor erster Transformation).
+     * Manuelle Nutzer-Änderungen (Delta) werden via ApplicationInstance.applyArchitectureDelta on top erhalten.
      */
     applyArchitectureModeToComponents() {
-        // Fallback: Snapshot erstellen falls noch nicht vorhanden
-        if (!this.currentApp._archOriginal) {
-            this.currentApp._archOriginal = {
-                selectedComponents: new Set(this.currentApp.selectedComponents),
-                componentConfigs: JSON.parse(JSON.stringify(this.currentApp.componentConfigs))
-            };
-        }
-
-        const base = this.currentApp._archOriginal.selectedComponents;
         const mode = this.architectureSettings.mode || 'classic';
 
-        // App-ID für Pattern-Erkennung
+        // App-ID für Pattern-Erkennung (basiert auf Snapshot-Komponenten,
+        // applyArchitectureDelta erstellt Snapshot implizit falls noch keiner existiert)
+        if (!this.currentApp.hasArchitectureSnapshot()) {
+            this.currentApp.snapshotArchitecture();
+        }
+        const snapshot = this.currentApp.getArchitectureSnapshot();
+        const baseIds = Array.from(snapshot.selectedComponents).map(id => id.replace(/-\d+$/, ''));
         const appId = this.currentApp.applicationData
             ? Object.keys(knownApplications).find(k => knownApplications[k].name === this.currentApp.applicationData.name)
             : null;
-
-        // Pattern erkennen (basierend auf Original-Basis, nicht auf transformiertem Zustand)
-        const baseIds = Array.from(base).map(id => id.replace(/-\d+$/, ''));
         const pattern = detectDeploymentPattern(baseIds, appId);
 
-        // Transformation berechnen – dynamische Intelligenz statt statischer Daten
-        let transformed;
-        if (mode === 'cloud_native') {
-            transformed = inferCloudNativeComponents(base);
-        } else {
-            transformed = inferClassicComponents(base);
-        }
+        // Architektur-Transformation auf Snapshot-Basis anwenden.
+        // Die transform-Callback erhält Defensiv-Kopien des Snapshots; die Methode
+        // re-appliziert das Delta (added/removed/configs) automatisch.
+        this.currentApp.applyArchitectureDelta((originalComponents, originalConfigs) => {
+            let transformed = (mode === 'cloud_native')
+                ? inferCloudNativeComponents(originalComponents)
+                : inferClassicComponents(originalComponents);
 
-        // Delta anwenden (manuelle Nutzer-Änderungen bleiben erhalten)
-        this.currentApp._archDelta.added.forEach(id => transformed.add(id));
-        this.currentApp._archDelta.removed.forEach(id => transformed.delete(id));
+            // Konsistenz-Cleanup: serverless und compute schließen sich aus
+            if (mode === 'cloud_native' && transformed.has('serverless') && transformed.has('compute')) {
+                transformed.delete('compute');
+            }
 
-        // Konsistenz-Cleanup: serverless und compute schließen sich aus
-        if (mode === 'cloud_native' && transformed.has('serverless') && transformed.has('compute')) {
-            transformed.delete('compute');
-        }
-
-        this.currentApp.selectedComponents = transformed;
-
-        // Configs aktualisieren
-        // Neue Komponenten (nicht in Originalstate): initialisieren
-        for (const id of transformed) {
-            const baseId = id.replace(/-\d+$/, '');
-            if (!this.currentApp._archOriginal.componentConfigs[id] && !this.currentApp.componentConfigs[id]) {
-                this.initComponentConfig(baseId === id ? id : baseId);
-                // Falls es die base-ID ist, kopieren wir die Config unter der neuen ID
-                if (baseId !== id && this.currentApp.componentConfigs[baseId]) {
-                    this.currentApp.componentConfigs[id] = { ...this.currentApp.componentConfigs[baseId] };
+            // Configs für transformierte Components: Originale aus Snapshot übernehmen
+            // (alle anderen Keys werden verworfen — entspricht dem alten Cleanup-Verhalten).
+            const configs = {};
+            for (const id of transformed) {
+                if (originalConfigs[id]) {
+                    configs[id] = structuredClone(originalConfigs[id]);
                 }
             }
-        }
-        // Entfernte Komponenten: Config-Key löschen (nur die, die nicht in _archOriginal waren)
-        for (const id of Object.keys(this.currentApp.componentConfigs)) {
-            if (!transformed.has(id) && !this.currentApp._archOriginal.componentConfigs[id]) {
-                delete this.currentApp.componentConfigs[id];
-            }
-        }
-        // Ursprüngliche Configs wiederherstellen (aus Snapshot)
-        for (const [id, cfg] of Object.entries(this.currentApp._archOriginal.componentConfigs)) {
-            if (transformed.has(id)) {
-                this.currentApp.componentConfigs[id] = JSON.parse(JSON.stringify(cfg));
-            }
-        }
-        // Delta-Configs anwenden
-        for (const [compId, fields] of Object.entries(this.currentApp._archDelta.configs)) {
-            if (transformed.has(compId) && this.currentApp.componentConfigs[compId]) {
-                Object.assign(this.currentApp.componentConfigs[compId], fields);
+            return { components: transformed, configs };
+        });
+
+        // Configs für neu (durch Transformation oder Delta) hinzugekommene Components initialisieren.
+        // Die `applyArchitectureDelta`-Methode hat selectedComponents/componentConfigs bereits gesetzt.
+        for (const id of this.currentApp.selectedComponents) {
+            if (this.currentApp.componentConfigs[id]) continue;
+            const baseId = id.replace(/-\d+$/, '');
+            this.initComponentConfig(baseId === id ? id : baseId);
+            // Falls die initialisierte ID nicht der eigentlichen Component-ID entspricht
+            // (Suffix-Variante), Config unter der neuen ID kopieren.
+            if (baseId !== id && this.currentApp.componentConfigs[baseId] && !this.currentApp.componentConfigs[id]) {
+                this.currentApp.componentConfigs[id] = { ...this.currentApp.componentConfigs[baseId] };
             }
         }
 
@@ -510,12 +491,7 @@ export const SAAComponents = {
         this.currentApp.componentConfigs[componentId][fieldId] = value;
 
         // Delta-Tracking: Config-Änderung nach Arch-Transformation merken
-        if (this.currentApp._archOriginal) {
-            if (!this.currentApp._archDelta.configs[componentId]) {
-                this.currentApp._archDelta.configs[componentId] = {};
-            }
-            this.currentApp._archDelta.configs[componentId][fieldId] = value;
-        }
+        this.currentApp.recordArchitectureChange(componentId, 'config', { [fieldId]: value });
 
         // Summary aktualisieren
         this.updateComponentConfigSummary(componentId);
@@ -1321,15 +1297,7 @@ export const SAAComponents = {
     toggleComponent(componentId) {
         const wasSelected = this.currentApp.selectedComponents.has(componentId);
         // Delta-Tracking: manuelle Änderungen des Nutzers nach Arch-Transformation merken
-        if (this.currentApp._archOriginal) {
-            if (wasSelected) {
-                this.currentApp._archDelta.removed.add(componentId);
-                this.currentApp._archDelta.added.delete(componentId);
-            } else {
-                this.currentApp._archDelta.added.add(componentId);
-                this.currentApp._archDelta.removed.delete(componentId);
-            }
-        }
+        this.currentApp.recordArchitectureChange(componentId, wasSelected ? 'remove' : 'add');
         if (wasSelected) {
             this.currentApp.selectedComponents.delete(componentId);
             // Config behalten für den Fall, dass Komponente wieder ausgewählt wird

@@ -324,11 +324,7 @@ class SovereignArchitectureAdvisor {
                             try { this.initComponentConfigsFromSystemRequirements(); } catch (e) {}
                         }
                         // Snapshot vor Transformation speichern, empfohlenen Modus setzen
-                        this.currentApp._archOriginal = {
-                            selectedComponents: new Set(this.currentApp.selectedComponents),
-                            componentConfigs: JSON.parse(JSON.stringify(this.currentApp.componentConfigs))
-                        };
-                        this.currentApp._archDelta = { added: new Set(), removed: new Set(), configs: {} };
+                        this.currentApp.snapshotArchitecture();
                         this.architectureSettings.mode = knownApp.recommendedArchitecture || 'classic';
                         if (typeof this.applyArchitectureModeToComponents === 'function') {
                             this.applyArchitectureModeToComponents();
@@ -708,11 +704,7 @@ class SovereignArchitectureAdvisor {
                     }
                 }
                 // Snapshot vor Transformation speichern, empfohlenen Modus setzen
-                this.currentApp._archOriginal = {
-                    selectedComponents: new Set(this.currentApp.selectedComponents),
-                    componentConfigs: JSON.parse(JSON.stringify(this.currentApp.componentConfigs))
-                };
-                this.currentApp._archDelta = { added: new Set(), removed: new Set(), configs: {} };
+                this.currentApp.snapshotArchitecture();
                 this.architectureSettings.mode = result.application.recommendedArchitecture || 'classic';
                 if (typeof this.applyArchitectureModeToComponents === 'function') {
                     this.applyArchitectureModeToComponents();
@@ -981,11 +973,7 @@ class SovereignArchitectureAdvisor {
             this.initComponentConfigsFromSystemRequirements();
 
             // Snapshot nach Sizing-Änderung erneuern (Modus beibehalten)
-            this.currentApp._archOriginal = {
-                selectedComponents: new Set(this.currentApp.selectedComponents),
-                componentConfigs: JSON.parse(JSON.stringify(this.currentApp.componentConfigs))
-            };
-            this.currentApp._archDelta = { added: new Set(), removed: new Set(), configs: {} };
+            this.currentApp.snapshotArchitecture();
             if (typeof this.applyArchitectureModeToComponents === 'function') {
                 this.applyArchitectureModeToComponents();
             }
@@ -1224,10 +1212,8 @@ class SovereignArchitectureAdvisor {
      * Öffentlich – wird vom Reset-Button per onclick="app.resetArchitectureMode()" aufgerufen.
      */
     resetArchitectureMode() {
-        if (!this.currentApp._archOriginal) return;
-        this.currentApp.selectedComponents = new Set(this.currentApp._archOriginal.selectedComponents);
-        this.currentApp.componentConfigs   = JSON.parse(JSON.stringify(this.currentApp._archOriginal.componentConfigs));
-        this.currentApp._archDelta = { added: new Set(), removed: new Set(), configs: {} };
+        if (!this.currentApp.hasArchitectureSnapshot()) return;
+        this.currentApp.resetArchitecture();
         this.architectureSettings.mode = this.currentApp.applicationData?.recommendedArchitecture || 'classic';
         this.updateSystemConfigFromComponents();
         this.renderComponents();

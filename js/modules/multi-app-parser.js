@@ -406,11 +406,7 @@ export function parseApplicationList(inputText, deps) {
                 instance
             );
             // Snapshot für Architektur-Transformation (analog zu Single-App)
-            instance._archOriginal = {
-                selectedComponents: new Set(instance.selectedComponents),
-                componentConfigs: JSON.parse(JSON.stringify(instance.componentConfigs))
-            };
-            instance._archDelta = { added: new Set(), removed: new Set(), configs: {} };
+            instance.snapshotArchitecture();
             instance.architectureMode = knownApplications[appType].recommendedArchitecture || 'classic';
         }
 
