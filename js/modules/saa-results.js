@@ -3,6 +3,13 @@
 
 import { architectureComponents, cloudProviders, selfBuildOptions } from '../saa-data.js';
 import { IconMapper } from './saa-utils.js';
+import {
+    computeTcoConsumptionBreakdown,
+    computeAppMonthlyTCO,
+    computeRatingColors,
+    formatRecommendationText as computeFormatRecommendationText,
+    formatPortfolioRecommendationText as computeFormatPortfolioRecommendationText
+} from './results-compute.js';
 
 export const SAAResults = {
     /**
@@ -411,9 +418,7 @@ export const SAAResults = {
 
         const topResult = app.analysisResults[0];
         const componentCount = app.selectedComponents.size;
-        const monthlyInfra = topResult?.tcoEstimate?.consumption?.monthlyEstimate || 0;
-        const monthlyOps = topResult?.tcoEstimate?.operations?.monthlyPersonnelCost || 0;
-        const totalMonthlyTCO = monthlyInfra + monthlyOps;
+        const { monthlyInfra, monthlyOps, totalMonthlyTCO } = computeAppMonthlyTCO(app);
 
         // Komponenten-Tags
         const componentTags = Array.from(app.selectedComponents).map(id => {
@@ -607,15 +612,7 @@ export const SAAResults = {
         };
 
         // Detaillierte Kostenaufschlüsselung erstellen - ALLE Services anzeigen
-        const allCostDetails = tco.consumption.details.map(d => {
-            const detailText = d.breakdown
-                ? `${d.name}: ${d.breakdown}`
-                : `${d.name}`;
-            return { text: detailText, cost: d.estimate };
-        });
-
-        // Berechne Summe der Details
-        const detailsSum = allCostDetails.reduce((sum, d) => sum + d.cost, 0);
+        const { items: allCostDetails, sum: detailsSum } = computeTcoConsumptionBreakdown(tco);
 
         const breakdownHtml = allCostDetails.length > 0
             ? `<div class="tco-breakdown">
@@ -1078,8 +1075,7 @@ export const SAAResults = {
      * Rendert kompakte Score-Anzeige für Control/Performance
      */
     renderRatingIndicators(service) {
-        const controlColor = service.control >= 70 ? 'var(--btc-success)' : service.control >= 40 ? 'var(--btc-warning)' : 'var(--btc-danger)';
-        const perfColor = service.performance >= 70 ? 'var(--btc-success)' : service.performance >= 40 ? 'var(--btc-warning)' : 'var(--btc-danger)';
+        const { controlColor, perfColor } = computeRatingColors(service);
 
         return `
             <div class="rating-mini-bars">
@@ -1136,117 +1132,26 @@ export const SAAResults = {
 
     /**
      * Pure Markdown→HTML-Formatter für Empfehlungstexte.
-     *
-     * Wandelt **fett**, Zeilenumbrüche und Bullet-Marker (• ) in das
-     * Summary-HTML der Recommendation-Section um. Wird sowohl direkt
-     * (Single-App, in _renderSingleAppView) als auch nachgelagert von
-     * formatPortfolioRecommendationText (Multi-App) verwendet.
+     * Thin wrapper über die pure Function in results-compute.js — bleibt
+     * als Mixin-Methode bestehen, damit bestehende `this.formatRecommendationText(...)`
+     * Aufrufstellen (Single-App in _renderSingleAppView etc.) unverändert funktionieren.
      */
     formatRecommendationText(text) {
-        return text
-            .replace(/\*\*(.*?)\*\*/g, '<span class="summary-highlight">$1</span>')
-            .replace(/\n/g, '<br>')
-            .replace(/• /g, '<span class="bullet">•</span> ');
+        return computeFormatRecommendationText(text);
     },
 
     /**
      * Generiert den Portfolio-Empfehlungstext (Multi-App) und formatiert ihn.
-     *
-     * Konzeptionell verschieden zu formatRecommendationText:
-     * Diese Funktion *erzeugt* den Empfehlungs-Inhalt aus Aggregat-Daten
-     * (Provider, Coverage, fehlende Services, Preview-Hinweise) und
-     * delegiert die Markdown→HTML-Konvertierung am Ende an
-     * formatRecommendationText.
-     *
-     * Gehört thematisch zu Compute/Recommendation-Logik (Phase 6 Kandidat
-     * für Auslagerung als pure Function in results-compute.js).
+     * Thin wrapper über die pure Function in results-compute.js — leitet
+     * formatCurrency (aus SAAPdf-Mixin) als Callback weiter.
      */
     formatPortfolioRecommendationText(topProvider, metrics, aggregatedTCO) {
-        const provider = topProvider.provider;
-        const score = topProvider.aggregatedScore;
-        const tco = aggregatedTCO[provider.id];
-        const categoryNames = this._PROVIDER_CATEGORY_NAMES;
-
-        let text = `Für Ihr **Portfolio von ${metrics.totalApps} Anwendungen** empfehlen wir **${provider.name}** als primären Cloud-Provider.\n\n`;
-
-        text += `**${provider.name}** (${categoryNames[provider.category]}) erreicht einen gewichteten Portfolio-Score von **${score.toFixed(1)} Punkten** `;
-        text += `über alle ${metrics.totalComponents} Komponenten hinweg. `;
-        text += `Die geschätzten Gesamtkosten liegen bei **~${this.formatCurrency(tco.totalMonthly)}€ pro Monat**.\n\n`;
-
-        // Generische Service-Namen für bessere Lesbarkeit
-        const genericServiceNames = {
-            'database_sql': 'SQL Datenbank', 'database_nosql': 'NoSQL Datenbank',
-            'compute': 'Compute', 'kubernetes': 'Kubernetes', 'serverless': 'Serverless',
-            'storage_object': 'Object Storage', 'storage_block': 'Block Storage', 'storage_file': 'File Storage',
-            'loadbalancer': 'Load Balancer', 'cdn': 'CDN', 'dns': 'DNS',
-            'messaging': 'Messaging', 'cache': 'Cache', 'container_registry': 'Container Registry',
-            'secrets': 'Secrets Management', 'monitoring': 'Monitoring', 'logging': 'Logging',
-            'ai_ml': 'AI/ML', 'identity': 'Identity Management'
-        };
-
-        // Gründe für die Empfehlung
-        text += `**Gründe für diese Empfehlung:**\n`;
-
-        // Abdeckung mit Details zu fehlenden Services
-        const coveragePercent = Math.round(topProvider.serviceAnalysis.coverage);
-        if (topProvider.serviceAnalysis.missing.length > 0 || topProvider.serviceAnalysis.preview.length > 0) {
-            const missingCount = topProvider.serviceAnalysis.missing.length;
-            const previewCount = topProvider.serviceAnalysis.preview.length;
-
-            let coverageDetails = '';
-            if (missingCount > 0) {
-                const missingList = topProvider.serviceAnalysis.missing
-                    .map(id => genericServiceNames[id] || id)
-                    .slice(0, 3)
-                    .join(', ');
-                const moreCount = missingCount > 3 ? ` (+${missingCount - 3} weitere)` : '';
-                coverageDetails += `${missingCount} fehlend (${missingList}${moreCount})`;
-            }
-            if (previewCount > 0) {
-                const previewList = topProvider.serviceAnalysis.preview
-                    .map(id => genericServiceNames[id] || id)
-                    .slice(0, 3)
-                    .join(', ');
-                const moreCount = previewCount > 3 ? ` (+${previewCount - 3} weitere)` : '';
-                if (coverageDetails) coverageDetails += ', ';
-                coverageDetails += `${previewCount} in Preview (${previewList}${moreCount})`;
-            }
-
-            text += `• **Abdeckung**: ${coveragePercent}% verfügbar (${coverageDetails})\n`;
-        } else {
-            text += `• **Vollständige Abdeckung**: ${coveragePercent}% der benötigten Services sind verfügbar\n`;
-        }
-
-        text += `• **Einheitliche Plattform**: Vereinfachtes Management über alle ${metrics.totalApps} Anwendungen\n`;
-        text += `• **Optimales Preis-Leistungs-Verhältnis**: Bestes Gesamtergebnis unter Berücksichtigung Ihrer Gewichtung\n`;
-
-        // Detaillierte Hinweise zu fehlenden Services
-        if (topProvider.serviceAnalysis.missing.length > 0) {
-            const missingList = topProvider.serviceAnalysis.missing
-                .map(id => genericServiceNames[id] || id)
-                .slice(0, 5)
-                .join(', ');
-            const moreCount = topProvider.serviceAnalysis.missing.length > 5
-                ? ` (+${topProvider.serviceAnalysis.missing.length - 5} weitere)`
-                : '';
-
-            text += `\n**Hinweis zu fehlenden Services**: ${missingList}${moreCount} sind nicht nativ verfügbar. `;
-            text += `Empfehlung: Self-Build auf VMs oder Partner-Lösungen einsetzen.`;
-        }
-
-        if (topProvider.serviceAnalysis.preview.length > 0) {
-            const previewList = topProvider.serviceAnalysis.preview
-                .map(id => genericServiceNames[id] || id)
-                .slice(0, 5)
-                .join(', ');
-            const moreCount = topProvider.serviceAnalysis.preview.length > 5
-                ? ` (+${topProvider.serviceAnalysis.preview.length - 5} weitere)`
-                : '';
-
-            text += `\n\n**Hinweis zu Preview-Services**: ${previewList}${moreCount} sind noch in der Preview-Phase und sollten für produktive Workloads mit Vorsicht eingesetzt werden.`;
-        }
-
-        return this.formatRecommendationText(text);
+        return computeFormatPortfolioRecommendationText(
+            topProvider,
+            metrics,
+            aggregatedTCO,
+            (v) => this.formatCurrency(v)
+        );
     },
 
 
