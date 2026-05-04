@@ -5,6 +5,38 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2026-05-04
+
+Code-Hygiene-Release ohne Feature-Änderungen. Architektur-Refactor in 6 Phasen, jede einzeln smoke-testbar gepusht.
+
+### Changed (intern, nicht user-sichtbar)
+
+- **„Always Portfolio"-State-Modell:** Single-App ist nun ein Portfolio mit `length 1`. Die 16 Backward-Compat-Getter/Setter in `saa-app.js` (130 Zeilen Proxy-Ceremony) sind eliminiert. State lebt einheitlich auf `ApplicationInstance` in `this.applications[]`, zugegriffen über den neuen `currentApp`-Getter. Verbleibende `isMultiAppMode`-Stellen (38 → 30) sind ausschließlich UI-Sichtbarkeit oder Modus-Persistenz, kein State-Routing mehr.
+- **Sovereignty-Engine extrahiert:** Neues Modul `js/modules/sovereignty-engine.js` ist strukturell paritätisch zum SCC-Schwesterprojekt (`js/data/sov-framework.js`). BSI-Updates können künftig in beiden Repos byte-identisch nachgezogen werden. Alle 10 Provider × 2 Audit-Modes liefern 1:1 die SCC-v4.0.0-Werte.
+- **`saa-data.js` zu reinen Daten:** 4 Klassen + 1 Funktion in eigene Module ausgegliedert (`application-instance.js`, `application-matcher.js`, `sizing-detector.js`, `deployment-pattern.js`). Side-Effect-Merge `PROVIDER_C3A_DATA.forEach` entfernt — Daten werden nun lazy in der Sovereignty-Engine ergänzt.
+- **NoSQL-Provider-Branches datengetrieben:** Hardcoded `providerId === 'aws|azure|gcp'`-Switches in `_estimateDatabaseNoSQL` durch Lookup-Tabelle in `js/modules/provider-service-mapping.js` ersetzt.
+- **Render-Layer kollabiert:** 5 Pärchen `render*` ↔ `renderAggregated*` zu 5 unifizierten Methoden zusammengeführt (`renderAnalysisResults(portfolio)`, `renderProviderCard`, `renderProviderDetail`, `renderComparisonTable`, plus Doc-Cleanup für `formatRecommendationText`). 6 Methoden entfernt.
+- **`PortfolioAnalyzer`** statt `MultiAppAnalyzer`: Single-App nutzt nun `analyzeOne()` und liefert dieselbe Portfolio-shaped Datenstruktur wie Multi-App. Renderer hat einen einzigen Entry-Pfad.
+- **Render/Compute-Split:** Pure Compute-Funktionen aus `saa-results.js` in neues Modul `js/modules/results-compute.js` ausgegliedert (`computeTcoConsumptionBreakdown`, `computeAppMonthlyTCO`, `computeRatingColors`, `formatRecommendationText`, `formatPortfolioRecommendationText`).
+- **CSS-Monolith aufgesplittet:** `css/saa-styles.css` (5532 Zeilen) in 6 thematische Dateien (`base.css`, `wizard.css`, `results.css`, `modals.css`, `responsive.css`, `v4-additions.css`). `index.html` lädt alle 6, `evaluation-criteria.html` nur die 4 relevanten.
+
+### Migration
+
+- **Session-State-Migration** automatisch beim Load: alte Saves mit `selectedComponents`, `componentConfigs` etc. am State-Top-Level werden in `applications[0]` migriert, nutzt `ApplicationInstance.fromCurrentState()`.
+- Keine externen API-Änderungen, keine User-sichtbaren Verhaltensänderungen.
+
+### Größenvergleich
+
+| Datei | Vorher | Nachher | Δ |
+|---|---:|---:|---:|
+| `js/saa-app.js` | 1407 | 1334 | −73 |
+| `js/saa-data.js` | 2248 | 1949 | −299 |
+| `js/modules/saa-results.js` | 2285 | 2110 | −175 |
+| `js/modules/saa-state.js` | 223 | 201 | −22 |
+| `css/saa-styles.css` (Monolith) | 5532 | 0 (split) | −5532 |
+
+7 neue Module: `sovereignty-engine.js`, `application-instance.js`, `application-matcher.js`, `sizing-detector.js`, `deployment-pattern.js`, `provider-service-mapping.js`, `results-compute.js`.
+
 ## [4.0.0] - 2026-04-27
 
 Diese Major-Release stellt die Souveränitäts-Bewertung des SAA auf eine vollständig
