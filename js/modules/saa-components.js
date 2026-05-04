@@ -395,9 +395,11 @@ export const SAAComponents = {
         }
 
         this.updateSystemConfigFromComponents();
-        // Architektur-Modus in ApplicationInstance speichern (für multi-app analyzePortfolio)
-        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
-            this.applications[this.currentAppIndex].architectureMode = mode;
+        // Architektur-Modus auf der aktuellen ApplicationInstance ablegen.
+        // Always-Portfolio: this.currentApp ist sowohl im Single- als auch im Multi-Modus
+        // gesetzt. Im Multi-Modus liest analyzePortfolio den Wert pro App aus.
+        if (this.currentApp) {
+            this.currentApp.architectureMode = mode;
         }
         this.saveSessionState();
     },

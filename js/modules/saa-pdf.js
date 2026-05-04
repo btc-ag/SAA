@@ -15,15 +15,15 @@ export const SAAPdf = {
      * Exportiert die Analyse als PDF
      */
     exportToPDF() {
+        const isMulti = this.isMultiAppMode;
         // Track: PDF-Export ausgelöst (wichtige Conversion)
         track('export-pdf', {
-            mode: this.isMultiAppMode ? 'multi' : 'single',
-            appCount: this.isMultiAppMode ? (this.applications || []).length : 1
+            mode: isMulti ? 'multi' : 'single',
+            appCount: isMulti ? (this.applications || []).length : 1
         });
 
-        // Check if we're in Multi-App Mode or Single-App Mode
-        if (this.isMultiAppMode && this.aggregatedResults) {
-            // Multi-App Mode: Export Portfolio Overview
+        // PDF-Template-Variante wählen: Portfolio vs. Single-App
+        if (isMulti && this.aggregatedResults) {
             this.exportPortfolioPDF();
             return;
         }

@@ -106,11 +106,7 @@ export const SAASettings = {
 
         // Wenn auf Step 3, Analyse neu berechnen
         if (this.currentStep === 3) {
-            if (this.isMultiAppMode) {
-                this.runMultiAppAnalysis();
-            } else {
-                this.runAnalysis();
-            }
+            this.runActiveAnalysis();
         }
     },
 
@@ -145,13 +141,7 @@ export const SAASettings = {
 
         // Wenn auf Step 3, Analyse neu berechnen (debounced)
         if (this.currentStep === 3) {
-            this.debounce(() => {
-                if (this.isMultiAppMode) {
-                    this.runMultiAppAnalysis();
-                } else {
-                    this.runAnalysis();
-                }
-            }, 300)();
+            this.debounce(() => this.runActiveAnalysis(), 300)();
         }
     },
 
@@ -205,13 +195,7 @@ export const SAASettings = {
 
         // Analyse aktualisieren (debounced)
         if (this.currentStep === 3) {
-            this.debounce(() => {
-                if (this.isMultiAppMode) {
-                    this.runMultiAppAnalysis();
-                } else {
-                    this.runAnalysis();
-                }
-            }, 300)();
+            this.debounce(() => this.runActiveAnalysis(), 300)();
         }
     },
 
@@ -230,13 +214,7 @@ export const SAASettings = {
 
         // Analyse aktualisieren (debounced)
         if (this.currentStep === 3) {
-            this.debounce(() => {
-                if (this.isMultiAppMode) {
-                    this.runMultiAppAnalysis();
-                } else {
-                    this.runAnalysis();
-                }
-            }, 300)();
+            this.debounce(() => this.runActiveAnalysis(), 300)();
         }
     },
 
@@ -255,13 +233,7 @@ export const SAASettings = {
 
         // Analyse aktualisieren (debounced)
         if (this.currentStep === 3) {
-            this.debounce(() => {
-                if (this.isMultiAppMode) {
-                    this.runMultiAppAnalysis();
-                } else {
-                    this.runAnalysis();
-                }
-            }, 300)();
+            this.debounce(() => this.runActiveAnalysis(), 300)();
         }
     },
 

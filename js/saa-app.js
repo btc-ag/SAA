@@ -460,13 +460,7 @@ class SovereignArchitectureAdvisor {
         if (!slider) return;
 
         // Debounced Analysis (nur nach Ende der Bewegung)
-        const debouncedAnalysis = this.debounce(() => {
-            if (this.isMultiAppMode) {
-                this.runMultiAppAnalysis();
-            } else {
-                this.runAnalysis();
-            }
-        }, 200);
+        const debouncedAnalysis = this.debounce(() => this.runActiveAnalysis(), 200);
 
         // Sofortige visuelle Updates, verzögerte Analyse
         slider.addEventListener('input', (e) => {
@@ -1129,12 +1123,8 @@ class SovereignArchitectureAdvisor {
             this.updateSelectedSummary();
             // ComponentConfigs werden beim Rendern automatisch angezeigt
         } else if (this.currentStep === 3) {
-            // Multi-App vs. Single-App Analyse
-            if (this.isMultiAppMode) {
-                this.runMultiAppAnalysis();
-            } else {
-                this.runAnalysis();
-            }
+            // Multi-App vs. Single-App Analyse via einheitlichen Dispatcher
+            this.runActiveAnalysis();
             // Nach oben scrollen zur Analyse
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -1241,6 +1231,21 @@ class SovereignArchitectureAdvisor {
         this.updateSystemConfigFromComponents();
         this.renderComponents();
         if (this.currentApp.analysisResults) this.runAnalysis();
+    }
+
+    /**
+     * Re-Analyse für den aktuellen Modus. Single dispatching helper, der die
+     * Modus-Entscheidung kapselt: Multi-App → Portfolio-Analyse, Single → klassische
+     * Einzel-Analyse. Wird von Settings/Slider/Step-Wechsel aufgerufen, damit das
+     * `if (isMultiAppMode) { runMultiAppAnalysis() } else { runAnalysis() }`-Pattern
+     * nicht überall wiederholt werden muss.
+     */
+    runActiveAnalysis() {
+        if (this.isMultiAppMode) {
+            this.runMultiAppAnalysis();
+        } else {
+            this.runAnalysis();
+        }
     }
 
     runAnalysis() {
