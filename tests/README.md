@@ -51,9 +51,30 @@ node tests/smoke-application-instance.mjs
 
 Module mit Top-Level-DOM-Zugriffen werden nicht direkt importiert. Pure Helper aus solchen Modulen (z.B. `migrateLegacySessionState` aus `saa-state.js`) werden separat exportiert und isoliert getestet.
 
+## Coverage-Report
+
+```bash
+# Schnelle Summary in der Konsole:
+npm run coverage:summary
+
+# Vollständiger Report (HTML in `coverage/index.html` + lcov):
+npm run coverage
+```
+
+Nach `npm run coverage` öffne `coverage/index.html` im Browser für einen klickbaren File-by-File-Drilldown.
+
+**In CI:** GitHub Actions erstellt nach jedem Push einen `coverage-report`-Artifact, downloadbar im Actions-Run.
+
+**Excludes** (in `.c8rc.json`):
+- DOM-abhängige Files (`saa-app.js`, `criteria-page.js`) — können in Node ohne Mock nicht geladen werden
+- Pure Datendateien (`saa-apps-data.js`, `provider-c3a-data.js`)
+- Test-Code selbst
+
+Module mit DOM-Dependencies, die NICHT excluded sind (`saa-multiapp.js`, `saa-results*.js`, `saa-state.js` etc.) werden von c8 nur indirekt durch importierte Helper erfasst — die Top-Level-Klassen sind nicht testbar ohne Browser-Mock und erscheinen daher mit niedriger Line-Coverage.
+
 ## CI
 
-GitHub Actions Workflow `.github/workflows/smoke-tests.yml` führt `run-all.mjs` bei jedem Push und PR aus.
+GitHub Actions Workflow `.github/workflows/smoke-tests.yml` führt `run-all.mjs` und `npm run coverage` bei jedem Push und PR aus. Der HTML-Report wird als Build-Artifact bereitgestellt.
 
 ## Erweitern
 

@@ -1,0 +1,21 @@
+{
+  "all": true,
+  "include": [
+    "js/**/*.js"
+  ],
+  "exclude": [
+    "tests/**",
+    "js/saa-app.js",
+    "js/criteria-page.js",
+    "js/saa-apps-data.js",
+    "js/data/provider-c3a-data.js",
+    "node_modules/**"
+  ],
+  "reporter": [
+    "text",
+    "html",
+    "lcov"
+  ],
+  "report-dir": "coverage",
+  "check-coverage": false
+}

@@ -141,6 +141,17 @@ python3 -m http.server 8080
 
 **GitHub Pages**: Funktioniert direkt – ES-Module laufen auf jedem HTTPS-Server ohne Einschränkungen.
 
+### Tests & Coverage
+
+```bash
+npm install               # einmalig
+npm test                  # 779 Smoke-Tests
+npm run coverage:summary  # Coverage-Summary in der Konsole
+npm run coverage          # vollständiger HTML- und lcov-Report unter coverage/
+```
+
+Details siehe [`tests/README.md`](tests/README.md).
+
 ### Dateistruktur
 ```
 SAA/
