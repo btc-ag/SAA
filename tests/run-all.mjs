@@ -24,6 +24,7 @@ const tests = [
     'smoke-results-compute.mjs',
     'smoke-cloud-analyzer.mjs',
     'smoke-cloud-pricing.mjs',
+    'smoke-analysis-branches.mjs',
     'smoke-portfolio-analyzer.mjs',
     'smoke-session-migration.mjs'
 ];
