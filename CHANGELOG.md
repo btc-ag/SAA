@@ -5,6 +5,50 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.2] - 2026-05-04
+
+Test-Coverage massiv erweitert. Keine Code-Änderungen am Production-Code (außer einem zusätzlichen Named Export für Testbarkeit).
+
+### Added
+
+- **Test-Suite ausgebaut:** 11 neue Test-Suiten unter `tests/`, gesamt nun **779 Tests** in 15 Suiten:
+  - `smoke-application-instance.mjs` (56 Tests) — Constructor, fromCurrentState, Architecture-API, Privacy-Encapsulation
+  - `smoke-multi-app-parser.mjs` (60 Tests) — alle Pure-Parser-Funktionen
+  - `smoke-application-matcher.mjs` (27 Tests) — Fuzzy-Match, Search-Index, Normalize, Similarity
+  - `smoke-sizing-detector.mjs` (23 Tests) — Keyword-basierte Sizing-Erkennung
+  - `smoke-deployment-pattern.mjs` (26 Tests) — Pattern-Erkennung mit verschiedenen Komponenten-Kombinationen
+  - `smoke-cloud-analyzer.mjs` (97 Tests) — `analyzeForComponents`, `calculateProviderScore`, `calculateTCO`, `_estimate*`-Methoden
+  - `smoke-portfolio-analyzer.mjs` (39 Tests) — `analyzePortfolio`, `analyzeOne`, Aggregation, Portfolio-Metriken
+  - `smoke-session-migration.mjs` (30 Tests) — Legacy-State-Migration, Idempotenz, Edge-Cases
+  - `smoke-results-compute.mjs` (45 Tests) — Pure Compute Functions
+  - `smoke-audit-mode.mjs` (12 Tests) — `getAuditMode`, `setAuditMode`, Persistenz
+  - `smoke-saa-data.mjs` (160 Tests) — Daten-Integrität: 10 Provider × 22 Service-Categories, Komponenten-Liste, etc.
+  - `smoke-c3a-sov7.mjs` (151 Tests) — C3A-Framework + SOV-7-Compliance direkt
+- GitHub Actions CI führt alle 779 Tests bei jedem Push aus.
+
+### Changed
+
+- `js/modules/saa-state.js`: `migrateLegacySessionState` zusätzlich als Named Export rausgegeben (für direkte Testbarkeit). Funktion bleibt nutzbar wie bisher.
+
+### Coverage qualitativ
+
+| Bereich | Coverage |
+|---|---|
+| Sovereignty-Pipeline (C3A, SOV-7, EU-CSF) | ✅ vollständig (Werte gegen SCC) |
+| Analysis-Engine (CloudAnalyzer, PortfolioAnalyzer) | ✅ Hauptpfade + private Estimator-Helper |
+| Application-Lifecycle (Matcher, Sizing, Pattern) | ✅ Hauptpfade |
+| Architektur-Modus-API | ✅ inkl. Privacy-Test (`#archOriginal` von außen unzugreifbar) |
+| Session-State-Migration | ✅ Legacy-Pfade + Idempotenz |
+| Pure Compute (TCO, Recommendation-Text) | ✅ |
+| Daten-Integrität (Provider-Liste, Komponenten) | ✅ 160 Strukturchecks |
+| DOM-Rendering | ❌ ohne Browser nicht testbar (vanilla, kein jsdom) |
+| PDF-Export | ❌ ohne Browser nicht testbar |
+| Event-Handler / UI-Lifecycle | ❌ ohne Browser nicht testbar |
+
+### Notes
+
+- Alle Tests pass nach erstem Lauf — **keine echten Bugs gefunden**. Wenige Erwartungen mussten an die echte API angepasst werden (z.B. `formatRecommendationText` nutzt `<span class="summary-highlight">` statt `<strong>`, `computeRatingColors` hat 2 Dimensionen statt 4, `setAuditMode('invalid')` macht state-abhängiges Fallback).
+
 ## [4.1.1] - 2026-05-04
 
 Follow-up-Release zu v4.1.0. Weitere Datei-Splits, Test-Infrastruktur, strikte Encapsulation.
