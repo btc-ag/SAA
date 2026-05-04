@@ -538,7 +538,7 @@ export const SAAResults = {
                                 <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
                                     Bewegen Sie die Maus über einen Service für Details zur Bewertung.
                                 </p>
-                                ${this.renderComparisonTableForApp(app)}
+                                ${this.renderComparisonTable(app)}
                             </div>
                         ` : ''}
                     </div>
@@ -863,90 +863,6 @@ export const SAAResults = {
     },
 
     /**
-     * Rendert Comparison Table für eine spezifische App (Multi-App)
-     */
-    renderComparisonTableForApp(app) {
-        const requiredServices = this.analyzer.getRequiredServices(Array.from(app.selectedComponents));
-        const topProviders = app.analysisResults.slice(0, 5);
-
-        let html = `
-            <div class="comparison-table-container">
-                <table class="comparison-table">
-                    <thead>
-                        <tr>
-                            <th>Service</th>
-                            ${topProviders.map(r => `<th>${r.provider.name}</th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-
-        requiredServices.forEach(serviceId => {
-            const serviceLabels = { container_registry: 'Container Registry', ai_ml: 'AI/ML' };
-            const comp = architectureComponents.find(c => c.id === serviceId);
-            const serviceName = comp ? comp.name : (serviceLabels[serviceId] || serviceId);
-
-            html += `<tr><td>${serviceName}</td>`;
-
-            topProviders.forEach(result => {
-                const service = result.provider.services[serviceId];
-                if (!service || !service.available) {
-                    const selfBuild = selfBuildOptions[serviceId];
-                    if (service?.maturity === 'planned') {
-                        html += `<td><span class="service-badge planned">Geplant</span></td>`;
-                    } else if (selfBuild) {
-                        html += `<td>
-                            <span class="service-badge self-build"
-                                  data-tip="⚠️ Dieser Service ist bei diesem Anbieter NICHT nativ verfügbar.&#10;&#10;Alternative: Selbst aufbauen mit ${selfBuild.name}&#10;📅 Zusätzlicher Aufwand: ~${selfBuild.projectDays} Projekttage&#10;👥 Betrieb: ${selfBuild.operationsLevel === 'high' ? 'Hoch (eigenes Team nötig)' : selfBuild.operationsLevel === 'medium' ? 'Mittel (regelmäßige Wartung)' : 'Gering'}&#10;&#10;${selfBuild.description}">
-                                🔧 ${selfBuild.name.split('/')[0]}
-                            </span>
-                        </td>`;
-                    } else {
-                        html += `<td><span class="service-badge none">—</span></td>`;
-                    }
-                } else {
-                    const maturityClass = service.maturity === 'preview' ? 'preview' : 'production';
-                    const tooltipContent = this.buildServiceTooltip(service);
-                    html += `<td>
-                        <span class="service-badge ${maturityClass} has-tooltip"
-                              data-tip="${tooltipContent}">
-                            ${service.name}
-                        </span>
-                        ${this.renderRatingIndicators(service)}
-                    </td>`;
-                }
-            });
-
-            html += '</tr>';
-        });
-
-        html += `
-                    </tbody>
-                </table>
-            </div>
-            <div class="table-legend">
-                <div class="legend-section">
-                    <span class="legend-title">Status:</span>
-                    <span class="legend-item"><span class="service-badge production" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">Service</span> Verfügbar</span>
-                    <span class="legend-item"><span class="service-badge preview" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">Preview</span> Beta/Preview</span>
-                    <span class="legend-item"><span class="service-badge self-build" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">🔧</span> Nicht nativ - Self-Build nötig</span>
-                    <span class="legend-item"><span class="service-badge none" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">—</span> Nicht verfügbar</span>
-                </div>
-                <div class="legend-section">
-                    <span class="legend-title">Bewertung:</span>
-                    <span class="legend-item">${IconMapper.toFontAwesome('🔒', 'provider')} = Kontrolle (Souveränität)</span>
-                    <span class="legend-item">${IconMapper.toFontAwesome('⚡', 'utility')} = Leistung (Performance)</span>
-                    <span class="legend-item" style="color: var(--btc-success);">■ Grün = Gut (70+)</span>
-                    <span class="legend-item" style="color: var(--btc-warning);">■ Gelb = Mittel (40-69)</span>
-                    <span class="legend-item" style="color: var(--btc-danger);">■ Rot = Niedrig (&lt;40)</span>
-                </div>
-            </div>
-        `;
-
-        return html;
-    },
-
-    /**
      * Rendert einen Hinweis wenn Custom Scores aktiv sind
      */
     renderCustomScoresNotice() {
@@ -984,9 +900,17 @@ export const SAAResults = {
         `;
     },
 
-    renderComparisonTable() {
-        const requiredServices = this.analyzer.getRequiredServices(Array.from(this.currentApp.selectedComponents));
-        const topProviders = this.currentApp.analysisResults.slice(0, 5);
+    /**
+     * Rendert die Service-Vergleichstabelle für eine App.
+     *
+     * Single-App: ohne Argument (oder mit explizitem currentApp) → nutzt this.currentApp.
+     * Multi-App / Per-App-Accordion: mit konkreter App → nutzt deren Daten.
+     *
+     * @param {Object} [app] - ApplicationInstance; default = this.currentApp
+     */
+    renderComparisonTable(app = this.currentApp) {
+        const requiredServices = this.analyzer.getRequiredServices(Array.from(app.selectedComponents));
+        const topProviders = app.analysisResults.slice(0, 5);
 
         let html = `
             <div class="comparison-table-container">
