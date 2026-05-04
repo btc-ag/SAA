@@ -217,7 +217,7 @@ export const SAAResults = {
                 </div>
                 ${this.renderCustomScoresNotice()}
                 <div class="recommendations-grid">
-                    ${this.currentApp.analysisResults.slice(0, 6).map((result, index) => this.renderRecommendationCard(result, index)).join('')}
+                    ${this.currentApp.analysisResults.slice(0, 6).map((result, index) => this.renderProviderCard(result, index)).join('')}
                 </div>
             </div>
 
@@ -326,7 +326,7 @@ export const SAAResults = {
                     Ranking basierend auf gewichteten Scores über alle ${portfolioMetrics.totalApps} Anwendungen hinweg.
                 </p>
                 <div class="recommendations-grid aggregate">
-                    ${aggregatedProviders.slice(0, 6).map((result, index) => this.renderAggregatedProviderCard(result, index, aggregatedTCO)).join('')}
+                    ${aggregatedProviders.slice(0, 6).map((result, index) => this.renderProviderCard(result, index, { isAggregated: true, aggregatedTCO })).join('')}
                 </div>
             </div>
 
@@ -385,75 +385,22 @@ export const SAAResults = {
         this.bindDetailButtons();
     },
 
-    /**
-     * Rendert eine aggregierte Provider-Karte
-     */
-    renderAggregatedProviderCard(result, index, aggregatedTCO) {
-        const { provider, aggregatedScore, serviceAnalysis, appScores } = result;
-        const tco = aggregatedTCO[provider.id];
-        const isTopPick = index === 0;
+    // ── Provider-Card ────────────────────────────────────────────────────
+    // Konstanten für alle Provider-Card-Rendering-Pfade (Single + Aggregated)
+    _PROVIDER_CATEGORY_NAMES: {
+        hyperscaler: 'Hyperscaler',
+        sovereign: 'Souveräne Cloud',
+        eu: 'EU-Anbieter',
+        private: 'Private Cloud',
+        hybrid: 'Hybrid-Lösung'
+    },
 
-        const categoryNames = {
-            hyperscaler: 'Hyperscaler',
-            sovereign: 'Souveräne Cloud',
-            eu: 'EU-Anbieter',
-            private: 'Private Cloud',
-            hybrid: 'Hybrid-Lösung'
-        };
-
-        const categoryIcons = {
-            hyperscaler: '🌐',
-            sovereign: '🏛️',
-            eu: '🇪🇺',
-            private: '🔒',
-            hybrid: '🔄'
-        };
-
-        // Finde das vollständige Result-Objekt für den Detail-Button
-        const firstAppResult = this.applications[0]?.analysisResults?.find(r => r.provider.id === provider.id);
-        const providerResultIndex = firstAppResult ?
-            this.applications[0].analysisResults.findIndex(r => r.provider.id === provider.id) : -1;
-
-        return `
-            <div class="recommendation-card ${isTopPick ? 'top-pick' : ''}" data-provider-id="${provider.id}">
-                ${isTopPick ? '<div class="recommendation-badge">Top-Empfehlung</div>' : ''}
-                <div class="recommendation-header">
-                    <div class="provider-logo" style="background: ${provider.color}20; color: ${provider.color};">
-                        ${IconMapper.toFontAwesome(categoryIcons[provider.category], 'provider')}
-                    </div>
-                    <div class="provider-info">
-                        <h3>${provider.name}</h3>
-                        <span class="provider-category">${categoryNames[provider.category]}</span>
-                    </div>
-                </div>
-
-                <div class="recommendation-scores">
-                    <div class="score-item">
-                        <div class="score-value">${aggregatedScore.toFixed(1)}</div>
-                        <div class="score-label">Portfolio-Score</div>
-                    </div>
-                    <div class="score-item">
-                        <div class="score-value">${Math.round(serviceAnalysis.coverage)}%</div>
-                        <div class="score-label">Abdeckung</div>
-                    </div>
-                    <div class="score-item">
-                        <div class="score-value">${this.formatCurrency(tco.totalMonthly)}€</div>
-                        <div class="score-label">TCO/Monat</div>
-                    </div>
-                </div>
-
-                <div class="recommendation-services">
-                    <div class="services-title">Portfolio (${appScores.length} ${appScores.length === 1 ? 'Anwendung' : 'Anwendungen'})</div>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem;">
-                        Gewichteter Durchschnitt über alle Anwendungen
-                    </p>
-                </div>
-
-                <button class="detail-btn" data-provider-id="${provider.id}" data-aggregated="true">
-                    Portfolio-Details anzeigen →
-                </button>
-            </div>
-        `;
+    _PROVIDER_CATEGORY_ICONS: {
+        hyperscaler: '🌐',
+        sovereign: '🏛️',
+        eu: '🇪🇺',
+        private: '🔒',
+        hybrid: '🔄'
     },
 
     /**
@@ -580,7 +527,7 @@ export const SAAResults = {
                         <div class="analysis-section">
                             <h3 class="analysis-title">Cloud-Empfehlungen</h3>
                             <div class="recommendations-grid">
-                                ${app.analysisResults.slice(0, 6).map((result, i) => this.renderRecommendationCard(result, i, index)).join('')}
+                                ${app.analysisResults.slice(0, 6).map((result, i) => this.renderProviderCard(result, i, { appIndex: index })).join('')}
                             </div>
                         </div>
 
@@ -724,24 +671,78 @@ export const SAAResults = {
         `;
     },
 
-    renderRecommendationCard(result, index, appIndex = null) {
+    /**
+     * Rendert eine Provider-Karte — unifizierter Pfad für Single + Aggregated.
+     *
+     * @param {Object} result - Ergebnis-Objekt:
+     *   Single:     { provider, score, serviceAnalysis, tcoEstimate, recommendation }
+     *   Aggregated: { provider, aggregatedScore, serviceAnalysis, appScores }
+     * @param {number} index - Position im Ranking (0 = Top-Empfehlung)
+     * @param {Object} [opts]
+     * @param {boolean} [opts.isAggregated=false] - Portfolio-Aggregat-Ansicht
+     * @param {Object}  [opts.aggregatedTCO]      - aggregatedTCO Map (nur Aggregated)
+     * @param {number}  [opts.appIndex=null]      - App-Index (Per-App-Card im Multi-App-Accordion)
+     */
+    renderProviderCard(result, index, opts = {}) {
+        const { isAggregated = false, aggregatedTCO = null, appIndex = null } = opts;
         const isTopPick = index === 0;
-        const categoryNames = {
-            hyperscaler: 'Hyperscaler',
-            sovereign: 'Souveräne Cloud',
-            eu: 'EU-Anbieter',
-            private: 'Private Cloud',
-            hybrid: 'Hybrid-Lösung'
-        };
+        const provider = result.provider;
+        const categoryNames = this._PROVIDER_CATEGORY_NAMES;
+        const categoryIcons = this._PROVIDER_CATEGORY_ICONS;
 
-        const categoryIcons = {
-            hyperscaler: '🌐',
-            sovereign: '🏛️',
-            eu: '🇪🇺',
-            private: '🔒',
-            hybrid: '🔄'
-        };
+        // Header (identisch in beiden Pfaden)
+        const headerHtml = `
+            <div class="recommendation-header">
+                <div class="provider-logo" style="background: ${provider.color}20; color: ${provider.color};">
+                    ${IconMapper.toFontAwesome(categoryIcons[provider.category], 'provider')}
+                </div>
+                <div class="provider-info">
+                    <h3>${provider.name}</h3>
+                    <span class="provider-category">${categoryNames[provider.category]}</span>
+                </div>
+            </div>
+        `;
 
+        if (isAggregated) {
+            // Aggregated: Portfolio-Score, Coverage, TCO-Total
+            const tco = aggregatedTCO[provider.id];
+            const { aggregatedScore, serviceAnalysis, appScores } = result;
+
+            return `
+                <div class="recommendation-card ${isTopPick ? 'top-pick' : ''}" data-provider-id="${provider.id}">
+                    ${isTopPick ? '<div class="recommendation-badge">Top-Empfehlung</div>' : ''}
+                    ${headerHtml}
+
+                    <div class="recommendation-scores">
+                        <div class="score-item">
+                            <div class="score-value">${aggregatedScore.toFixed(1)}</div>
+                            <div class="score-label">Portfolio-Score</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-value">${Math.round(serviceAnalysis.coverage)}%</div>
+                            <div class="score-label">Abdeckung</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-value">${this.formatCurrency(tco.totalMonthly)}€</div>
+                            <div class="score-label">TCO/Monat</div>
+                        </div>
+                    </div>
+
+                    <div class="recommendation-services">
+                        <div class="services-title">Portfolio (${appScores.length} ${appScores.length === 1 ? 'Anwendung' : 'Anwendungen'})</div>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                            Gewichteter Durchschnitt über alle Anwendungen
+                        </p>
+                    </div>
+
+                    <button class="detail-btn" data-provider-id="${provider.id}" data-aggregated="true">
+                        Portfolio-Details anzeigen →
+                    </button>
+                </div>
+            `;
+        }
+
+        // Single-App-Pfad: volle Ratings, Service-Tags, Recommendation-Summary
         const tcoLevelColors = {
             low: 'var(--btc-success)',
             medium: 'var(--btc-warning)',
@@ -751,15 +752,7 @@ export const SAAResults = {
         return `
             <div class="recommendation-card ${isTopPick ? 'top-pick' : ''}">
                 ${isTopPick ? '<div class="recommendation-badge">Top-Empfehlung</div>' : ''}
-                <div class="recommendation-header">
-                    <div class="provider-logo" style="background: ${result.provider.color}20; color: ${result.provider.color};">
-                        ${IconMapper.toFontAwesome(categoryIcons[result.provider.category], 'provider')}
-                    </div>
-                    <div class="provider-info">
-                        <h3>${result.provider.name}</h3>
-                        <span class="provider-category">${categoryNames[result.provider.category]}</span>
-                    </div>
-                </div>
+                ${headerHtml}
 
                 <div class="recommendation-scores">
                     <div class="score-item">
