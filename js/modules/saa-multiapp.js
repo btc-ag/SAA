@@ -6,20 +6,13 @@ import { ApplicationInstance } from './application-instance.js';
 
 export const SAAMultiApp = {
     /**
-     * Migration von Single-App zu Multi-App Modus
+     * Wechselt in den Multi-App-Modus.
+     *
+     * Im Always-Portfolio-Modell ist this.applications immer befüllt –
+     * eine separate Migration der Single-App-State-Felder ist nicht mehr nötig,
+     * da der State seit Phase 4c ausschließlich auf den ApplicationInstances lebt.
      */
     migrateToMultiApp() {
-        if (this.applications.length === 0 && this._applicationData) {
-            const app = ApplicationInstance.fromCurrentState({
-                applicationData: this._applicationData,
-                selectedComponents: this._selectedComponents,
-                componentConfigs: this._componentConfigs,
-                systemConfig: this._systemConfig,
-                selectedSizing: this._selectedSizing,
-                analysisResults: this._analysisResults
-            });
-            this.applications.push(app);
-        }
         this.isMultiAppMode = true;
         this.totalSteps = 4; // Step 0 hinzugefügt
     },
@@ -411,22 +404,27 @@ GitLab klein`
     /**
      * System Requirements für eine spezifische App initialisieren
      * Unterstützt beide Modi:
-     * - Single-App-Modus: ohne Parameter (verwendet this.systemConfig, this.applicationData, this.selectedSizing)
+     * - Single-App-Modus: ohne Parameter (verwendet this.currentApp.systemConfig/applicationData/sizing)
      * - Multi-App-Modus: mit Parametern (appData, sizing, appInstance)
      */
     initComponentConfigsFromSystemRequirements(appData, sizing, appInstance) {
 
-        // Single-App-Modus: Keine Parameter übergeben
+        // Single-App-Modus: Keine Parameter übergeben → operiere auf currentApp
         if (!appData && !sizing && !appInstance) {
-            if (!this.systemConfig?.config) {
+            const app = this.currentApp;
+            if (!app || !app.systemConfig?.config) {
                 return;
             }
 
-            const sysReq = this.systemConfig.config;
+            // Lokale Aliase auf currentApp-State – der gesamte Block unten arbeitet
+            // bewusst über die Aliase, um den Code lesbar zu halten.
+            const selectedComponents = app.selectedComponents;
+            const componentConfigs = app.componentConfigs;
+            const sysReq = app.systemConfig.config;
 
             // Compute-Konfiguration übernehmen
-            if (sysReq.compute && this.selectedComponents.has('compute')) {
-                if (!this.componentConfigs['compute']) {
+            if (sysReq.compute && selectedComponents.has('compute')) {
+                if (!componentConfigs['compute']) {
                     this.initComponentConfig('compute');
                 }
 
@@ -443,7 +441,7 @@ GitLab klein`
 
                         if (dbComponentId) {
                             // Only skip if the corresponding database component is selected (= Managed DB)
-                            if (this.selectedComponents.has(dbComponentId)) {
+                            if (selectedComponents.has(dbComponentId)) {
                                 continue;
                             } else {
                             }
@@ -472,12 +470,12 @@ GitLab klein`
                         }
                     }
 
-                    this.componentConfigs['compute'].cpu = firstConfig.cpu || 2;
-                    this.componentConfigs['compute'].ram = firstConfig.ram || 4;
-                    this.componentConfigs['compute'].instances = instances;
-                    this.componentConfigs['compute']._vmTypeName = this.formatVMTypeName(firstVM.key);
+                    componentConfigs['compute'].cpu = firstConfig.cpu || 2;
+                    componentConfigs['compute'].ram = firstConfig.ram || 4;
+                    componentConfigs['compute'].instances = instances;
+                    componentConfigs['compute']._vmTypeName = this.formatVMTypeName(firstVM.key);
                     if (haType) {
-                        this.componentConfigs['compute']._haType = haType;
+                        componentConfigs['compute']._haType = haType;
                     }
 
                     // Weitere VM-Typen = compute-2, compute-3, etc.
@@ -498,15 +496,15 @@ GitLab klein`
                             }
                         }
 
-                        this.selectedComponents.add(instanceId);
-                        this.componentConfigs[instanceId] = {
+                        selectedComponents.add(instanceId);
+                        componentConfigs[instanceId] = {
                             cpu: vmConfig.cpu || 2,
                             ram: vmConfig.ram || 4,
                             instances: instances,
                             _vmTypeName: this.formatVMTypeName(vmType.key)
                         };
                         if (haType) {
-                            this.componentConfigs[instanceId]._haType = haType;
+                            componentConfigs[instanceId]._haType = haType;
                         }
 
                     }
@@ -516,22 +514,22 @@ GitLab klein`
                     let instanceCount = sysReq.compute.nodes || 1;
 
                     // Wenn kubernetes auch gewählt: compute-Specs = Worker Nodes → node count aus sysReq.nodes
-                    if (this.selectedComponents.has('kubernetes') && sysReq.nodes) {
+                    if (selectedComponents.has('kubernetes') && sysReq.nodes) {
                         const nodeMatch = sysReq.nodes.toString().match(/(\d+)/);
                         if (nodeMatch) instanceCount = parseInt(nodeMatch[1]);
                     }
 
-                    this.componentConfigs['compute'].cpu = sysReq.compute.cpu;
-                    this.componentConfigs['compute'].ram = sysReq.compute.ram;
-                    this.componentConfigs['compute'].instances = instanceCount;
+                    componentConfigs['compute'].cpu = sysReq.compute.cpu;
+                    componentConfigs['compute'].ram = sysReq.compute.ram;
+                    componentConfigs['compute'].instances = instanceCount;
 
                     // Apply HA configuration if present (overrides nodes, but not kubernetes worker count)
-                    if (sysReq.ha && !this.selectedComponents.has('kubernetes')) {
+                    if (sysReq.ha && !selectedComponents.has('kubernetes')) {
                         const haConfig = this.extractHAConfig(sysReq.ha);
                         if (haConfig && haConfig.nodeCount > 1) {
-                            this.componentConfigs['compute'].instances = haConfig.nodeCount;
+                            componentConfigs['compute'].instances = haConfig.nodeCount;
                             if (haConfig.haType) {
-                                this.componentConfigs['compute']._haType = haConfig.haType;
+                                componentConfigs['compute']._haType = haConfig.haType;
                             }
                         }
                     }
@@ -565,29 +563,29 @@ GitLab klein`
                 }
 
                 // SQL Database
-                if (this.selectedComponents.has('database_sql')) {
-                    if (!this.componentConfigs['database_sql']) {
+                if (selectedComponents.has('database_sql')) {
+                    if (!componentConfigs['database_sql']) {
                         this.initComponentConfig('database_sql');
                     }
 
                     // DB-Typ setzen
                     if (dbType.toLowerCase().includes('postgresql') || dbType.toLowerCase().includes('postgres')) {
-                        this.componentConfigs['database_sql'].dbType = 'PostgreSQL';
+                        componentConfigs['database_sql'].dbType = 'PostgreSQL';
                     } else if (dbType.toLowerCase().includes('mysql')) {
-                        this.componentConfigs['database_sql'].dbType = 'MySQL';
+                        componentConfigs['database_sql'].dbType = 'MySQL';
                     } else if (dbType.toLowerCase().includes('mariadb')) {
-                        this.componentConfigs['database_sql'].dbType = 'MariaDB';
+                        componentConfigs['database_sql'].dbType = 'MariaDB';
                     } else if (dbType.toLowerCase().includes('sql server') || dbType.toLowerCase().includes('mssql')) {
-                        this.componentConfigs['database_sql'].dbType = 'SQL Server';
+                        componentConfigs['database_sql'].dbType = 'SQL Server';
                     } else if (dbType.toLowerCase().includes('oracle')) {
-                        this.componentConfigs['database_sql'].dbType = 'Oracle';
+                        componentConfigs['database_sql'].dbType = 'Oracle';
                     }
 
                     // DB-Größe (mit TB/GB Konvertierung)
                     if (sysReq.database.size) {
                         const dbSizeGB = this.parseDBSize(sysReq.database.size);
                         if (dbSizeGB) {
-                            this.componentConfigs['database_sql'].dbSize = dbSizeGB;
+                            componentConfigs['database_sql'].dbSize = dbSizeGB;
                         }
                     }
 
@@ -603,19 +601,19 @@ GitLab klein`
                             haType = appHA?.haType || 'HA';
                         }
 
-                        this.componentConfigs['database_sql']._haType = haType || 'HA';
-                        this.componentConfigs['database_sql']._haNodes = haNodes;
+                        componentConfigs['database_sql']._haType = haType || 'HA';
+                        componentConfigs['database_sql']._haNodes = haNodes;
 
                         // Automatisch zusätzliche Instanzen erstellen
-                        for (let i = 2; i <= this.componentConfigs['database_sql']._haNodes; i++) {
+                        for (let i = 2; i <= componentConfigs['database_sql']._haNodes; i++) {
                             const instanceId = `database_sql-${i}`;
-                            if (!this.selectedComponents.has(instanceId)) {
-                                this.selectedComponents.add(instanceId);
-                                this.componentConfigs[instanceId] = {
-                                    dbType: this.componentConfigs['database_sql'].dbType,
-                                    dbSize: this.componentConfigs['database_sql'].dbSize,
-                                    _haType: this.componentConfigs['database_sql']._haType,
-                                    _haNodes: this.componentConfigs['database_sql']._haNodes,
+                            if (!selectedComponents.has(instanceId)) {
+                                selectedComponents.add(instanceId);
+                                componentConfigs[instanceId] = {
+                                    dbType: componentConfigs['database_sql'].dbType,
+                                    dbSize: componentConfigs['database_sql'].dbSize,
+                                    _haType: componentConfigs['database_sql']._haType,
+                                    _haNodes: componentConfigs['database_sql']._haNodes,
                                     _isHAReplica: true
                                 };
                             }
@@ -624,25 +622,25 @@ GitLab klein`
                 }
 
                 // NoSQL Database
-                if (this.selectedComponents.has('database_nosql')) {
-                    if (!this.componentConfigs['database_nosql']) {
+                if (selectedComponents.has('database_nosql')) {
+                    if (!componentConfigs['database_nosql']) {
                         this.initComponentConfig('database_nosql');
                     }
 
                     // NoSQL-Typ setzen
                     if (dbType.toLowerCase().includes('mongodb')) {
-                        this.componentConfigs['database_nosql'].nosqlType = 'MongoDB';
+                        componentConfigs['database_nosql'].nosqlType = 'MongoDB';
                     } else if (dbType.toLowerCase().includes('redis')) {
-                        this.componentConfigs['database_nosql'].nosqlType = 'Redis';
+                        componentConfigs['database_nosql'].nosqlType = 'Redis';
                     } else if (dbType.toLowerCase().includes('cassandra')) {
-                        this.componentConfigs['database_nosql'].nosqlType = 'Cassandra';
+                        componentConfigs['database_nosql'].nosqlType = 'Cassandra';
                     }
 
                     // DB-Größe (mit TB/GB Konvertierung)
                     if (sysReq.database.size) {
                         const dbSizeGB = this.parseDBSize(sysReq.database.size);
                         if (dbSizeGB) {
-                            this.componentConfigs['database_nosql'].nosqlSize = dbSizeGB;
+                            componentConfigs['database_nosql'].nosqlSize = dbSizeGB;
                         }
                     }
 
@@ -658,19 +656,19 @@ GitLab klein`
                             haType = appHA?.haType || 'Replica Set';
                         }
 
-                        this.componentConfigs['database_nosql']._haType = haType || 'Replica Set';
-                        this.componentConfigs['database_nosql']._haNodes = 3; // NoSQL meist 3 Nodes
+                        componentConfigs['database_nosql']._haType = haType || 'Replica Set';
+                        componentConfigs['database_nosql']._haNodes = 3; // NoSQL meist 3 Nodes
 
                         // Automatisch zusätzliche Instanzen erstellen
-                        for (let i = 2; i <= this.componentConfigs['database_nosql']._haNodes; i++) {
+                        for (let i = 2; i <= componentConfigs['database_nosql']._haNodes; i++) {
                             const instanceId = `database_nosql-${i}`;
-                            if (!this.selectedComponents.has(instanceId)) {
-                                this.selectedComponents.add(instanceId);
-                                this.componentConfigs[instanceId] = {
-                                    nosqlType: this.componentConfigs['database_nosql'].nosqlType,
-                                    nosqlSize: this.componentConfigs['database_nosql'].nosqlSize,
-                                    _haType: this.componentConfigs['database_nosql']._haType,
-                                    _haNodes: this.componentConfigs['database_nosql']._haNodes,
+                            if (!selectedComponents.has(instanceId)) {
+                                selectedComponents.add(instanceId);
+                                componentConfigs[instanceId] = {
+                                    nosqlType: componentConfigs['database_nosql'].nosqlType,
+                                    nosqlSize: componentConfigs['database_nosql'].nosqlSize,
+                                    _haType: componentConfigs['database_nosql']._haType,
+                                    _haNodes: componentConfigs['database_nosql']._haNodes,
                                     _isHAReplica: true
                                 };
                             }
@@ -684,53 +682,53 @@ GitLab klein`
                 const storageSizeGB = this.parseStorageSize(sysReq.storage.size);
 
                 // Block Storage
-                if (this.selectedComponents.has('storage_block')) {
-                    if (!this.componentConfigs['storage_block']) {
+                if (selectedComponents.has('storage_block')) {
+                    if (!componentConfigs['storage_block']) {
                         this.initComponentConfig('storage_block');
                     }
                     if (storageSizeGB) {
-                        this.componentConfigs['storage_block'].blockSize = storageSizeGB;
+                        componentConfigs['storage_block'].blockSize = storageSizeGB;
                     }
                     // Storage-Typ
                     if (sysReq.storage.type) {
                         const storageType = sysReq.storage.type.toLowerCase();
                         if (storageType.includes('nvme')) {
-                            this.componentConfigs['storage_block'].blockType = 'nvme';
+                            componentConfigs['storage_block'].blockType = 'nvme';
                         } else if (storageType.includes('ssd')) {
-                            this.componentConfigs['storage_block'].blockType = 'ssd';
+                            componentConfigs['storage_block'].blockType = 'ssd';
                         } else if (storageType.includes('hdd')) {
-                            this.componentConfigs['storage_block'].blockType = 'hdd';
+                            componentConfigs['storage_block'].blockType = 'hdd';
                         }
                     }
                 }
 
                 // Object Storage
-                if (this.selectedComponents.has('storage_object')) {
-                    if (!this.componentConfigs['storage_object']) {
+                if (selectedComponents.has('storage_object')) {
+                    if (!componentConfigs['storage_object']) {
                         this.initComponentConfig('storage_object');
                     }
                     if (storageSizeGB) {
-                        this.componentConfigs['storage_object'].objectSize = storageSizeGB;
+                        componentConfigs['storage_object'].objectSize = storageSizeGB;
                     }
                 }
 
                 // File Storage
-                if (this.selectedComponents.has('storage_file')) {
-                    if (!this.componentConfigs['storage_file']) {
+                if (selectedComponents.has('storage_file')) {
+                    if (!componentConfigs['storage_file']) {
                         this.initComponentConfig('storage_file');
                     }
                     if (storageSizeGB) {
-                        this.componentConfigs['storage_file'].fileSize = storageSizeGB;
+                        componentConfigs['storage_file'].fileSize = storageSizeGB;
                     }
                 }
             }
 
             // Kubernetes: immer nur Control Plane; Worker Nodes = compute
-            if (this.selectedComponents.has('kubernetes')) {
-                if (!this.componentConfigs['kubernetes']) {
+            if (selectedComponents.has('kubernetes')) {
+                if (!componentConfigs['kubernetes']) {
                     this.initComponentConfig('kubernetes');
                 }
-                this.componentConfigs['kubernetes'].controlPlaneOnly = this.selectedComponents.has('compute');
+                componentConfigs['kubernetes'].controlPlaneOnly = selectedComponents.has('compute');
             }
 
             return;

@@ -29,20 +29,20 @@ export const SAAPdf = {
         }
 
         // Single-App Mode
-        if (!this.analysisResults || this.analysisResults.length === 0) {
+        if (!this.currentApp.analysisResults || this.currentApp.analysisResults.length === 0) {
             alert('Keine Analyseergebnisse vorhanden.');
             return;
         }
 
-        const top3 = this.analysisResults.slice(0, 3);
+        const top3 = this.currentApp.analysisResults.slice(0, 3);
         const date = new Date().toLocaleDateString('de-DE', {
             year: 'numeric', month: 'long', day: 'numeric'
         });
 
         // Generiere die finale Empfehlung wie in der UI
         const finalRec = this.analyzer.generateFinalRecommendation(
-            this.analysisResults,
-            Array.from(this.selectedComponents),
+            this.currentApp.analysisResults,
+            Array.from(this.currentApp.selectedComponents),
             this.weights
         );
 
@@ -258,11 +258,11 @@ export const SAAPdf = {
         <div class="config-grid">
             <div class="config-item">
                 <label>Anwendung</label>
-                <span>${this.applicationData?.name || 'Manuelle Auswahl'}</span>
+                <span>${this.currentApp.applicationData?.name || 'Manuelle Auswahl'}</span>
             </div>
             <div class="config-item">
                 <label>Komponenten</label>
-                <span>${this.selectedComponents.size} ausgewählt</span>
+                <span>${this.currentApp.selectedComponents.size} ausgewählt</span>
             </div>
             <div class="config-item">
                 <label>Bewertungsprofil</label>
@@ -270,7 +270,7 @@ export const SAAPdf = {
             </div>
             <div class="config-item">
                 <label>Sizing</label>
-                <span>${this.selectedSizing === 'small' ? 'Klein' : this.selectedSizing === 'medium' ? 'Mittel' : 'Groß'}</span>
+                <span>${this.currentApp.sizing === 'small' ? 'Klein' : this.currentApp.sizing === 'medium' ? 'Mittel' : 'Groß'}</span>
             </div>
         </div>
         <div class="config-grid" style="margin-top: 15px;">
@@ -280,7 +280,7 @@ export const SAAPdf = {
             </div>
             <div class="config-item">
                 <label>Ausgewählte Komponenten</label>
-                <span>${Array.from(this.selectedComponents).map(c => {
+                <span>${Array.from(this.currentApp.selectedComponents).map(c => {
                     const comp = architectureComponents.find(ac => ac.id === c);
                     return comp ? comp.name : c;
                 }).join(', ')}</span>

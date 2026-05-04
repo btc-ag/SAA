@@ -32,6 +32,7 @@ function migrateLegacySessionState(state) {
     const instance = ApplicationInstance.fromCurrentState({
         selectedComponents: state.selectedComponents || [],
         componentConfigs: state.componentConfigs || {},
+        componentInstances: state.componentInstances || {},
         applicationData: state.applicationData || null,
         analysisResults: state.analysisResults || null,
         selectedSizing: state.selectedSizing || 'medium',
@@ -43,8 +44,7 @@ function migrateLegacySessionState(state) {
         isMultiAppMode: false,
         applications: [instance],
         currentAppIndex: 0,
-        aggregatedResults: null,
-        componentInstances: state.componentInstances || {}
+        aggregatedResults: null
     };
 }
 
@@ -73,26 +73,16 @@ export const SAAState = {
                     } else if (!(app.selectedComponents instanceof Set)) {
                         app.selectedComponents = new Set();
                     }
+                    // componentInstances als Plain-Object sicherstellen
+                    if (!app.componentInstances || typeof app.componentInstances !== 'object') {
+                        app.componentInstances = {};
+                    }
                     return app;
                 });
                 this.currentAppIndex = state.currentAppIndex ?? 0;
             }
 
             this.aggregatedResults = state.aggregatedResults || null;
-
-            // Bridge zu den 16 Backward-Compat-Gettern: solange diese noch aktiv sind
-            // (bis Task 4.3), brauchen sie im Single-App-Modus die _foo-Properties.
-            // Wird in Task 4.3 zusammen mit den Gettern entfernt.
-            if (!this.isMultiAppMode && this.applications[0]) {
-                const a = this.applications[0];
-                this._selectedComponents = a.selectedComponents;
-                this._componentConfigs = a.componentConfigs || {};
-                this._componentInstances = state.componentInstances || {};
-                this._applicationData = a.applicationData || null;
-                this._analysisResults = a.analysisResults || null;
-                this._selectedSizing = a.sizing || 'medium';
-                this._systemConfig = a.systemConfig || null;
-            }
 
             console.log('Session-State wiederhergestellt:', state);
 
@@ -121,19 +111,9 @@ export const SAAState = {
 
     saveSessionState() {
         try {
-            // Im Single-App-Modus: _foo-Properties zurück in applications[0] spiegeln,
-            // damit der gespeicherte State immer die kanonische Form (applications[]) hat.
-            // Wird in Task 4.3 zusammen mit den Backward-Compat-Gettern obsolet.
-            if (!this.isMultiAppMode && this.applications[0]) {
-                const a = this.applications[0];
-                if (this._selectedComponents !== undefined) a.selectedComponents = this._selectedComponents;
-                if (this._componentConfigs !== undefined) a.componentConfigs = this._componentConfigs;
-                if (this._applicationData !== undefined) a.applicationData = this._applicationData;
-                if (this._analysisResults !== undefined) a.analysisResults = this._analysisResults;
-                if (this._selectedSizing !== undefined) a.sizing = this._selectedSizing;
-                if (this._systemConfig !== undefined) a.systemConfig = this._systemConfig;
-            }
-
+            // State lebt seit Phase 4c ausschließlich auf this.applications[i].
+            // componentInstances wird je App in der ApplicationInstance gehalten
+            // und wird beim Spread automatisch mitserialisiert.
             const state = {
                 currentStep: this.currentStep,
                 isMultiAppMode: this.isMultiAppMode,
@@ -142,8 +122,7 @@ export const SAAState = {
                     selectedComponents: Array.from(app.selectedComponents || [])
                 })),
                 currentAppIndex: this.currentAppIndex,
-                aggregatedResults: this.aggregatedResults || null,
-                componentInstances: this._componentInstances || {}
+                aggregatedResults: this.aggregatedResults || null
             };
 
             sessionStorage.setItem('saa_session_state', JSON.stringify(state));
@@ -199,18 +178,17 @@ export const SAAState = {
 
     reset() {
         this.currentStep = 0;
-        this.selectedComponents.clear();
-        this.componentConfigs = {};
-        this.applicationData = null;
-        this.analysisResults = null;
         this.strategyWeight = 50;
-        this.systemConfig = null;
-        this.selectedSizing = 'medium';
-        this._archOriginal = null;
-        this._archDelta = { added: new Set(), removed: new Set(), configs: {} };
+        // Frische ApplicationInstance statt Property-Resets
+        this.applications = [new ApplicationInstance(null, 'Anwendung')];
+        this.currentAppIndex = 0;
+        this.aggregatedResults = null;
+        this.isMultiAppMode = false;
 
-        document.getElementById('appSearchInput').value = '';
-        document.getElementById('researchResult').style.display = 'none';
+        const searchInput = document.getElementById('appSearchInput');
+        if (searchInput) searchInput.value = '';
+        const research = document.getElementById('researchResult');
+        if (research) research.style.display = 'none';
 
         this.updateStepDisplay();
     },

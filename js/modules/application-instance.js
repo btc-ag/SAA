@@ -22,6 +22,7 @@ class ApplicationInstance {
         this.sizing = sizing; // 'small' | 'medium' | 'large'
         this.selectedComponents = new Set();
         this.componentConfigs = {};
+        this.componentInstances = {};
         this.systemConfig = null;
         this.applicationData = null; // Referenz auf knownApplications
         this.analysisResults = null;
@@ -52,6 +53,7 @@ class ApplicationInstance {
         );
         instance.selectedComponents = new Set(currentState.selectedComponents);
         instance.componentConfigs = { ...currentState.componentConfigs };
+        instance.componentInstances = currentState.componentInstances ? { ...currentState.componentInstances } : {};
         instance.systemConfig = currentState.systemConfig ? { ...currentState.systemConfig } : null;
         instance.applicationData = currentState.applicationData;
         instance.analysisResults = currentState.analysisResults;

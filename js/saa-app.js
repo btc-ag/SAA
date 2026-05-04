@@ -31,20 +31,13 @@ class SovereignArchitectureAdvisor {
         this.currentStep = 0; // Start bei Step 0 (Auswahl)
         this.totalSteps = 3;
 
-        // ========== MULTI-APP SUPPORT ==========
-        this.isMultiAppMode = false; // Toggle zwischen Single-App und Multi-App
+        // ========== ALWAYS PORTFOLIO ==========
+        // State lebt ausschließlich auf this.applications[currentAppIndex]
+        // (= this.currentApp). Single-App = isMultiAppMode=false + applications.length===1.
+        this.isMultiAppMode = false;
         this.applications = []; // Array von ApplicationInstance
-        this.currentAppIndex = 0; // Aktive App während Konfiguration
+        this.currentAppIndex = 0;
         this.aggregatedResults = null; // Portfolio-Analyse-Ergebnisse
-
-        // ========== SINGLE-APP STATE (für Backward Compatibility) ==========
-        this._selectedComponents = new Set();
-        this._componentConfigs = {}; // Konfiguration je Komponente
-        this._componentInstances = {}; // { componentId: [config1, config2, ...] } für Multi-Instance
-        this._applicationData = null;
-        this._analysisResults = null;
-        this._selectedSizing = 'medium'; // Gewähltes Sizing: small, medium, large
-        this._systemConfig = null; // Gespeicherte System-Konfiguration
 
         // ========== SHARED STATE ==========
         this.strategyWeight = 50; // Legacy, wird durch weights ersetzt
@@ -86,10 +79,6 @@ class SovereignArchitectureAdvisor {
         };
         this.detectedPattern = null; // Erkanntes Deployment-Pattern
 
-        // Architektur-Snapshot & Delta (single-app backing fields)
-        this.__archOriginal = null;
-        this.__archDelta    = { added: new Set(), removed: new Set(), configs: {} };
-
         // Preset-Definitionen
         this.presets = {
             balanced: { control: 25, performance: 25, availability: 35, cost: 15 },
@@ -123,95 +112,6 @@ class SovereignArchitectureAdvisor {
      */
     get currentApp() {
         return this.applications[this.currentAppIndex] ?? null;
-    }
-
-    // ========== BACKWARD COMPATIBILITY GETTERS/SETTERS ==========
-    get selectedComponents() {
-        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
-            return this.applications[this.currentAppIndex].selectedComponents;
-        }
-        return this._selectedComponents;
-    }
-    set selectedComponents(value) {
-        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
-            this.applications[this.currentAppIndex].selectedComponents = value;
-        } else {
-            this._selectedComponents = value;
-        }
-    }
-
-    get componentConfigs() {
-        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
-            return this.applications[this.currentAppIndex].componentConfigs;
-        }
-        return this._componentConfigs;
-    }
-    set componentConfigs(value) {
-        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
-            this.applications[this.currentAppIndex].componentConfigs = value;
-        } else {
-            this._componentConfigs = value;
-        }
-    }
-
-    get applicationData() {
-        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
-            return this.applications[this.currentAppIndex].applicationData;
-        }
-        return this._applicationData;
-    }
-    set applicationData(value) { this._applicationData = value; }
-
-    get analysisResults() {
-        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
-            return this.applications[this.currentAppIndex].analysisResults;
-        }
-        return this._analysisResults;
-    }
-    set analysisResults(value) { this._analysisResults = value; }
-
-    get selectedSizing() {
-        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
-            return this.applications[this.currentAppIndex].sizing;
-        }
-        return this._selectedSizing;
-    }
-    set selectedSizing(value) { this._selectedSizing = value; }
-
-    get systemConfig() {
-        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
-            return this.applications[this.currentAppIndex].systemConfig;
-        }
-        return this._systemConfig;
-    }
-    set systemConfig(value) { this._systemConfig = value; }
-
-    get _archOriginal() {
-        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
-            return this.applications[this.currentAppIndex]._archOriginal;
-        }
-        return this.__archOriginal;
-    }
-    set _archOriginal(value) {
-        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
-            this.applications[this.currentAppIndex]._archOriginal = value;
-        } else {
-            this.__archOriginal = value;
-        }
-    }
-
-    get _archDelta() {
-        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
-            return this.applications[this.currentAppIndex]._archDelta;
-        }
-        return this.__archDelta;
-    }
-    set _archDelta(value) {
-        if (this.isMultiAppMode && this.applications[this.currentAppIndex]) {
-            this.applications[this.currentAppIndex]._archDelta = value;
-        } else {
-            this.__archDelta = value;
-        }
     }
 
     init() {
@@ -255,7 +155,7 @@ class SovereignArchitectureAdvisor {
                 if (this.currentStep === 3) {
                     if (this.isMultiAppMode) {
                         this.runMultiAppAnalysis();
-                    } else if (this.applicationData || this.selectedComponents.size > 0) {
+                    } else if (this.currentApp.applicationData || this.currentApp.selectedComponents.size > 0) {
                         this.runAnalysis();
                     }
                 }
@@ -398,7 +298,7 @@ class SovereignArchitectureAdvisor {
                 if (app) this.hardReset();
 
                 if (app === 'custom') {
-                    this.applicationData = null;
+                    this.currentApp.applicationData = null;
                     document.getElementById('researchResult').style.display = 'none';
                     document.getElementById('appSearchInput').value = 'Benutzerdefinierte Anwendung';
                     this.nextStep();
@@ -406,16 +306,16 @@ class SovereignArchitectureAdvisor {
                     const knownApp = knownApplications[app];
                     if (knownApp) {
                         document.getElementById('appSearchInput').value = knownApp.name;
-                        this.applicationData = knownApp;
-                        this.selectedComponents.clear();
-                        knownApp.components.forEach(c => this.selectedComponents.add(c));
+                        this.currentApp.applicationData = knownApp;
+                        this.currentApp.selectedComponents.clear();
+                        knownApp.components.forEach(c => this.currentApp.selectedComponents.add(c));
                         if (knownApp.systemRequirements) {
-                            const defaultSize = knownApp.systemRequirements[this.selectedSizing]
-                                ? this.selectedSizing
+                            const defaultSize = knownApp.systemRequirements[this.currentApp.sizing]
+                                ? this.currentApp.sizing
                                 : (knownApp.systemRequirements.medium ? 'medium' :
                                    knownApp.systemRequirements.small ? 'small' : 'large');
-                            this.selectedSizing = defaultSize;
-                            this.systemConfig = {
+                            this.currentApp.sizing = defaultSize;
+                            this.currentApp.systemConfig = {
                                 sizing: defaultSize,
                                 config: knownApp.systemRequirements[defaultSize],
                                 application: knownApp.name
@@ -423,11 +323,11 @@ class SovereignArchitectureAdvisor {
                             try { this.initComponentConfigsFromSystemRequirements(); } catch (e) {}
                         }
                         // Snapshot vor Transformation speichern, empfohlenen Modus setzen
-                        this._archOriginal = {
-                            selectedComponents: new Set(this.selectedComponents),
-                            componentConfigs: JSON.parse(JSON.stringify(this.componentConfigs))
+                        this.currentApp._archOriginal = {
+                            selectedComponents: new Set(this.currentApp.selectedComponents),
+                            componentConfigs: JSON.parse(JSON.stringify(this.currentApp.componentConfigs))
                         };
-                        this._archDelta = { added: new Set(), removed: new Set(), configs: {} };
+                        this.currentApp._archDelta = { added: new Set(), removed: new Set(), configs: {} };
                         this.architectureSettings.mode = knownApp.recommendedArchitecture || 'classic';
                         if (typeof this.applyArchitectureModeToComponents === 'function') {
                             this.applyArchitectureModeToComponents();
@@ -463,7 +363,7 @@ class SovereignArchitectureAdvisor {
         // Navigation
         document.getElementById('prevBtn')?.addEventListener('click', () => this.prevStep());
         document.getElementById('skipToManual')?.addEventListener('click', () => {
-            this.applicationData = null;
+            this.currentApp.applicationData = null;
             document.getElementById('researchResult').style.display = 'none';
             this.nextStep();
         });
@@ -513,10 +413,10 @@ class SovereignArchitectureAdvisor {
 
         document.getElementById('singleModeBtn')?.addEventListener('click', () => {
             this.isMultiAppMode = false;
-            this.applications = [];
+            // Always Portfolio: in den Single-App-Modus mit genau 1 frischen ApplicationInstance
+            this.applications = [new ApplicationInstance(null, 'Anwendung')];
             this.currentAppIndex = 0;
             this.aggregatedResults = null;
-            this._analysisResults = null;
             track('app-mode', { mode: 'single' });
             document.getElementById('singleModeBtn').classList.add('active');
             document.getElementById('multiModeBtn').classList.remove('active');
@@ -527,7 +427,8 @@ class SovereignArchitectureAdvisor {
 
         document.getElementById('multiModeBtn')?.addEventListener('click', () => {
             this.isMultiAppMode = true;
-            this._analysisResults = null;
+            // analysisResults der aktuellen App zurücksetzen (Multi-App nutzt aggregatedResults)
+            if (this.currentApp) this.currentApp.analysisResults = null;
             track('app-mode', { mode: 'multi' });
             document.getElementById('multiModeBtn').classList.add('active');
             document.getElementById('singleModeBtn').classList.remove('active');
@@ -786,20 +687,20 @@ class SovereignArchitectureAdvisor {
             });
 
             if (result.success) {
-                this.applicationData = result.application;
+                this.currentApp.applicationData = result.application;
 
                 // Komponenten vorauswählen
-                this.selectedComponents.clear();
-                result.application.components.forEach(c => this.selectedComponents.add(c));
+                this.currentApp.selectedComponents.clear();
+                result.application.components.forEach(c => this.currentApp.selectedComponents.add(c));
 
                 // System-Konfiguration mit Default-Sizing initialisieren
                 if (result.application.systemRequirements) {
-                    const defaultSize = result.application.systemRequirements[this.selectedSizing]
-                        ? this.selectedSizing
+                    const defaultSize = result.application.systemRequirements[this.currentApp.sizing]
+                        ? this.currentApp.sizing
                         : (result.application.systemRequirements.medium ? 'medium' :
                            result.application.systemRequirements.small ? 'small' : 'large');
-                    this.selectedSizing = defaultSize;
-                    this.systemConfig = {
+                    this.currentApp.sizing = defaultSize;
+                    this.currentApp.systemConfig = {
                         sizing: defaultSize,
                         config: result.application.systemRequirements[defaultSize],
                         application: result.application.name
@@ -812,11 +713,11 @@ class SovereignArchitectureAdvisor {
                     }
                 }
                 // Snapshot vor Transformation speichern, empfohlenen Modus setzen
-                this._archOriginal = {
-                    selectedComponents: new Set(this.selectedComponents),
-                    componentConfigs: JSON.parse(JSON.stringify(this.componentConfigs))
+                this.currentApp._archOriginal = {
+                    selectedComponents: new Set(this.currentApp.selectedComponents),
+                    componentConfigs: JSON.parse(JSON.stringify(this.currentApp.componentConfigs))
                 };
-                this._archDelta = { added: new Set(), removed: new Set(), configs: {} };
+                this.currentApp._archDelta = { added: new Set(), removed: new Set(), configs: {} };
                 this.architectureSettings.mode = result.application.recommendedArchitecture || 'classic';
                 if (typeof this.applyArchitectureModeToComponents === 'function') {
                     this.applyArchitectureModeToComponents();
@@ -907,7 +808,7 @@ class SovereignArchitectureAdvisor {
 
         const sizingTabsHtml = sizes.map(size => {
             const sizeLabels = { small: 'Klein', medium: 'Mittel', large: 'Groß' };
-            const isActive = size === this.selectedSizing ? 'active' : '';
+            const isActive = size === this.currentApp.sizing ? 'active' : '';
             const sizeData = req[size];
             const usersLabel = sizeData.users || sizeData.contacts || '';
             return `
@@ -919,7 +820,7 @@ class SovereignArchitectureAdvisor {
         }).join('');
 
         // Sizing-Details für ausgewählte Größe
-        const sizingDetailsHtml = this.renderSizingDetails(req[this.selectedSizing] || req[sizes[0]]);
+        const sizingDetailsHtml = this.renderSizingDetails(req[this.currentApp.sizing] || req[sizes[0]]);
 
         // Sizing-Formel wenn vorhanden
         const sizingFormulaHtml = sizing ? `
@@ -1049,7 +950,7 @@ class SovereignArchitectureAdvisor {
      * Wählt ein Sizing aus und aktualisiert die Anzeige
      */
     selectSizing(size) {
-        this.selectedSizing = size;
+        this.currentApp.sizing = size;
 
         // Tab-Buttons aktualisieren
         document.querySelectorAll('.sizing-tab').forEach(tab => {
@@ -1057,39 +958,39 @@ class SovereignArchitectureAdvisor {
         });
 
         // Details aktualisieren
-        if (this.applicationData && this.applicationData.systemRequirements) {
+        if (this.currentApp.applicationData && this.currentApp.applicationData.systemRequirements) {
             const detailsContainer = document.getElementById('sizingDetails');
             if (detailsContainer) {
-                const sizeConfig = this.applicationData.systemRequirements[size];
+                const sizeConfig = this.currentApp.applicationData.systemRequirements[size];
                 detailsContainer.innerHTML = this.renderSizingDetails(sizeConfig);
             }
 
             // System-Konfiguration speichern
-            this.systemConfig = {
+            this.currentApp.systemConfig = {
                 sizing: size,
-                config: this.applicationData.systemRequirements[size],
-                application: this.applicationData.name
+                config: this.currentApp.applicationData.systemRequirements[size],
+                application: this.currentApp.applicationData.name
             };
 
             // Bestehende Komponenten-Konfigurationen zurücksetzen (außer manuell konfigurierte)
             // Nur automatisch generierte Instanzen (compute-2, database_sql-2, etc.) entfernen
-            const autoGeneratedKeys = Object.keys(this.componentConfigs).filter(key =>
+            const autoGeneratedKeys = Object.keys(this.currentApp.componentConfigs).filter(key =>
                 key.match(/-(2|3|4|5)$/)
             );
             autoGeneratedKeys.forEach(key => {
-                this.selectedComponents.delete(key);
-                delete this.componentConfigs[key];
+                this.currentApp.selectedComponents.delete(key);
+                delete this.currentApp.componentConfigs[key];
             });
 
             // Komponenten-Konfigurationen aus System-Requirements aktualisieren
             this.initComponentConfigsFromSystemRequirements();
 
             // Snapshot nach Sizing-Änderung erneuern (Modus beibehalten)
-            this._archOriginal = {
-                selectedComponents: new Set(this.selectedComponents),
-                componentConfigs: JSON.parse(JSON.stringify(this.componentConfigs))
+            this.currentApp._archOriginal = {
+                selectedComponents: new Set(this.currentApp.selectedComponents),
+                componentConfigs: JSON.parse(JSON.stringify(this.currentApp.componentConfigs))
             };
-            this._archDelta = { added: new Set(), removed: new Set(), configs: {} };
+            this.currentApp._archDelta = { added: new Set(), removed: new Set(), configs: {} };
             if (typeof this.applyArchitectureModeToComponents === 'function') {
                 this.applyArchitectureModeToComponents();
             }
@@ -1100,13 +1001,13 @@ class SovereignArchitectureAdvisor {
      * Rendert eine kompakte Zusammenfassung der System-Konfiguration für die Analyse-Ansicht
      */
     renderSystemConfigSummary() {
-        if (!this.systemConfig || !this.systemConfig.config) {
+        if (!this.currentApp.systemConfig || !this.currentApp.systemConfig.config) {
             return '';
         }
 
-        const config = this.systemConfig.config;
+        const config = this.currentApp.systemConfig.config;
         const sizeLabels = { small: 'Klein', medium: 'Mittel', large: 'Groß' };
-        const sizingLabel = sizeLabels[this.systemConfig.sizing] || this.systemConfig.sizing;
+        const sizingLabel = sizeLabels[this.currentApp.systemConfig.sizing] || this.currentApp.systemConfig.sizing;
 
         let items = [];
 
@@ -1190,11 +1091,11 @@ class SovereignArchitectureAdvisor {
 
         // Zurück zu Step 1 (Modus): Single-App-Daten zurücksetzen
         if (targetStep === 1 && !this.isMultiAppMode) {
-            this.applicationData = null;
-            this.systemConfig = null;
-            this.selectedComponents.clear();
-            this.componentConfigs = {};
-            this.selectedSizing = 'medium';
+            this.currentApp.applicationData = null;
+            this.currentApp.systemConfig = null;
+            this.currentApp.selectedComponents.clear();
+            this.currentApp.componentConfigs = {};
+            this.currentApp.sizing = 'medium';
         }
 
         // Step 3 nur erlauben wenn Komponenten ausgewählt
@@ -1205,7 +1106,7 @@ class SovereignArchitectureAdvisor {
                     alert('Bitte wählen Sie für alle Anwendungen Komponenten aus.');
                     return;
                 }
-            } else if (this.selectedComponents.size === 0) {
+            } else if (this.currentApp.selectedComponents.size === 0) {
                 alert('Bitte wählen Sie zuerst Komponenten aus.');
                 return;
             }
@@ -1314,7 +1215,7 @@ class SovereignArchitectureAdvisor {
                     const allAppsHaveComponents = this.applications.every(app => app.selectedComponents.size > 0);
                     nextBtn.disabled = !allAppsHaveComponents;
                 } else {
-                    nextBtn.disabled = this.selectedComponents.size === 0;
+                    nextBtn.disabled = this.currentApp.selectedComponents.size === 0;
                 }
                 nextBtn.innerHTML = 'Analyse starten →';
                 nextBtn.onclick = () => this.nextStep();
@@ -1332,41 +1233,41 @@ class SovereignArchitectureAdvisor {
      * Öffentlich – wird vom Reset-Button per onclick="app.resetArchitectureMode()" aufgerufen.
      */
     resetArchitectureMode() {
-        if (!this._archOriginal) return;
-        this.selectedComponents = new Set(this._archOriginal.selectedComponents);
-        this.componentConfigs   = JSON.parse(JSON.stringify(this._archOriginal.componentConfigs));
-        this._archDelta = { added: new Set(), removed: new Set(), configs: {} };
-        this.architectureSettings.mode = this.applicationData?.recommendedArchitecture || 'classic';
+        if (!this.currentApp._archOriginal) return;
+        this.currentApp.selectedComponents = new Set(this.currentApp._archOriginal.selectedComponents);
+        this.currentApp.componentConfigs   = JSON.parse(JSON.stringify(this.currentApp._archOriginal.componentConfigs));
+        this.currentApp._archDelta = { added: new Set(), removed: new Set(), configs: {} };
+        this.architectureSettings.mode = this.currentApp.applicationData?.recommendedArchitecture || 'classic';
         this.updateSystemConfigFromComponents();
         this.renderComponents();
-        if (this.analysisResults) this.runAnalysis();
+        if (this.currentApp.analysisResults) this.runAnalysis();
     }
 
     runAnalysis() {
-        const componentIds = Array.from(this.selectedComponents);
+        const componentIds = Array.from(this.currentApp.selectedComponents);
 
         // Sicherstellen, dass systemConfig die aktuellen Komponenten-Konfigurationen widerspiegelt
         this.updateSystemConfigFromComponents();
 
         // App-ID für Pattern-Erkennung ermitteln
-        const appId = this.applicationData
-            ? Object.keys(knownApplications).find(k => knownApplications[k].name === this.applicationData.name)
+        const appId = this.currentApp.applicationData
+            ? Object.keys(knownApplications).find(k => knownApplications[k].name === this.currentApp.applicationData.name)
             : null;
 
         // Architektur-Einstellungen vorbereiten
         const archSettings = {
             mode: this.architectureSettings.mode, // null = Auto, 'cloud_native' oder 'classic'
             appId: appId,
-            sizing: this.selectedSizing || 'medium'
+            sizing: this.currentApp.sizing || 'medium'
         };
 
         // Neue 4-Gewichte-API verwenden, mit systemConfig für realistische Kostenberechnung
         // maturitySettings für konfigurierbaren Reife-Faktor übergeben
         // architectureSettings für Cloud-native vs. Klassisch
-        this.analysisResults = this.analyzer.analyzeForComponents(
+        this.currentApp.analysisResults = this.analyzer.analyzeForComponents(
             componentIds,
             this.weights,
-            this.systemConfig,
+            this.currentApp.systemConfig,
             this.maturitySettings,
             this.operationsSettings,
             this.projectEffortSettings,

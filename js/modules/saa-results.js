@@ -6,21 +6,21 @@ import { IconMapper } from './saa-utils.js';
 
 export const SAAResults = {
     renderAnalysisResults() {
-        if (!this.analysisResults) return;
+        if (!this.currentApp.analysisResults) return;
 
         const container = document.getElementById('analysisResultsContainer');
         if (!container) return;
 
         // Zusammenfassung der ausgewählten Komponenten
-        const selectedComps = Array.from(this.selectedComponents).map(id => {
+        const selectedComps = Array.from(this.currentApp.selectedComponents).map(id => {
             const comp = architectureComponents.find(c => c.id === id);
             return comp ? { name: comp.name, icon: comp.icon } : { name: id, icon: '📦' };
         });
 
         // Final Recommendation
         const finalRec = this.analyzer.generateFinalRecommendation(
-            this.analysisResults,
-            Array.from(this.selectedComponents),
+            this.currentApp.analysisResults,
+            Array.from(this.currentApp.selectedComponents),
             this.strategyWeight
         );
 
@@ -28,7 +28,7 @@ export const SAAResults = {
         const systemConfigHtml = this.renderSystemConfigSummary();
 
         // Architektur-Informationen aus den Analyse-Ergebnissen extrahieren
-        const archInfo = this.analysisResults[0]?.serviceAnalysis?.architectureInfo;
+        const archInfo = this.currentApp.analysisResults[0]?.serviceAnalysis?.architectureInfo;
         const archModeDisplay = {
             'cloud_native': { icon: 'fa-cloud', label: 'Cloud-native / PaaS', color: 'var(--primary-color)' },
             'classic': { icon: 'fa-server', label: 'Klassisch / VM-basiert', color: 'var(--text-secondary)' },
@@ -45,9 +45,9 @@ export const SAAResults = {
             <!-- Ausgewählte Komponenten -->
             <div class="analysis-section">
                 <h3 class="analysis-title">Analysierte Architektur</h3>
-                ${this.applicationData ? `<p style="color: var(--btc-accent); font-weight: 600; margin-bottom: 0.5rem;">${this.applicationData.name}</p>` : ''}
+                ${this.currentApp.applicationData ? `<p style="color: var(--btc-accent); font-weight: 600; margin-bottom: 0.5rem;">${this.currentApp.applicationData.name}</p>` : ''}
                 <p style="color: var(--text-secondary); margin-bottom: 1rem;">
-                    ${this.selectedComponents.size} Komponenten wurden für die Cloud-Analyse berücksichtigt:
+                    ${this.currentApp.selectedComponents.size} Komponenten wurden für die Cloud-Analyse berücksichtigt:
                 </p>
                 <div class="selected-components">
                     ${selectedComps.map(c => `<span class="selected-component-tag">${IconMapper.toFontAwesome(c.icon, 'component')} ${c.name}</span>`).join('')}
@@ -192,7 +192,7 @@ export const SAAResults = {
                 </div>
                 ${this.renderCustomScoresNotice()}
                 <div class="recommendations-grid">
-                    ${this.analysisResults.slice(0, 6).map((result, index) => this.renderRecommendationCard(result, index)).join('')}
+                    ${this.currentApp.analysisResults.slice(0, 6).map((result, index) => this.renderRecommendationCard(result, index)).join('')}
                 </div>
             </div>
 
@@ -841,8 +841,8 @@ export const SAAResults = {
                     }
                 }
                 // Single-App Modus
-                else if (this.analysisResults && this.analysisResults[providerIndex]) {
-                    this.openDetailPopup(this.analysisResults[providerIndex]);
+                else if (this.currentApp.analysisResults && this.currentApp.analysisResults[providerIndex]) {
+                    this.openDetailPopup(this.currentApp.analysisResults[providerIndex]);
                 }
             });
         });
@@ -971,8 +971,8 @@ export const SAAResults = {
     },
 
     renderComparisonTable() {
-        const requiredServices = this.analyzer.getRequiredServices(Array.from(this.selectedComponents));
-        const topProviders = this.analysisResults.slice(0, 5);
+        const requiredServices = this.analyzer.getRequiredServices(Array.from(this.currentApp.selectedComponents));
+        const topProviders = this.currentApp.analysisResults.slice(0, 5);
 
         let html = `
             <div class="comparison-table-container">
@@ -1592,9 +1592,9 @@ export const SAAResults = {
         if (this.isMultiAppMode && this.aggregatedResults) {
             // Multi-App: Zeige aggregierte Provider
             providersToShow = this.aggregatedResults.aggregatedProviders;
-        } else if (this.analysisResults && this.analysisResults.length > 0) {
+        } else if (this.currentApp.analysisResults && this.currentApp.analysisResults.length > 0) {
             // Single-App: Zeige analysierte Provider
-            providersToShow = this.analysisResults;
+            providersToShow = this.currentApp.analysisResults;
         } else {
             // Fallback: Zeige alle Provider mit Basis-Daten
             providersToShow = cloudProviders.map(provider => ({

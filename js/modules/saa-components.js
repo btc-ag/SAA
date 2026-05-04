@@ -87,8 +87,8 @@ export const SAAComponents = {
         });
 
         // Deployment-Pattern erkennen für aktuelle Komponenten
-        const componentIds = Array.from(this.selectedComponents).map(id => id.replace(/-\d+$/, ''));
-        const appId = this.applicationData ? Object.keys(knownApplications).find(k => knownApplications[k].name === this.applicationData.name) : null;
+        const componentIds = Array.from(this.currentApp.selectedComponents).map(id => id.replace(/-\d+$/, ''));
+        const appId = this.currentApp.applicationData ? Object.keys(knownApplications).find(k => knownApplications[k].name === this.currentApp.applicationData.name) : null;
         this.detectedPattern = detectDeploymentPattern(componentIds, appId);
 
         // Architektur-Modus Toggle
@@ -153,7 +153,7 @@ export const SAAComponents = {
                             <div style="font-size: 0.75rem; color: var(--text-secondary);">VMs, volle Kontrolle</div>
                         </div>
                     </label>
-                    ${this._archOriginal ? `
+                    ${this.currentApp._archOriginal ? `
                     <button onclick="app.resetArchitectureMode()" style="
                         display: flex;
                         align-items: center;
@@ -205,7 +205,7 @@ export const SAAComponents = {
 
                             // Render all instances (nicht nur sequenzielle!)
                             // Finde alle Instanzen dieser Komponente in selectedComponents
-                            const instances = Array.from(this.selectedComponents)
+                            const instances = Array.from(this.currentApp.selectedComponents)
                                 .filter(id => {
                                     // Prüfe ob es eine Instanz dieser Komponente ist (z.B. compute-2, compute-5)
                                     const match = id.match(new RegExp(`^${comp.id}-(\\d+)$`));
@@ -313,7 +313,7 @@ export const SAAComponents = {
                 this.architectureSettings.mode = e.target.value;
                 this.applyArchitectureModeToComponents();
                 this.renderComponents();
-                if (this.analysisResults) this.runAnalysis();
+                if (this.currentApp.analysisResults) this.runAnalysis();
             });
         });
     },
@@ -325,19 +325,19 @@ export const SAAComponents = {
      */
     applyArchitectureModeToComponents() {
         // Fallback: Snapshot erstellen falls noch nicht vorhanden
-        if (!this._archOriginal) {
-            this._archOriginal = {
-                selectedComponents: new Set(this.selectedComponents),
-                componentConfigs: JSON.parse(JSON.stringify(this.componentConfigs))
+        if (!this.currentApp._archOriginal) {
+            this.currentApp._archOriginal = {
+                selectedComponents: new Set(this.currentApp.selectedComponents),
+                componentConfigs: JSON.parse(JSON.stringify(this.currentApp.componentConfigs))
             };
         }
 
-        const base = this._archOriginal.selectedComponents;
+        const base = this.currentApp._archOriginal.selectedComponents;
         const mode = this.architectureSettings.mode || 'classic';
 
         // App-ID für Pattern-Erkennung
-        const appId = this.applicationData
-            ? Object.keys(knownApplications).find(k => knownApplications[k].name === this.applicationData.name)
+        const appId = this.currentApp.applicationData
+            ? Object.keys(knownApplications).find(k => knownApplications[k].name === this.currentApp.applicationData.name)
             : null;
 
         // Pattern erkennen (basierend auf Original-Basis, nicht auf transformiertem Zustand)
@@ -353,44 +353,44 @@ export const SAAComponents = {
         }
 
         // Delta anwenden (manuelle Nutzer-Änderungen bleiben erhalten)
-        this._archDelta.added.forEach(id => transformed.add(id));
-        this._archDelta.removed.forEach(id => transformed.delete(id));
+        this.currentApp._archDelta.added.forEach(id => transformed.add(id));
+        this.currentApp._archDelta.removed.forEach(id => transformed.delete(id));
 
         // Konsistenz-Cleanup: serverless und compute schließen sich aus
         if (mode === 'cloud_native' && transformed.has('serverless') && transformed.has('compute')) {
             transformed.delete('compute');
         }
 
-        this.selectedComponents = transformed;
+        this.currentApp.selectedComponents = transformed;
 
         // Configs aktualisieren
         // Neue Komponenten (nicht in Originalstate): initialisieren
         for (const id of transformed) {
             const baseId = id.replace(/-\d+$/, '');
-            if (!this._archOriginal.componentConfigs[id] && !this.componentConfigs[id]) {
+            if (!this.currentApp._archOriginal.componentConfigs[id] && !this.currentApp.componentConfigs[id]) {
                 this.initComponentConfig(baseId === id ? id : baseId);
                 // Falls es die base-ID ist, kopieren wir die Config unter der neuen ID
-                if (baseId !== id && this.componentConfigs[baseId]) {
-                    this.componentConfigs[id] = { ...this.componentConfigs[baseId] };
+                if (baseId !== id && this.currentApp.componentConfigs[baseId]) {
+                    this.currentApp.componentConfigs[id] = { ...this.currentApp.componentConfigs[baseId] };
                 }
             }
         }
         // Entfernte Komponenten: Config-Key löschen (nur die, die nicht in _archOriginal waren)
-        for (const id of Object.keys(this.componentConfigs)) {
-            if (!transformed.has(id) && !this._archOriginal.componentConfigs[id]) {
-                delete this.componentConfigs[id];
+        for (const id of Object.keys(this.currentApp.componentConfigs)) {
+            if (!transformed.has(id) && !this.currentApp._archOriginal.componentConfigs[id]) {
+                delete this.currentApp.componentConfigs[id];
             }
         }
         // Ursprüngliche Configs wiederherstellen (aus Snapshot)
-        for (const [id, cfg] of Object.entries(this._archOriginal.componentConfigs)) {
+        for (const [id, cfg] of Object.entries(this.currentApp._archOriginal.componentConfigs)) {
             if (transformed.has(id)) {
-                this.componentConfigs[id] = JSON.parse(JSON.stringify(cfg));
+                this.currentApp.componentConfigs[id] = JSON.parse(JSON.stringify(cfg));
             }
         }
         // Delta-Configs anwenden
-        for (const [compId, fields] of Object.entries(this._archDelta.configs)) {
-            if (transformed.has(compId) && this.componentConfigs[compId]) {
-                Object.assign(this.componentConfigs[compId], fields);
+        for (const [compId, fields] of Object.entries(this.currentApp._archDelta.configs)) {
+            if (transformed.has(compId) && this.currentApp.componentConfigs[compId]) {
+                Object.assign(this.currentApp.componentConfigs[compId], fields);
             }
         }
 
@@ -494,7 +494,7 @@ export const SAAComponents = {
      * Aktualisiert die Konfiguration einer Komponente
      */
     updateComponentConfig(componentId, fieldId, value) {
-        if (!this.componentConfigs[componentId]) {
+        if (!this.currentApp.componentConfigs[componentId]) {
             this.initComponentConfig(componentId);
         }
 
@@ -505,14 +505,14 @@ export const SAAComponents = {
             value = parseInt(value) || 0;
         }
 
-        this.componentConfigs[componentId][fieldId] = value;
+        this.currentApp.componentConfigs[componentId][fieldId] = value;
 
         // Delta-Tracking: Config-Änderung nach Arch-Transformation merken
-        if (this._archOriginal) {
-            if (!this._archDelta.configs[componentId]) {
-                this._archDelta.configs[componentId] = {};
+        if (this.currentApp._archOriginal) {
+            if (!this.currentApp._archDelta.configs[componentId]) {
+                this.currentApp._archDelta.configs[componentId] = {};
             }
-            this._archDelta.configs[componentId][fieldId] = value;
+            this.currentApp._archDelta.configs[componentId][fieldId] = value;
         }
 
         // Summary aktualisieren
@@ -531,15 +531,15 @@ export const SAAComponents = {
         const vmIndex = parseInt(input.dataset.vmIndex);
         const vmField = input.dataset.vmField;
 
-        if (!this.componentConfigs[componentId]) {
+        if (!this.currentApp.componentConfigs[componentId]) {
             this.initComponentConfig(componentId);
         }
 
-        if (!Array.isArray(this.componentConfigs[componentId][fieldId])) {
-            this.componentConfigs[componentId][fieldId] = [{ name: 'VM', cpu: 4, ram: 16, count: 1 }];
+        if (!Array.isArray(this.currentApp.componentConfigs[componentId][fieldId])) {
+            this.currentApp.componentConfigs[componentId][fieldId] = [{ name: 'VM', cpu: 4, ram: 16, count: 1 }];
         }
 
-        const vmGroups = this.componentConfigs[componentId][fieldId];
+        const vmGroups = this.currentApp.componentConfigs[componentId][fieldId];
         if (!vmGroups[vmIndex]) return;
 
         // Wert parsen
@@ -559,15 +559,15 @@ export const SAAComponents = {
      * Fügt eine neue VM zu einer VM-Group hinzu
      */
     addVMToGroup(componentId, fieldId) {
-        if (!this.componentConfigs[componentId]) {
+        if (!this.currentApp.componentConfigs[componentId]) {
             this.initComponentConfig(componentId);
         }
 
-        if (!Array.isArray(this.componentConfigs[componentId][fieldId])) {
-            this.componentConfigs[componentId][fieldId] = [];
+        if (!Array.isArray(this.currentApp.componentConfigs[componentId][fieldId])) {
+            this.currentApp.componentConfigs[componentId][fieldId] = [];
         }
 
-        const vmGroups = this.componentConfigs[componentId][fieldId];
+        const vmGroups = this.currentApp.componentConfigs[componentId][fieldId];
         vmGroups.push({ name: `VM ${vmGroups.length + 1}`, cpu: 4, ram: 16, count: 1 });
 
         // Komponente neu rendern
@@ -581,9 +581,9 @@ export const SAAComponents = {
      * Entfernt eine VM aus einer VM-Group
      */
     removeVMFromGroup(componentId, fieldId, vmIndex) {
-        if (!this.componentConfigs[componentId]) return;
+        if (!this.currentApp.componentConfigs[componentId]) return;
 
-        const vmGroups = this.componentConfigs[componentId][fieldId];
+        const vmGroups = this.currentApp.componentConfigs[componentId][fieldId];
         if (!Array.isArray(vmGroups) || vmGroups.length <= 1) return;
 
         vmGroups.splice(vmIndex, 1);
@@ -604,15 +604,15 @@ export const SAAComponents = {
         const dbIndex = parseInt(input.dataset.dbIndex);
         const dbField = input.dataset.dbField;
 
-        if (!this.componentConfigs[componentId]) {
+        if (!this.currentApp.componentConfigs[componentId]) {
             this.initComponentConfig(componentId);
         }
 
-        if (!Array.isArray(this.componentConfigs[componentId][fieldId])) {
-            this.componentConfigs[componentId][fieldId] = [{ name: 'DB', type: 'PostgreSQL', size: 100 }];
+        if (!Array.isArray(this.currentApp.componentConfigs[componentId][fieldId])) {
+            this.currentApp.componentConfigs[componentId][fieldId] = [{ name: 'DB', type: 'PostgreSQL', size: 100 }];
         }
 
-        const databases = this.componentConfigs[componentId][fieldId];
+        const databases = this.currentApp.componentConfigs[componentId][fieldId];
         if (!databases[dbIndex]) return;
 
         // Wert parsen
@@ -632,15 +632,15 @@ export const SAAComponents = {
      * Fügt eine neue Datenbank zu einer DB-Group hinzu
      */
     addDBToGroup(componentId, fieldId) {
-        if (!this.componentConfigs[componentId]) {
+        if (!this.currentApp.componentConfigs[componentId]) {
             this.initComponentConfig(componentId);
         }
 
-        if (!Array.isArray(this.componentConfigs[componentId][fieldId])) {
-            this.componentConfigs[componentId][fieldId] = [];
+        if (!Array.isArray(this.currentApp.componentConfigs[componentId][fieldId])) {
+            this.currentApp.componentConfigs[componentId][fieldId] = [];
         }
 
-        const databases = this.componentConfigs[componentId][fieldId];
+        const databases = this.currentApp.componentConfigs[componentId][fieldId];
         databases.push({ name: `DB ${databases.length + 1}`, type: 'PostgreSQL', size: 100 });
 
         // Komponente neu rendern
@@ -654,9 +654,9 @@ export const SAAComponents = {
      * Entfernt eine Datenbank aus einer DB-Group
      */
     removeDBFromGroup(componentId, fieldId, dbIndex) {
-        if (!this.componentConfigs[componentId]) return;
+        if (!this.currentApp.componentConfigs[componentId]) return;
 
-        const databases = this.componentConfigs[componentId][fieldId];
+        const databases = this.currentApp.componentConfigs[componentId][fieldId];
         if (!Array.isArray(databases) || databases.length <= 1) return;
 
         databases.splice(dbIndex, 1);
@@ -677,15 +677,15 @@ export const SAAComponents = {
         const volIndex = parseInt(input.dataset.volIndex);
         const volField = input.dataset.volField;
 
-        if (!this.componentConfigs[componentId]) {
+        if (!this.currentApp.componentConfigs[componentId]) {
             this.initComponentConfig(componentId);
         }
 
-        if (!Array.isArray(this.componentConfigs[componentId][fieldId])) {
-            this.componentConfigs[componentId][fieldId] = [{ name: 'Volume', type: 'ssd', size: 200 }];
+        if (!Array.isArray(this.currentApp.componentConfigs[componentId][fieldId])) {
+            this.currentApp.componentConfigs[componentId][fieldId] = [{ name: 'Volume', type: 'ssd', size: 200 }];
         }
 
-        const volumes = this.componentConfigs[componentId][fieldId];
+        const volumes = this.currentApp.componentConfigs[componentId][fieldId];
         if (!volumes[volIndex]) return;
 
         // Wert parsen
@@ -705,15 +705,15 @@ export const SAAComponents = {
      * Fügt ein neues Volume zu einer Storage-Group hinzu
      */
     addStorageToGroup(componentId, fieldId) {
-        if (!this.componentConfigs[componentId]) {
+        if (!this.currentApp.componentConfigs[componentId]) {
             this.initComponentConfig(componentId);
         }
 
-        if (!Array.isArray(this.componentConfigs[componentId][fieldId])) {
-            this.componentConfigs[componentId][fieldId] = [];
+        if (!Array.isArray(this.currentApp.componentConfigs[componentId][fieldId])) {
+            this.currentApp.componentConfigs[componentId][fieldId] = [];
         }
 
-        const volumes = this.componentConfigs[componentId][fieldId];
+        const volumes = this.currentApp.componentConfigs[componentId][fieldId];
         volumes.push({ name: `Volume ${volumes.length + 1}`, type: 'ssd', size: 200 });
 
         // Komponente neu rendern
@@ -727,9 +727,9 @@ export const SAAComponents = {
      * Entfernt ein Volume aus einer Storage-Group
      */
     removeStorageFromGroup(componentId, fieldId, volIndex) {
-        if (!this.componentConfigs[componentId]) return;
+        if (!this.currentApp.componentConfigs[componentId]) return;
 
-        const volumes = this.componentConfigs[componentId][fieldId];
+        const volumes = this.currentApp.componentConfigs[componentId][fieldId];
         if (!Array.isArray(volumes) || volumes.length <= 1) return;
 
         volumes.splice(volIndex, 1);
@@ -748,9 +748,9 @@ export const SAAComponents = {
         const component = architectureComponents.find(c => c.id === componentId);
         if (!component?.configFields) return;
 
-        this.componentConfigs[componentId] = {};
+        this.currentApp.componentConfigs[componentId] = {};
         component.configFields.forEach(field => {
-            this.componentConfigs[componentId][field.id] = field.default;
+            this.currentApp.componentConfigs[componentId][field.id] = field.default;
         });
     },
 
@@ -763,7 +763,7 @@ export const SAAComponents = {
         if (!card) return;
 
         const component = architectureComponents.find(c => c.id === componentId);
-        const config = this.componentConfigs[componentId];
+        const config = this.currentApp.componentConfigs[componentId];
         if (!component?.configSummary || !config) return;
 
         let summaryEl = card.querySelector('.component-config-summary');
@@ -791,12 +791,12 @@ export const SAAComponents = {
             const instances = [];
 
             // Original-Komponente
-            if (this.selectedComponents.has(baseId) && this.componentConfigs[baseId]) {
-                instances.push(this.componentConfigs[baseId]);
+            if (this.currentApp.selectedComponents.has(baseId) && this.currentApp.componentConfigs[baseId]) {
+                instances.push(this.currentApp.componentConfigs[baseId]);
             }
 
             // Alle Instanzen finden (nicht nur sequenzielle!)
-            Array.from(this.selectedComponents)
+            Array.from(this.currentApp.selectedComponents)
                 .filter(id => {
                     const match = id.match(new RegExp(`^${baseId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-(\\d+)$`));
                     return match !== null;
@@ -807,8 +807,8 @@ export const SAAComponents = {
                     return numA - numB;
                 })
                 .forEach(instanceId => {
-                    if (this.componentConfigs[instanceId]) {
-                        instances.push(this.componentConfigs[instanceId]);
+                    if (this.currentApp.componentConfigs[instanceId]) {
+                        instances.push(this.currentApp.componentConfigs[instanceId]);
                     }
                 });
 
@@ -1031,7 +1031,7 @@ export const SAAComponents = {
         if (identityConfig) config.identity = identityConfig;
         if (aimlConfig) config.aiml = aimlConfig;
 
-        this.systemConfig = {
+        this.currentApp.systemConfig = {
             sizing: 'custom',
             config: config
         };
@@ -1043,8 +1043,8 @@ export const SAAComponents = {
         const isInstance = instanceId !== null;
         const instanceNumber = isInstance ? cardId.split('-').pop() : null;
 
-        const isSelected = this.selectedComponents.has(cardId);
-        const config = this.componentConfigs[cardId];
+        const isSelected = this.currentApp.selectedComponents.has(cardId);
+        const config = this.currentApp.componentConfigs[cardId];
         const hasConfig = component.configurable && component.configFields;
 
         // Konfigurations-Zusammenfassung wenn ausgewählt
@@ -1102,7 +1102,7 @@ export const SAAComponents = {
     renderComponentConfigPanel(component, componentId) {
         if (!component.configFields) return '';
 
-        const config = this.componentConfigs[componentId] || {};
+        const config = this.currentApp.componentConfigs[componentId] || {};
 
         // Kubernetes im Control-Plane-Only-Modus: keine Worker-Felder zeigen
         if (componentId === 'kubernetes' && config.controlPlaneOnly) {
@@ -1317,33 +1317,33 @@ export const SAAComponents = {
     },
 
     toggleComponent(componentId) {
-        const wasSelected = this.selectedComponents.has(componentId);
+        const wasSelected = this.currentApp.selectedComponents.has(componentId);
         // Delta-Tracking: manuelle Änderungen des Nutzers nach Arch-Transformation merken
-        if (this._archOriginal) {
+        if (this.currentApp._archOriginal) {
             if (wasSelected) {
-                this._archDelta.removed.add(componentId);
-                this._archDelta.added.delete(componentId);
+                this.currentApp._archDelta.removed.add(componentId);
+                this.currentApp._archDelta.added.delete(componentId);
             } else {
-                this._archDelta.added.add(componentId);
-                this._archDelta.removed.delete(componentId);
+                this.currentApp._archDelta.added.add(componentId);
+                this.currentApp._archDelta.removed.delete(componentId);
             }
         }
         if (wasSelected) {
-            this.selectedComponents.delete(componentId);
+            this.currentApp.selectedComponents.delete(componentId);
             // Config behalten für den Fall, dass Komponente wieder ausgewählt wird
         } else {
-            this.selectedComponents.add(componentId);
+            this.currentApp.selectedComponents.add(componentId);
             // Config initialisieren wenn noch nicht vorhanden
-            if (!this.componentConfigs[componentId]) {
+            if (!this.currentApp.componentConfigs[componentId]) {
                 this.initComponentConfig(componentId);
             }
         }
         // controlPlaneOnly synchronisieren: kubernetes zeigt nur Control Plane wenn compute auch da
         if (componentId === 'kubernetes' || componentId === 'compute') {
-            if (this.selectedComponents.has('kubernetes')) {
-                if (!this.componentConfigs['kubernetes']) this.initComponentConfig('kubernetes');
-                const k8sConfig = this.componentConfigs['kubernetes'];
-                k8sConfig.controlPlaneOnly = this.selectedComponents.has('compute');
+            if (this.currentApp.selectedComponents.has('kubernetes')) {
+                if (!this.currentApp.componentConfigs['kubernetes']) this.initComponentConfig('kubernetes');
+                const k8sConfig = this.currentApp.componentConfigs['kubernetes'];
+                k8sConfig.controlPlaneOnly = this.currentApp.selectedComponents.has('compute');
                 // Kubernetes-Karte neu rendern damit Config-Panel aktualisiert wird
                 if (componentId === 'compute') this.reRenderComponentCard('kubernetes');
             }
@@ -1368,18 +1368,18 @@ export const SAAComponents = {
 
         // Finde nächste freie Instanz-Nummer
         let instanceNumber = 2;
-        while (this.selectedComponents.has(`${baseComponentId}-${instanceNumber}`)) {
+        while (this.currentApp.selectedComponents.has(`${baseComponentId}-${instanceNumber}`)) {
             instanceNumber++;
         }
 
         const newComponentId = `${baseComponentId}-${instanceNumber}`;
 
         // Neue Instanz zur Auswahl hinzufügen
-        this.selectedComponents.add(newComponentId);
+        this.currentApp.selectedComponents.add(newComponentId);
 
         // Config kopieren von der Original-Komponente
-        const baseConfig = this.componentConfigs[baseComponentId] || {};
-        this.componentConfigs[newComponentId] = { ...baseConfig };
+        const baseConfig = this.currentApp.componentConfigs[baseComponentId] || {};
+        this.currentApp.componentConfigs[newComponentId] = { ...baseConfig };
 
         // Vollständigen Component-Grid neu rendern
         this.renderComponents();
@@ -1394,10 +1394,10 @@ export const SAAComponents = {
      */
     removeComponentInstance(instanceId) {
         // Entferne aus selectedComponents
-        this.selectedComponents.delete(instanceId);
+        this.currentApp.selectedComponents.delete(instanceId);
 
         // Entferne Config
-        delete this.componentConfigs[instanceId];
+        delete this.currentApp.componentConfigs[instanceId];
 
         // Vollständigen Component-Grid neu rendern
         this.renderComponents();
@@ -1487,19 +1487,19 @@ export const SAAComponents = {
         const container = document.getElementById(containerId);
         if (!container) return;
 
-        if (this.selectedComponents.size === 0) {
+        if (this.currentApp.selectedComponents.size === 0) {
             container.innerHTML = '<p style="color: var(--text-tertiary);">Noch keine Komponenten ausgewählt</p>';
             return;
         }
 
-        const tags = Array.from(this.selectedComponents).map(id => {
+        const tags = Array.from(this.currentApp.selectedComponents).map(id => {
             // Basis-Komponente finden (auch für Instanzen wie "vm-2")
             const baseId = id.includes('-') && /\-\d+$/.test(id) ? id.replace(/-\d+$/, '') : id;
             const comp = architectureComponents.find(c => c.id === baseId);
 
             if (!comp) return ''; // Falls Komponente nicht gefunden
 
-            const config = this.componentConfigs[id];
+            const config = this.currentApp.componentConfigs[id];
 
             // Instanz-Nummer anzeigen
             const instanceMatch = id.match(/-(\d+)$/);
