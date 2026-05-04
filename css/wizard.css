@@ -1,0 +1,1124 @@
+/* SAA - wizard.css
+   Wizard-Steps, Component-Auswahl, App-Suche, Sizing, Inline-Config. */
+
+/* Wizard Steps */
+.wizard-container {
+    margin-bottom: 3rem;
+}
+
+.wizard-steps {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.wizard-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    flex: 1;
+    max-width: 200px;
+}
+
+.wizard-step::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: -50%;
+    width: 100%;
+    height: 3px;
+    background: var(--border-color);
+    z-index: 0;
+}
+
+.wizard-step:first-child::before {
+    display: none;
+}
+
+.wizard-step.completed {
+    cursor: pointer;
+}
+
+.wizard-step.completed:hover .step-number {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.wizard-step.completed::before {
+    background: var(--btc-accent);
+}
+
+.wizard-step.active::before {
+    background: linear-gradient(90deg, var(--btc-accent) 0%, var(--btc-primary) 100%);
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    border: 3px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text-tertiary);
+    position: relative;
+    z-index: 1;
+    transition: all 0.3s ease;
+}
+
+.wizard-step.active .step-number {
+    border-color: var(--btc-primary);
+    background: var(--btc-primary);
+    color: white;
+    box-shadow: 0 0 0 4px rgba(90, 166, 231, 0.2);
+}
+
+.wizard-step.completed .step-number {
+    border-color: var(--btc-accent);
+    background: var(--btc-accent);
+    color: white;
+}
+
+.step-label {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-align: center;
+    transition: color 0.3s ease;
+}
+
+.wizard-step.active .step-label {
+    color: var(--btc-primary);
+}
+
+.wizard-step.completed .step-label {
+    color: var(--btc-accent);
+}
+
+/* Step Content */
+.step-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.step-content.active {
+    display: block;
+}
+
+/* Application Search */
+.search-section {
+    background: var(--bg-secondary);
+    backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+}
+
+.search-section:hover {
+    border-color: var(--border-color-hover);
+    box-shadow: var(--shadow-md);
+}
+
+.search-input-wrapper {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.app-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 120px;
+    max-height: 320px;
+    overflow-y: auto;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+    margin-top: 4px;
+}
+
+.app-dropdown.visible {
+    display: block;
+}
+
+.app-dropdown-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s ease;
+}
+
+.app-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.app-dropdown-item:hover,
+.app-dropdown-item.selected {
+    background: var(--bg-tertiary);
+}
+
+.app-dropdown-item-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.2rem;
+}
+
+.app-dropdown-item-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.app-dropdown-category {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--btc-primary);
+    background: var(--bg-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    position: sticky;
+    top: 0;
+}
+
+.search-input {
+    flex: 1;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 1rem;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--btc-primary);
+    box-shadow: 0 0 0 4px rgba(90, 166, 231, 0.1);
+    background: var(--bg-secondary);
+}
+
+.search-input::placeholder {
+    color: var(--text-tertiary);
+}
+
+.search-button {
+    padding: 1rem 2rem;
+    background: var(--btc-primary);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: inherit;
+}
+
+.search-button:hover {
+    background: var(--btc-secondary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.search-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.search-button.loading {
+    pointer-events: none;
+}
+
+.search-button.loading::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid white;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Quick Select Suggestions */
+.quick-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.quick-suggestion {
+    padding: 0.5rem 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-suggestion:hover {
+    background: var(--btc-primary);
+    color: white;
+    border-color: var(--btc-primary);
+}
+
+/* Research Result */
+.research-result {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--btc-accent);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.research-result-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.research-result-icon {
+    font-size: 2rem;
+}
+
+.research-result-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--btc-heading);
+}
+
+.research-result-description {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.research-result-source {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
+/* System Requirements Section */
+.system-requirements-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+}
+
+.sysreq-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--btc-heading);
+    margin: 0 0 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sysreq-title::before {
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    content: '\f013';
+    color: var(--btc-primary);
+}
+
+.sysreq-note {
+    background: var(--btc-info-bg, rgba(59, 130, 246, 0.1));
+    border: 1px solid var(--btc-info, #3b82f6);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.sysreq-note-icon {
+    font-size: 1.1rem;
+}
+
+/* Sizing Tabs */
+.sizing-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.sizing-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-tertiary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 100px;
+}
+
+.sizing-tab:hover {
+    border-color: var(--btc-primary);
+    background: var(--bg-secondary);
+}
+
+.sizing-tab.active {
+    border-color: var(--btc-accent);
+    background: rgba(0, 180, 120, 0.1);
+}
+
+.sizing-tab-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--btc-heading);
+}
+
+.sizing-tab-users {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-top: 0.25rem;
+}
+
+.sizing-tab.active .sizing-tab-label {
+    color: var(--btc-accent);
+}
+
+/* Sizing Details Grid */
+.sysreq-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.sysreq-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.sysreq-item-wide {
+    grid-column: 1 / -1;
+}
+
+.sysreq-item-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    color: var(--btc-primary);
+}
+
+.sysreq-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.sysreq-item-label {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.sysreq-item-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--btc-heading);
+    word-break: break-word;
+}
+
+.sysreq-item-detail {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+/* Sizing Formula */
+.sysreq-formula {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.sysreq-source-link {
+    color: var(--btc-primary);
+    margin-left: 0.5rem;
+    text-decoration: none;
+}
+
+.sysreq-source-link:hover {
+    text-decoration: underline;
+}
+
+/* Components Selection */
+.components-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.component-card {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    padding: 0;
+    cursor: default;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.component-card:hover {
+    border-color: var(--btc-primary);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+}
+
+.component-card.selected {
+    border-color: var(--btc-accent);
+    background: rgba(0, 212, 170, 0.05);
+}
+
+.component-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+    cursor: pointer;
+}
+
+.component-checkbox {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.component-checkbox:hover {
+    background: var(--btc-primary);
+    transform: scale(1.1);
+}
+
+/* Checkbox Button (für ausgewählte Komponenten) */
+.component-checkbox-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--btc-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+}
+
+.component-checkbox-btn:hover {
+    background: var(--btc-primary);
+    transform: scale(1.1);
+}
+
+.component-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+    color: var(--btc-heading);
+}
+
+.component-card.selected .component-icon {
+    color: var(--btc-primary);
+}
+
+.component-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.component-name {
+    font-weight: 700;
+    color: var(--btc-heading);
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+}
+
+.component-description {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Config Hint für nicht ausgewählte Komponenten */
+.component-config-hint {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    margin-top: 0.35rem;
+    font-style: italic;
+}
+
+/* Config Summary für ausgewählte Komponenten */
+.component-config-summary {
+    font-size: 0.75rem;
+    color: var(--btc-accent);
+    font-weight: 600;
+    margin-top: 0.35rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(0, 212, 170, 0.1);
+    border-radius: 4px;
+    display: inline-block;
+}
+
+/* Component Actions Container (Checkbox + Add/Delete Buttons) */
+.component-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+/* Instance Badge */
+.component-instance-badge {
+    display: inline-block;
+    background: var(--btc-accent);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+}
+
+/* Add Instance Button - Compact Version under Checkbox */
+.component-add-instance-btn-compact {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: var(--bg-secondary);
+    border: 1px dashed var(--btc-primary);
+    border-radius: 4px;
+    color: var(--btc-primary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.component-add-instance-btn-compact:hover {
+    background: var(--btc-primary);
+    border-style: solid;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Delete Instance Button */
+.component-delete-instance-btn {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.component-delete-instance-btn:hover {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+/* Inline Config Panel */
+.component-config-panel {
+    padding: 0.75rem 1.25rem 1rem;
+    background: var(--bg-tertiary);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    cursor: default;
+}
+
+.component-config-field {
+    flex: 1;
+    min-width: 80px;
+    max-width: 150px;
+}
+
+.component-config-field label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.component-config-field input,
+.component-config-field select {
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.component-config-field input:focus,
+.component-config-field select:focus {
+    outline: none;
+    border-color: var(--btc-primary);
+}
+
+/* VM Group Felder */
+.vm-group-field {
+    flex: 1;
+    min-width: 100%;
+    max-width: none;
+}
+
+.vm-group-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Inline Configuration Styles */
+.inline-config-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.inline-config-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.inline-config-row:hover {
+    border-color: var(--btc-primary);
+    background: var(--bg-tertiary);
+}
+
+.inline-config-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.inline-config-name {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.inline-config-name:focus {
+    outline: none;
+    border-color: var(--btc-primary);
+    box-shadow: 0 0 0 2px rgba(0, 108, 183, 0.1);
+}
+
+.inline-config-specs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.inline-spec {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
+.inline-spec-wide {
+    flex: 1;
+    min-width: 150px;
+}
+
+.inline-spec-input {
+    width: 70px;
+    padding: 0.25rem 0.5rem;
+    border: none;
+    background: transparent;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.inline-spec-input:focus {
+    outline: none;
+}
+
+.inline-spec-input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.inline-spec-input::-webkit-outer-spin-button,
+.inline-spec-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.inline-spec-select {
+    flex: 1;
+    padding: 0.25rem 0.5rem;
+    border: none;
+    background: transparent;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.inline-spec-select:focus {
+    outline: none;
+}
+
+.inline-spec-unit {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.inline-config-delete {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-tertiary);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.inline-config-delete:hover {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.inline-config-add {
+    padding: 0.75rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    color: var(--btc-primary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.inline-config-add:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--btc-primary);
+    border-style: solid;
+}
+
+.inline-config-add i {
+    font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .inline-config-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .inline-config-specs {
+        flex-direction: column;
+    }
+
+    .inline-spec {
+        width: 100%;
+    }
+
+    .inline-config-delete {
+        align-self: flex-end;
+    }
+}
+
+.component-category-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 8px;
+    background: var(--bg-tertiary);
+    color: var(--text-tertiary);
+    margin-top: 0.5rem;
+    display: inline-block;
+}
+
+/* Category Groups */
+.category-group {
+    margin-bottom: 2rem;
+}
+
+.category-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.category-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.category-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--btc-heading);
+}
+
+/* Custom Component Input */
+.custom-component-section {
+    background: var(--bg-tertiary);
+    border: 1px dashed var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+}
+
+.custom-component-title {
+    font-weight: 700;
+    color: var(--btc-heading);
+    margin-bottom: 0.5rem;
+}
+
+.custom-component-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    margin-top: 0.5rem;
+    font-family: inherit;
+}
+
+.custom-component-input:focus {
+    outline: none;
+    border-color: var(--btc-primary);
+}
+
+/* System Configuration Panel */
+.system-config-panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+}
+
+.system-config-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--btc-heading);
+    margin-bottom: 0.5rem;
+}
+
+.system-config-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.config-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.config-section {
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.config-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--btc-heading);
+    margin-bottom: 0.75rem;
+}
+
+.config-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.config-field {
+    flex: 1;
+    min-width: 120px;
+}
+
+.config-field label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.config-field input,
+.config-field select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.config-field input:focus,
+.config-field select:focus {
+    outline: none;
+    border-color: var(--btc-primary);
+}
+
+/* Sizing Preset Buttons */
+.sizing-preset-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.sizing-preset-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sizing-preset-btn:hover {
+    border-color: var(--btc-primary);
+    color: var(--btc-primary);
+}
+
+.sizing-preset-btn.active {
+    background: var(--btc-primary);
+    color: white;
+    border-color: var(--btc-primary);
+}
+
+
+/* Clickable Wizard Steps */
+.wizard-step {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wizard-step:hover .step-number {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 180, 120, 0.3);
+}
+
+.wizard-step.completed:hover .step-number,
+.wizard-step.active:hover .step-number {
+    background: var(--btc-primary);
+}

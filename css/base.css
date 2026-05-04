@@ -1,0 +1,77 @@
+/* SAA - base.css
+   Reset, CSS-Variablen, Header, allgemeines Layout, Tooltips. */
+
+/**
+ * Sovereign Architecture Advisor - Styles
+ * Erweitert die SCC Base-Styles
+ */
+
+/* SAA-spezifische Variablen */
+:root {
+    --saa-step-active: var(--btc-primary);
+    --saa-step-complete: var(--btc-accent);
+    --saa-step-pending: var(--text-tertiary);
+
+    /* Architektur-Modus Farben */
+    --primary-color-light: rgba(59, 130, 246, 0.1);
+    --success-color-light: rgba(16, 185, 129, 0.1);
+    --info-color-light: rgba(59, 130, 246, 0.1);
+    --warning-color-light: rgba(245, 158, 11, 0.1);
+    --info-color: #3b82f6;
+}
+
+
+/* ============================================
+   IMPROVED TOOLTIPS
+   ============================================ */
+
+.service-badge {
+    position: relative;
+    cursor: help;
+}
+
+/* Global Tooltip (JavaScript-basiert) */
+.global-tooltip {
+    position: fixed;
+    background: #ffffff;
+    color: #333333;
+    padding: 1rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    max-width: 350px;
+    z-index: 99999;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+    border: 1px solid #e0e0e0;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+.global-tooltip.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Tooltip Inhalt Formatierung */
+.global-tooltip p {
+    margin: 0 0 0.5rem 0;
+}
+
+.global-tooltip p:last-child {
+    margin-bottom: 0;
+}
+
+.global-tooltip p.tooltip-section {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e0e0e0;
+}
+
+.global-tooltip strong,
+.global-tooltip b {
+    color: #1a1a1a;
+    font-weight: 700;
+}
+
