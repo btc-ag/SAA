@@ -5,6 +5,44 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.3] - 2026-05-04
+
+Coverage-Report eingeführt. Erste Single-Dependency-Setup im Projekt: `c8` für V8 native Coverage.
+
+### Added
+
+- **`package.json`** mit drei npm-Scripts: `npm test` (führt 779 Tests aus), `npm run coverage` (HTML + lcov + Konsole), `npm run coverage:summary` (nur Konsolen-Summary).
+- **`.c8rc.json`** mit Coverage-Konfiguration. Excludes: pure Daten-Files (`saa-apps-data.js`, `data/provider-c3a-data.js`), Entry-Files mit DOM-Listenern (`saa-app.js`, `criteria-page.js`).
+- **GitHub Actions** lädt nun den vollen Coverage-Report als Artifact bei jedem Push.
+- **Coverage-Sektion** in `tests/README.md` mit Befehlen + Hinweisen.
+
+### Coverage-Stand (initial)
+
+```
+Statements:   43.48% ( 6053/13921 )
+Branches:     69.85% ( 489/700 )
+Functions:    58.12% ( 93/160 )
+Lines:        43.48% ( 6053/13921 )
+```
+
+**Nach Modul-Klasse aufgeschlüsselt:**
+
+| Klasse | Coverage |
+|---|---|
+| 10 Pure-Logic-Module (sovereignty, c3a, sov7, audit, application-instance, matcher, sizing, deployment, parser, results-compute, provider-mapping) | **86–100 %** |
+| `saa-data.js` (Daten-Integrität) | 98.76 % Lines |
+| `saa-analysis.js` (CloudAnalyzer + PortfolioAnalyzer) | 66.95 % Lines |
+| `cloud-pricing.js` | 75 % Lines / 10 % Funcs (Public-API-Methoden uncovered, Hot-Spot für künftigen Ausbau) |
+| `saa-state.js` (`migrateLegacySessionState` exported) | 35 % Lines |
+| 9 DOM-Module (`saa-multiapp.js`, `saa-results*.js`, `saa-pdf.js`, `saa-settings.js`, `saa-components.js`, `saa-utils.js`) | 0 % — bewusst nicht direkt getestet (Top-Level-DOM-Zugriffe) |
+
+Der Wert von 43.48 % Lines ist von den 9 DOM-Modulen mit 0 % nach unten gezogen. Coverage über die testbaren Module liegt bei ~85 %.
+
+### Notes
+
+- `node_modules/` (8.4 MB) und `package-lock.json` sind in `.gitignore`. `npm install` läuft in der CI als Cache-Step.
+- Coverage-Report erzeugt klickbares HTML in `coverage/index.html` für File-by-File-Drilldown.
+
 ## [4.1.2] - 2026-05-04
 
 Test-Coverage massiv erweitert. Keine Code-Änderungen am Production-Code (außer einem zusätzlichen Named Export für Testbarkeit).
