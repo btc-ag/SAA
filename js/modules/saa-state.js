@@ -48,6 +48,8 @@ function migrateLegacySessionState(state) {
     };
 }
 
+export { migrateLegacySessionState };
+
 export const SAAState = {
 
     loadSessionState() {
