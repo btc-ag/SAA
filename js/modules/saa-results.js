@@ -5,11 +5,36 @@ import { architectureComponents, cloudProviders, selfBuildOptions } from '../saa
 import { IconMapper } from './saa-utils.js';
 
 export const SAAResults = {
-    renderAnalysisResults() {
-        if (!this.currentApp.analysisResults) return;
+    /**
+     * Rendert Analyse-Ergebnisse — unifizierter Pfad für Single + Multi-App.
+     *
+     * Dispatch über `portfolio.perAppResults.length`:
+     * - 1 App  → Single-App-View (TCO-Übersicht, Empfehlungen, Vergleichstabelle)
+     * - >1 App → Portfolio-View (Aggregat-Provider-Ranking, Per-App-Accordion)
+     *
+     * @param {Object} portfolio - Output aus PortfolioAnalyzer.analyzePortfolio/analyzeOne
+     *                             Shape: { perAppResults, aggregatedProviders, aggregatedTCO, portfolioMetrics }
+     */
+    renderAnalysisResults(portfolio) {
+        if (!portfolio || !portfolio.perAppResults) return;
 
         const container = document.getElementById('analysisResultsContainer');
         if (!container) return;
+
+        const isAggregated = portfolio.perAppResults.length > 1;
+        if (isAggregated) {
+            this._renderAggregatedView(portfolio, container);
+        } else {
+            this._renderSingleAppView(portfolio, container);
+        }
+    },
+
+    /**
+     * Rendert die Single-App-View (eine ApplicationInstance).
+     * @private
+     */
+    _renderSingleAppView(portfolio, container) {
+        if (!this.currentApp.analysisResults) return;
 
         // Zusammenfassung der ausgewählten Komponenten
         const selectedComps = Array.from(this.currentApp.selectedComponents).map(id => {
@@ -244,15 +269,11 @@ export const SAAResults = {
     },
 
     /**
-     * Rendert aggregierte Analyse-Ergebnisse für Multi-App
+     * Rendert die Portfolio-View (mehrere Anwendungen, aggregiertes Ranking).
+     * @private
      */
-    renderAggregatedAnalysisResults() {
-        if (!this.aggregatedResults) return;
-
-        const container = document.getElementById('analysisResultsContainer');
-        if (!container) return;
-
-        const { portfolioMetrics, aggregatedProviders, aggregatedTCO } = this.aggregatedResults;
+    _renderAggregatedView(portfolio, container) {
+        const { portfolioMetrics, aggregatedProviders, aggregatedTCO } = portfolio;
         const topProvider = aggregatedProviders[0];
 
         let html = `

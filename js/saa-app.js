@@ -1249,8 +1249,6 @@ class SovereignArchitectureAdvisor {
     }
 
     runAnalysis() {
-        const componentIds = Array.from(this.currentApp.selectedComponents);
-
         // Sicherstellen, dass systemConfig die aktuellen Komponenten-Konfigurationen widerspiegelt
         this.updateSystemConfigFromComponents();
 
@@ -1259,26 +1257,30 @@ class SovereignArchitectureAdvisor {
             ? Object.keys(knownApplications).find(k => knownApplications[k].name === this.currentApp.applicationData.name)
             : null;
 
-        // Architektur-Einstellungen vorbereiten
+        // Architektur-Einstellungen für die Single-App: Instance-weite architectureSettings
+        // (mode/appId) durchreichen, damit Pattern-Erkennung & Auto-Mode greifen.
         const archSettings = {
             mode: this.architectureSettings.mode, // null = Auto, 'cloud_native' oder 'classic'
             appId: appId,
             sizing: this.currentApp.sizing || 'medium'
         };
 
-        // Neue 4-Gewichte-API verwenden, mit systemConfig für realistische Kostenberechnung
-        // maturitySettings für konfigurierbaren Reife-Faktor übergeben
-        // architectureSettings für Cloud-native vs. Klassisch
-        this.currentApp.analysisResults = this.analyzer.analyzeForComponents(
-            componentIds,
+        // Single-App = Portfolio mit length 1. analyzeOne nutzt analyzePortfolio
+        // intern, das wiederum analyzeForComponents pro App ruft.
+        const portfolioAnalyzer = new PortfolioAnalyzer(cloudProviders, architectureComponents);
+        const portfolio = portfolioAnalyzer.analyzeOne(
+            this.currentApp,
             this.weights,
-            this.currentApp.systemConfig,
             this.maturitySettings,
             this.operationsSettings,
             this.projectEffortSettings,
             archSettings
         );
-        this.renderAnalysisResults();
+
+        // Ergebnis auf currentApp speichern (für Backward-Compat, z.B. PDF, Detail-Buttons)
+        this.currentApp.analysisResults = portfolio.perAppResults[0]?.results || null;
+
+        this.renderAnalysisResults(portfolio);
 
         // Session-State speichern nach Analyse
         this.saveSessionState();
@@ -1311,7 +1313,7 @@ class SovereignArchitectureAdvisor {
             }
         });
 
-        this.renderAggregatedAnalysisResults();
+        this.renderAnalysisResults(this.aggregatedResults);
 
         // Session-State speichern nach Multi-App-Analyse
         this.saveSessionState();

@@ -1796,12 +1796,18 @@ class PortfolioAnalyzer {
 
     /**
      * Analysiert ein Portfolio von Anwendungen
+     *
+     * @param {Map} [archOverrides] - Optional: Map<app, archSettings>, überschreibt
+     *   App-eigene architectureMode/sizing/appId für die jeweilige App.
+     *   Wird vom Single-App-Pfad (analyzeOne) genutzt, um Instance-weite
+     *   architectureSettings + appId durchzureichen.
      */
-    analyzePortfolio(applications, weights, maturitySettings, operationsSettings, projectEffortSettings) {
+    analyzePortfolio(applications, weights, maturitySettings, operationsSettings, projectEffortSettings, archOverrides = null) {
         // Step 1: Jede App individuell analysieren
         const appResults = applications.map(app => {
             const componentIds = Array.from(app.selectedComponents);
-            const appArchSettings = {
+            const override = archOverrides && archOverrides.get ? archOverrides.get(app) : null;
+            const appArchSettings = override || {
                 mode: app.architectureMode || 'classic',
                 sizing: app.sizing || 'medium'
             };
@@ -1844,10 +1850,20 @@ class PortfolioAnalyzer {
      * `perAppResults.length === 1`, `aggregatedProviders` trivial.
      *
      * @param {Object} app - {selectedComponents, systemConfig, ...} (analog ApplicationInstance)
+     * @param {Object} [archSettingsOverride] - Optional: archSettings (mode/appId/sizing),
+     *   überschreibt App-eigene architectureMode/sizing für genau diesen Aufruf.
+     *   Erlaubt Single-App-Pfad, Instance-weite architectureSettings durchzureichen.
      * @returns {Object} Portfolio-shaped result
      */
-    analyzeOne(app, weights, maturitySettings, operationsSettings, projectEffortSettings) {
-        return this.analyzePortfolio([app], weights, maturitySettings, operationsSettings, projectEffortSettings);
+    analyzeOne(app, weights, maturitySettings, operationsSettings, projectEffortSettings, archSettingsOverride = null) {
+        return this.analyzePortfolio(
+            [app],
+            weights,
+            maturitySettings,
+            operationsSettings,
+            projectEffortSettings,
+            archSettingsOverride ? new Map([[app, archSettingsOverride]]) : null
+        );
     }
 
     /**
