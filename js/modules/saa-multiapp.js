@@ -3,6 +3,19 @@
 
 import { knownApplications } from '../saa-apps-data.js';
 import { ApplicationInstance } from './application-instance.js';
+import {
+    parseApplicationList,
+    getDatabaseComponentId,
+    extractHAConfig,
+    parseStorageSize,
+    parseDBSize,
+    parseStorageConfig,
+    parseDatabaseConfig,
+    formatVMTypeName,
+    getSizeLabel,
+    calculateSimilarity,
+    levenshteinDistance
+} from './multi-app-parser.js';
 
 export const SAAMultiApp = {
     /**
@@ -18,62 +31,16 @@ export const SAAMultiApp = {
     },
 
     /**
-     * Parst Applikationsnamen (Komma, Semikolon, Tab, Absatz) und erstellt ApplicationInstance[]
-     */
-    parseApplicationList(inputText) {
-        // Flexibles Splitting: Komma, Semikolon, Tab, Zeilenumbruch
-        const lines = inputText.split(/[,;\t\n]/).map(l => l.trim()).filter(l => l.length > 0);
-        const parsedApps = [];
-
-        lines.forEach(line => {
-            const matches = this.appMatcher.matchApplication(line);
-            const sizingInfo = this.sizingDetector.detectSizing(line);
-
-            const bestMatch = matches.length > 0 ? matches[0] : null;
-            const appType = bestMatch && bestMatch.confidence > 0.6 ? bestMatch.id : null;
-
-            const instance = new ApplicationInstance(
-                null,
-                line,
-                appType,
-                sizingInfo.sizing
-            );
-
-            // Falls bekannte App, System Requirements laden
-            if (appType && knownApplications[appType]) {
-                instance.applicationData = knownApplications[appType];
-                instance.selectedComponents = new Set(knownApplications[appType].components || []);
-                this.initComponentConfigsFromSystemRequirements(
-                    instance.applicationData,
-                    instance.sizing,
-                    instance
-                );
-                // Snapshot für Architektur-Transformation (analog zu Single-App)
-                instance._archOriginal = {
-                    selectedComponents: new Set(instance.selectedComponents),
-                    componentConfigs: JSON.parse(JSON.stringify(instance.componentConfigs))
-                };
-                instance._archDelta = { added: new Set(), removed: new Set(), configs: {} };
-                instance.architectureMode = knownApplications[appType].recommendedArchitecture || 'classic';
-            }
-
-            parsedApps.push({
-                instance,
-                userInput: line,
-                suggestions: matches,
-                detectedSizing: sizingInfo,
-                selected: bestMatch
-            });
-        });
-
-        return parsedApps;
-    },
-
-    /**
      * Startet den Multi-App-Modus mit der Eingabe
      */
     startMultiAppMode(inputText) {
-        const parsedApps = this.parseApplicationList(inputText);
+        const parsedApps = parseApplicationList(inputText, {
+            appMatcher: this.appMatcher,
+            sizingDetector: this.sizingDetector,
+            knownApplications,
+            initComponentConfigsFromSystemRequirements:
+                this.initComponentConfigsFromSystemRequirements.bind(this)
+        });
 
         if (parsedApps.length === 0) {
             alert('Bitte geben Sie mindestens eine Anwendung ein.');
@@ -127,279 +94,10 @@ GitLab klein`
         }
     },
 
-    /**
-     * Formatiert VM-Typ-Namen für die Anzeige (z.B. webserver -> Webserver, appTier -> App Tier)
-     */
-    formatVMTypeName(key) {
-        // CamelCase aufteilen: appTier -> App Tier, dbServer -> DB Server
-        const formatted = key
-            .replace(/([a-z])([A-Z])/g, '$1 $2')  // appTier -> app Tier
-            .replace(/^./, str => str.toUpperCase())  // Ersten Buchstaben großschreiben
-            .replace(/\b(db|sql|vm|ha|web|app)\b/gi, match => match.toUpperCase());  // DB, SQL, VM, etc. großschreiben
-
-        return formatted;
-    },
-
-    /**
-     * Maps database keywords to their corresponding component IDs
-     * Returns 'database_sql', 'database_nosql' or null if not a database
-     */
-    getDatabaseComponentId(databaseKeyword) {
-        // Elasticsearch ist NICHT enthalten - wird meist als Search Engine genutzt, nicht als primäre DB
-        const nosqlDatabases = ['mongodb', 'redis', 'cassandra', 'neo4j', 'couchdb'];
-        const sqlDatabases = ['postgresql', 'postgres', 'mysql', 'mariadb', 'sqlserver', 'mssql', 'oracle', 'hana'];
-
-        const keyword = databaseKeyword.toLowerCase();
-
-        if (nosqlDatabases.some(db => keyword.includes(db))) {
-            return 'database_nosql';
-        }
-        if (sqlDatabases.some(db => keyword.includes(db))) {
-            return 'database_sql';
-        }
-        return null;
-    },
-
-    /**
-     * Extracts node count and type from HA configuration
-     * Handles various patterns:
-     * - { nodes: 3 }
-     * - { nodes: 3, type: 'Replica Set' }
-     * - { brokers: 3, zookeeper: 3 }
-     * - { servers: 5, clients: 'Unlimited' }
-     * - { nodes: '2-3' } (string with range)
-     *
-     * Returns: { nodeCount: number, haType: string|null, roles: object, hasMultipleRoles: boolean } or null
-     */
-    extractHAConfig(haConfig) {
-        if (!haConfig || typeof haConfig !== 'object') {
-            return null;
-        }
-
-        const result = {
-            nodeCount: 1,
-            haType: haConfig.type || null,
-            roles: {},
-            hasMultipleRoles: false
-        };
-
-        // Pattern 1: Simple nodes count
-        if (haConfig.nodes) {
-            if (typeof haConfig.nodes === 'string') {
-                // Handle ranges like '2-3' - take the higher number
-                const match = haConfig.nodes.match(/(\d+)-(\d+)/);
-                if (match) {
-                    result.nodeCount = parseInt(match[2]);
-                } else {
-                    result.nodeCount = parseInt(haConfig.nodes) || 1;
-                }
-            } else {
-                result.nodeCount = haConfig.nodes;
-            }
-        }
-
-        // Pattern 2: Multiple role-based counts (brokers, zookeeper, servers, etc.)
-        const roleKeys = ['brokers', 'servers', 'zookeeper', 'dataNodes', 'masters', 'replicas', 'workers'];
-        let totalRoleNodes = 0;
-
-        for (const roleKey of roleKeys) {
-            if (haConfig[roleKey] && typeof haConfig[roleKey] === 'number') {
-                result.roles[roleKey] = haConfig[roleKey];
-                totalRoleNodes += haConfig[roleKey];
-                result.hasMultipleRoles = true;
-            }
-        }
-
-        // If we have role-based nodes, use the total
-        if (totalRoleNodes > 0) {
-            result.nodeCount = totalRoleNodes;
-        }
-
-        return result;
-    },
-
-    /**
-     * Helper: Parse Storage Size mit TB/GB/PB Konvertierung
-     */
-    parseStorageSize(sizeString) {
-        if (!sizeString) return 500;
-        const match = sizeString.toString().match(/([\d.]+)\s*(TB|GB|PB)?/i);
-        if (!match) return parseInt(sizeString) || 500;
-
-        const value = parseFloat(match[1]);
-        const unit = match[2] ? match[2].toUpperCase() : 'GB';
-
-        if (unit === 'TB') return Math.round(value * 1024);
-        if (unit === 'PB') return Math.round(value * 1024 * 1024);
-        return Math.round(value);
-    },
-
-    /**
-     * Helper: Parse Database Size mit TB/GB Konvertierung und Bereichs-Support
-     */
-    parseDBSize(sizeString) {
-        if (!sizeString) return 100;
-        const match = sizeString.toString().match(/([\d.]+)(?:-[\d.]+)?\s*(TB|GB)?/i);
-        if (!match) return parseInt(sizeString) || 100;
-
-        let value = parseFloat(match[1]);
-        const unit = match[2] ? match[2].toUpperCase() : 'GB';
-
-        // Wenn Bereich (z.B. "1.5-2TB"), nimm die höhere Zahl
-        const rangeMatch = sizeString.toString().match(/-([\d.]+)\s*(TB|GB)?/i);
-        if (rangeMatch) {
-            value = parseFloat(rangeMatch[1]);
-        }
-
-        if (unit === 'TB') return Math.round(value * 1024);
-        return Math.round(value);
-    },
-
-    /**
-     * Helper: Parse Storage Configuration
-     */
-    parseStorageConfig(sysReq, configs, selectedComponents) {
-        if (!sysReq.storage) return;
-
-        let storageType = 'ssd';
-        if (typeof sysReq.storage.type === 'string') {
-            if (sysReq.storage.type.toLowerCase().includes('nvme')) storageType = 'nvme';
-            else if (sysReq.storage.type.toLowerCase().includes('hdd')) storageType = 'hdd';
-            else if (sysReq.storage.type.toLowerCase().includes('ssd')) storageType = 'ssd';
-        }
-
-        const storageSizeGB = this.parseStorageSize(sysReq.storage.size);
-
-        // Block Storage
-        if (selectedComponents.has('storage_block')) {
-            configs['storage_block'] = {
-                blockType: storageType,
-                blockSize: storageSizeGB
-            };
-        }
-
-        // Object Storage
-        if (selectedComponents.has('storage_object')) {
-            configs['storage_object'] = {
-                objectSize: storageSizeGB
-            };
-        }
-
-        // File Storage
-        if (selectedComponents.has('storage_file')) {
-            configs['storage_file'] = {
-                fileSize: storageSizeGB
-            };
-        }
-    },
-
-    /**
-     * Helper: Parse Database Configuration (SQL & NoSQL)
-     */
-    parseDatabaseConfig(sysReq, configs, selectedComponents) {
-        if (!sysReq.database) return;
-
-        const dbTypeString = sysReq.database.type || 'PostgreSQL';
-        const dbSize = this.parseDBSize(sysReq.database.size);
-
-        // DB-Typ bestimmen
-        let dbType = 'PostgreSQL';
-        if (dbTypeString.toLowerCase().includes('mysql')) dbType = 'MySQL';
-        else if (dbTypeString.toLowerCase().includes('mssql') || dbTypeString.toLowerCase().includes('sql server')) dbType = 'SQL Server';
-        else if (dbTypeString.toLowerCase().includes('oracle')) dbType = 'Oracle';
-        else if (dbTypeString.toLowerCase().includes('mongodb')) dbType = 'MongoDB';
-        else if (dbTypeString.toLowerCase().includes('postgresql') || dbTypeString.toLowerCase().includes('postgres')) dbType = 'PostgreSQL';
-        else if (dbTypeString.toLowerCase().includes('mariadb')) dbType = 'MariaDB';
-
-        // HA-Erkennung
-        let isHA = dbTypeString.toLowerCase().includes('ha') ||
-                   dbTypeString.toLowerCase().includes('cluster') ||
-                   dbTypeString.toLowerCase().includes('replication');
-        let haNodes = 2;
-
-        // Check für SQL-Nodes in Compute (z.B. Citrix CVAD)
-        if (!isHA && sysReq.compute && sysReq.compute.sql && sysReq.compute.sql.nodes > 1) {
-            isHA = true;
-            haNodes = sysReq.compute.sql.nodes;
-        }
-
-        // Wenn App-Level HA existiert
-        if (!isHA && sysReq.ha) {
-            const haConfig = this.extractHAConfig(sysReq.ha);
-            if (haConfig && haConfig.nodeCount > 1) {
-                isHA = true;
-                haNodes = haConfig.nodeCount;
-            }
-        }
-
-        // SQL oder NoSQL?
-        const isNoSQL = dbTypeString.toLowerCase().includes('mongodb') ||
-                       dbTypeString.toLowerCase().includes('redis') ||
-                       dbTypeString.toLowerCase().includes('cassandra');
-
-        if (isNoSQL) {
-            // NoSQL Database
-            if (selectedComponents.has('database_nosql')) {
-                configs['database_nosql'] = {
-                    nosqlType: dbType,
-                    nosqlSize: dbSize
-                };
-
-                if (isHA) {
-                    const haMatch = dbTypeString.match(/\((.*?)\)/);
-                    let haType = haMatch ? haMatch[1] : null;
-                    if (!haType && sysReq.ha) {
-                        const appHA = this.extractHAConfig(sysReq.ha);
-                        haType = appHA?.haType || 'Replica Set';
-                    }
-                    const nosqlHANodes = haNodes > 2 ? haNodes : 3;
-                    configs['database_nosql']._haType = haType || 'Replica Set';
-                    configs['database_nosql']._haNodes = nosqlHANodes;
-
-                    // Zusätzliche Instanzen
-                    for (let i = 2; i <= nosqlHANodes; i++) {
-                        configs[`database_nosql-${i}`] = {
-                            nosqlType: dbType,
-                            nosqlSize: dbSize,
-                            _haType: configs['database_nosql']._haType,
-                            _haNodes: nosqlHANodes,
-                            _isHAReplica: true
-                        };
-                    }
-                }
-            }
-        } else {
-            // SQL Database
-            if (selectedComponents.has('database_sql')) {
-                configs['database_sql'] = {
-                    dbType: dbType,
-                    dbSize: dbSize
-                };
-
-                if (isHA) {
-                    const haMatch = dbTypeString.match(/\((.*?)\)/);
-                    let haType = haMatch ? haMatch[1] : null;
-                    if (!haType && sysReq.ha) {
-                        const appHA = this.extractHAConfig(sysReq.ha);
-                        haType = appHA?.haType || 'HA';
-                    }
-                    configs['database_sql']._haType = haType || 'HA';
-                    configs['database_sql']._haNodes = haNodes;
-
-                    // Zusätzliche Instanzen
-                    for (let i = 2; i <= haNodes; i++) {
-                        configs[`database_sql-${i}`] = {
-                            dbType: dbType,
-                            dbSize: dbSize,
-                            _haType: configs['database_sql']._haType,
-                            _haNodes: haNodes,
-                            _isHAReplica: true
-                        };
-                    }
-                }
-            }
-        }
-    },
+    // Pure Parser-Funktionen (parseApplicationList, parseStorageSize, parseDBSize,
+    // parseStorageConfig, parseDatabaseConfig, extractHAConfig, getDatabaseComponentId,
+    // formatVMTypeName, getSizeLabel, calculateSimilarity, levenshteinDistance) wurden
+    // im v4.1.1-Refactor (Tier 1) nach js/modules/multi-app-parser.js extrahiert.
 
     /**
      * System Requirements für eine spezifische App initialisieren
@@ -437,7 +135,7 @@ GitLab klein`
                 for (const [key, value] of Object.entries(sysReq.compute)) {
                     if (value && typeof value === 'object' && (value.cpu || value.ram)) {
                         // Check if this VM is a database
-                        const dbComponentId = this.getDatabaseComponentId(key);
+                        const dbComponentId = getDatabaseComponentId(key);
 
                         if (dbComponentId) {
                             // Only skip if the corresponding database component is selected (= Managed DB)
@@ -463,7 +161,7 @@ GitLab klein`
                     let haType = null;
 
                     if (sysReq.ha) {
-                        const haConfig = this.extractHAConfig(sysReq.ha);
+                        const haConfig = extractHAConfig(sysReq.ha);
                         if (haConfig && haConfig.nodeCount > 1 && !haConfig.hasMultipleRoles) {
                             instances = haConfig.nodeCount;
                             haType = haConfig.haType;
@@ -473,7 +171,7 @@ GitLab klein`
                     componentConfigs['compute'].cpu = firstConfig.cpu || 2;
                     componentConfigs['compute'].ram = firstConfig.ram || 4;
                     componentConfigs['compute'].instances = instances;
-                    componentConfigs['compute']._vmTypeName = this.formatVMTypeName(firstVM.key);
+                    componentConfigs['compute']._vmTypeName = formatVMTypeName(firstVM.key);
                     if (haType) {
                         componentConfigs['compute']._haType = haType;
                     }
@@ -489,7 +187,7 @@ GitLab klein`
                         let haType = null;
 
                         if (sysReq.ha) {
-                            const haConfig = this.extractHAConfig(sysReq.ha);
+                            const haConfig = extractHAConfig(sysReq.ha);
                             if (haConfig && haConfig.nodeCount > 1 && !haConfig.hasMultipleRoles) {
                                 instances = haConfig.nodeCount;
                                 haType = haConfig.haType;
@@ -501,7 +199,7 @@ GitLab klein`
                             cpu: vmConfig.cpu || 2,
                             ram: vmConfig.ram || 4,
                             instances: instances,
-                            _vmTypeName: this.formatVMTypeName(vmType.key)
+                            _vmTypeName: formatVMTypeName(vmType.key)
                         };
                         if (haType) {
                             componentConfigs[instanceId]._haType = haType;
@@ -525,7 +223,7 @@ GitLab klein`
 
                     // Apply HA configuration if present (overrides nodes, but not kubernetes worker count)
                     if (sysReq.ha && !selectedComponents.has('kubernetes')) {
-                        const haConfig = this.extractHAConfig(sysReq.ha);
+                        const haConfig = extractHAConfig(sysReq.ha);
                         if (haConfig && haConfig.nodeCount > 1) {
                             componentConfigs['compute'].instances = haConfig.nodeCount;
                             if (haConfig.haType) {
@@ -555,7 +253,7 @@ GitLab klein`
 
                 // Wenn App-Level HA existiert, sollte DB auch HA sein
                 if (!isHA && sysReq.ha) {
-                    const haConfig = this.extractHAConfig(sysReq.ha);
+                    const haConfig = extractHAConfig(sysReq.ha);
                     if (haConfig && haConfig.nodeCount > 1) {
                         isHA = true;
                         haNodes = haConfig.nodeCount;
@@ -583,7 +281,7 @@ GitLab klein`
 
                     // DB-Größe (mit TB/GB Konvertierung)
                     if (sysReq.database.size) {
-                        const dbSizeGB = this.parseDBSize(sysReq.database.size);
+                        const dbSizeGB = parseDBSize(sysReq.database.size);
                         if (dbSizeGB) {
                             componentConfigs['database_sql'].dbSize = dbSizeGB;
                         }
@@ -597,7 +295,7 @@ GitLab klein`
 
                         // Wenn kein HA-Type in database.type, aber App-Level HA existiert
                         if (!haType && sysReq.ha) {
-                            const appHA = this.extractHAConfig(sysReq.ha);
+                            const appHA = extractHAConfig(sysReq.ha);
                             haType = appHA?.haType || 'HA';
                         }
 
@@ -638,7 +336,7 @@ GitLab klein`
 
                     // DB-Größe (mit TB/GB Konvertierung)
                     if (sysReq.database.size) {
-                        const dbSizeGB = this.parseDBSize(sysReq.database.size);
+                        const dbSizeGB = parseDBSize(sysReq.database.size);
                         if (dbSizeGB) {
                             componentConfigs['database_nosql'].nosqlSize = dbSizeGB;
                         }
@@ -652,7 +350,7 @@ GitLab klein`
 
                         // Wenn kein HA-Type in database.type, aber App-Level HA existiert
                         if (!haType && sysReq.ha) {
-                            const appHA = this.extractHAConfig(sysReq.ha);
+                            const appHA = extractHAConfig(sysReq.ha);
                             haType = appHA?.haType || 'Replica Set';
                         }
 
@@ -679,7 +377,7 @@ GitLab klein`
 
             // Storage-Konfiguration übernehmen
             if (sysReq.storage) {
-                const storageSizeGB = this.parseStorageSize(sysReq.storage.size);
+                const storageSizeGB = parseStorageSize(sysReq.storage.size);
 
                 // Block Storage
                 if (selectedComponents.has('storage_block')) {
@@ -828,7 +526,7 @@ GitLab klein`
                 for (const [key, value] of Object.entries(sysReq.compute)) {
                     if (value && typeof value === 'object' && (value.cpu || value.ram)) {
                         // Check if this VM is a database
-                        const dbComponentId = this.getDatabaseComponentId(key);
+                        const dbComponentId = getDatabaseComponentId(key);
 
                         if (dbComponentId) {
                             // Only skip if the corresponding database component is in the app's original selectedComponents
@@ -852,7 +550,7 @@ GitLab klein`
                     let haType = null;
 
                     if (sysReq.ha) {
-                        const haConfig = this.extractHAConfig(sysReq.ha);
+                        const haConfig = extractHAConfig(sysReq.ha);
                         if (haConfig && haConfig.nodeCount > 1 && !haConfig.hasMultipleRoles) {
                             instances = haConfig.nodeCount;
                             haType = haConfig.haType;
@@ -863,7 +561,7 @@ GitLab klein`
                         cpu: firstConfig.cpu || 2,
                         ram: firstConfig.ram || 4,
                         instances: instances,
-                        _vmTypeName: this.formatVMTypeName(firstVM.key)
+                        _vmTypeName: formatVMTypeName(firstVM.key)
                     };
                     if (haType) {
                         configs.compute._haType = haType;
@@ -880,7 +578,7 @@ GitLab klein`
                         let haType = null;
 
                         if (sysReq.ha) {
-                            const haConfig = this.extractHAConfig(sysReq.ha);
+                            const haConfig = extractHAConfig(sysReq.ha);
                             if (haConfig && haConfig.nodeCount > 1 && !haConfig.hasMultipleRoles) {
                                 instances = haConfig.nodeCount;
                                 haType = haConfig.haType;
@@ -891,7 +589,7 @@ GitLab klein`
                             cpu: vmConfig.cpu || 2,
                             ram: vmConfig.ram || 4,
                             instances: instances,
-                            _vmTypeName: this.formatVMTypeName(vmType.key)
+                            _vmTypeName: formatVMTypeName(vmType.key)
                         };
                         if (haType) {
                             configs[instanceId]._haType = haType;
@@ -906,7 +604,7 @@ GitLab klein`
                     let haType = null;
 
                     if (sysReq.ha) {
-                        const haConfig = this.extractHAConfig(sysReq.ha);
+                        const haConfig = extractHAConfig(sysReq.ha);
                         if (haConfig && haConfig.nodeCount > 1) {
                             instances = haConfig.nodeCount;
                             haType = haConfig.haType;
@@ -917,7 +615,7 @@ GitLab klein`
                         cpu: vmConfig.cpu || 2,
                         ram: vmConfig.ram || 4,
                         instances: instances,
-                        _vmTypeName: this.formatVMTypeName(vmType.key)
+                        _vmTypeName: formatVMTypeName(vmType.key)
                     };
                     if (haType) {
                         configs.compute._haType = haType;
@@ -935,7 +633,7 @@ GitLab klein`
 
                     // HA-Override nur wenn KEIN kubernetes gewählt (sonst überschreibt ha.nodes den Worker-Count)
                     if (sysReq.ha && !appInstance.selectedComponents.has('kubernetes')) {
-                        const haConfig = this.extractHAConfig(sysReq.ha);
+                        const haConfig = extractHAConfig(sysReq.ha);
                         if (haConfig && haConfig.nodeCount > 1) {
                             instanceCount = haConfig.nodeCount;
                             haType = haConfig.haType;
@@ -961,7 +659,7 @@ GitLab klein`
             // Suche nach Database-VMs im Compute-Block
             for (const [key, value] of Object.entries(sysReq.compute)) {
                 if (value && typeof value === 'object' && (value.cpu || value.ram)) {
-                    const dbComponentId = this.getDatabaseComponentId(key);
+                    const dbComponentId = getDatabaseComponentId(key);
                     if (dbComponentId && appInstance.selectedComponents.has(dbComponentId)) {
                         // Gefunden: MongoDB, PostgreSQL, etc. im Compute-Block
                         dbFromCompute = {
@@ -984,7 +682,7 @@ GitLab klein`
                 dbSize = 100; // Default
             } else {
                 dbTypeString = sysReq.database.type || 'PostgreSQL';
-                dbSize = this.parseDBSize(sysReq.database.size);
+                dbSize = parseDBSize(sysReq.database.size);
             }
 
             let dbType = 'PostgreSQL';
@@ -1010,7 +708,7 @@ GitLab klein`
 
             // Wenn App-Level HA existiert, sollte DB auch HA sein
             if (!isHA && sysReq.ha) {
-                const haConfig = this.extractHAConfig(sysReq.ha);
+                const haConfig = extractHAConfig(sysReq.ha);
                 if (haConfig && haConfig.nodeCount > 1) {
                     isHA = true;
                     haNodes = haConfig.nodeCount;
@@ -1032,7 +730,7 @@ GitLab klein`
                     const haMatch = dbTypeString.match(/\((.*?)\)/);
                     let haType = haMatch ? haMatch[1] : null;
                     if (!haType && sysReq.ha) {
-                        const appHA = this.extractHAConfig(sysReq.ha);
+                        const appHA = extractHAConfig(sysReq.ha);
                         haType = appHA?.haType || 'Replica Set';
                     }
                     const nosqlHANodes = haNodes > 2 ? haNodes : 3; // NoSQL meist mindestens 3 Nodes
@@ -1060,7 +758,7 @@ GitLab klein`
                     const haMatch = dbTypeString.match(/\((.*?)\)/);
                     let haType = haMatch ? haMatch[1] : null;
                     if (!haType && sysReq.ha) {
-                        const appHA = this.extractHAConfig(sysReq.ha);
+                        const appHA = extractHAConfig(sysReq.ha);
                         haType = appHA?.haType || 'HA';
                     }
                     configs.database_sql._haType = haType || 'HA';
@@ -1181,7 +879,7 @@ GitLab klein`
         // Konvertiere configs ins neue Array-Format für die Analyseengine
         appInstance.systemConfig = {
             config: this.convertConfigsToAnalysisFormat(configs),
-            sizing: this.getSizeLabel(sizing)
+            sizing: getSizeLabel(sizing)
         };
 
         // 5. Kombiniere: Konfigurierte Infrastruktur-Komponenten + ursprüngliche Nicht-Infrastruktur-Komponenten
@@ -1601,7 +1299,7 @@ GitLab klein`
                         if (word.length < 2) return; // Skip sehr kurze Wörter wie "s", "a"
 
                         // Vollständiger Vergleich
-                        let similarity = this.calculateSimilarity(filter, word);
+                        let similarity = calculateSimilarity(filter, word);
 
                         // Auch Substring-Vergleich (z.B. "superset" in "Apache Superset")
                         // mit Tippfehlertoleranz
@@ -1609,7 +1307,7 @@ GitLab klein`
                             // Prüfe alle Substrings der Länge des Filters
                             for (let i = 0; i <= word.length - filter.length; i++) {
                                 const substring = word.substring(i, i + filter.length);
-                                const substringSimilarity = this.calculateSimilarity(filter, substring);
+                                const substringSimilarity = calculateSimilarity(filter, substring);
                                 similarity = Math.max(similarity, substringSimilarity);
                             }
                         }
@@ -1713,44 +1411,6 @@ GitLab klein`
         } else if (e.key === 'Escape') {
             dropdown.classList.remove('visible');
         }
-    },
-
-    /**
-     * Berechnet String-Ähnlichkeit (Levenshtein-basiert)
-     */
-    calculateSimilarity(s1, s2) {
-        const longer = s1.length > s2.length ? s1 : s2;
-        const shorter = s1.length > s2.length ? s2 : s1;
-        const longerLength = longer.length;
-        if (longerLength === 0) return 1.0;
-
-        // Levenshtein-Distanz
-        const distance = this.levenshteinDistance(longer, shorter);
-        return (longerLength - distance) / longerLength;
-    },
-
-    /**
-     * Berechnet Levenshtein-Distanz zwischen zwei Strings
-     */
-    levenshteinDistance(s1, s2) {
-        const costs = [];
-        for (let i = 0; i <= s1.length; i++) {
-            let lastValue = i;
-            for (let j = 0; j <= s2.length; j++) {
-                if (i === 0) {
-                    costs[j] = j;
-                } else if (j > 0) {
-                    let newValue = costs[j - 1];
-                    if (s1.charAt(i - 1) !== s2.charAt(j - 1)) {
-                        newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
-                    }
-                    costs[j - 1] = lastValue;
-                    lastValue = newValue;
-                }
-            }
-            if (i > 0) costs[s2.length] = lastValue;
-        }
-        return costs[s2.length];
     },
 
     /**
@@ -2047,15 +1707,6 @@ GitLab klein`
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
-    },
-
-    /**
-     * Helper: Size Label
-     */
-    getSizeLabel(sizing) {
-        return sizing === 'small' ? 'Klein (1-100 User)' :
-               sizing === 'medium' ? 'Mittel (100-500 User)' :
-               'Groß (500+ User)';
     }
 
 };

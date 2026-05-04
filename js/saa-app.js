@@ -14,6 +14,7 @@ import { SAAComponents } from './modules/saa-components.js';
 import { SAAResults } from './modules/saa-results.js';
 import { SAASettings } from './modules/saa-settings.js';
 import { SAAMultiApp } from './modules/saa-multiapp.js';
+import { calculateSimilarity, extractHAConfig, formatVMTypeName } from './modules/multi-app-parser.js';
 import { SAAPdf } from './modules/saa-pdf.js';
 import { getAuditMode, setAuditMode } from './modules/audit-mode.js';
 import { ApplicationInstance } from './modules/application-instance.js';
@@ -550,13 +551,13 @@ class SovereignArchitectureAdvisor {
                         if (word.length < 2) return;
 
                         // Vollständiger Vergleich
-                        let similarity = this.calculateSimilarity(filter, word);
+                        let similarity = calculateSimilarity(filter, word);
 
                         // Substring-Vergleich mit Tippfehlertoleranz
                         if (word.length >= filter.length) {
                             for (let i = 0; i <= word.length - filter.length; i++) {
                                 const substring = word.substring(i, i + filter.length);
-                                const substringSimilarity = this.calculateSimilarity(filter, substring);
+                                const substringSimilarity = calculateSimilarity(filter, substring);
                                 similarity = Math.max(similarity, substringSimilarity);
                             }
                         }
@@ -871,11 +872,11 @@ class SovereignArchitectureAdvisor {
                 let nodeCount = config.nodes || config.count || 1;
                 let haType = null;
                 if (sizeConfig.ha) {
-                    const ha = this.extractHAConfig(sizeConfig.ha);
+                    const ha = extractHAConfig(sizeConfig.ha);
                     if (ha && ha.nodeCount > 1 && !ha.hasMultipleRoles) { nodeCount = ha.nodeCount; haType = ha.haType; }
                 }
                 const spec = `${config.cpu || '-'} vCPU / ${config.ram || '-'} GB RAM${nodeCount > 1 ? ` (${nodeCount} Nodes${haType ? ` - ${haType}` : ''})` : ''}`;
-                return `<div class="sysreq-item-detail"><strong>${this.formatVMTypeName(key)}:</strong> ${spec}</div>`;
+                return `<div class="sysreq-item-detail"><strong>${formatVMTypeName(key)}:</strong> ${spec}</div>`;
             }).join('');
             return `<div class="sysreq-item"><div class="sysreq-item-icon">${IconMapper.toFontAwesome(icon, 'component')}</div><div class="sysreq-item-content"><div class="sysreq-item-label">Compute</div>${details}</div></div>`;
         }
@@ -883,7 +884,7 @@ class SovereignArchitectureAdvisor {
         // Standard-Struktur
         let nodeInfo = compute.nodes > 1 ? `<div class="sysreq-item-detail">Nodes: ${compute.nodes}</div>` : '';
         if (sizeConfig.ha) {
-            const ha = this.extractHAConfig(sizeConfig.ha);
+            const ha = extractHAConfig(sizeConfig.ha);
             if (ha && ha.nodeCount > 1) nodeInfo = `<div class="sysreq-item-detail">${ha.nodeCount} Nodes${ha.haType ? ` (${ha.haType})` : ''}</div>`;
         }
         const extra = `${compute.workers ? `<div class="sysreq-item-detail">Workers: ${compute.workers}</div>` : ''}${nodeInfo}`;
