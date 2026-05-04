@@ -1134,6 +1134,14 @@ export const SAAResults = {
         });
     },
 
+    /**
+     * Pure Markdown→HTML-Formatter für Empfehlungstexte.
+     *
+     * Wandelt **fett**, Zeilenumbrüche und Bullet-Marker (• ) in das
+     * Summary-HTML der Recommendation-Section um. Wird sowohl direkt
+     * (Single-App, in _renderSingleAppView) als auch nachgelagert von
+     * formatPortfolioRecommendationText (Multi-App) verwendet.
+     */
     formatRecommendationText(text) {
         return text
             .replace(/\*\*(.*?)\*\*/g, '<span class="summary-highlight">$1</span>')
@@ -1142,20 +1150,22 @@ export const SAAResults = {
     },
 
     /**
-     * Formatiert Portfolio-Empfehlungstext für Multi-App
+     * Generiert den Portfolio-Empfehlungstext (Multi-App) und formatiert ihn.
+     *
+     * Konzeptionell verschieden zu formatRecommendationText:
+     * Diese Funktion *erzeugt* den Empfehlungs-Inhalt aus Aggregat-Daten
+     * (Provider, Coverage, fehlende Services, Preview-Hinweise) und
+     * delegiert die Markdown→HTML-Konvertierung am Ende an
+     * formatRecommendationText.
+     *
+     * Gehört thematisch zu Compute/Recommendation-Logik (Phase 6 Kandidat
+     * für Auslagerung als pure Function in results-compute.js).
      */
     formatPortfolioRecommendationText(topProvider, metrics, aggregatedTCO) {
         const provider = topProvider.provider;
         const score = topProvider.aggregatedScore;
         const tco = aggregatedTCO[provider.id];
-
-        const categoryNames = {
-            hyperscaler: 'Hyperscaler',
-            sovereign: 'Souveräne Cloud',
-            eu: 'EU-Anbieter',
-            private: 'Private Cloud',
-            hybrid: 'Hybrid-Lösung'
-        };
+        const categoryNames = this._PROVIDER_CATEGORY_NAMES;
 
         let text = `Für Ihr **Portfolio von ${metrics.totalApps} Anwendungen** empfehlen wir **${provider.name}** als primären Cloud-Provider.\n\n`;
 
