@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "node tests/run-all.mjs",
-    "coverage": "c8 --reporter=text --reporter=html --reporter=lcov node tests/run-all.mjs",
+    "coverage": "c8 --check-coverage --reporter=text --reporter=html --reporter=lcov node tests/run-all.mjs",
     "coverage:summary": "c8 --reporter=text-summary node tests/run-all.mjs"
   },
   "devDependencies": {

@@ -1,5 +1,12 @@
 # Sovereign Architecture Advisor (SAA)
 
+![Tests](https://img.shields.io/badge/tests-1011%20passing-brightgreen)
+![Coverage Lines](https://img.shields.io/badge/coverage%20lines-49%25-orange)
+![Coverage Branches](https://img.shields.io/badge/coverage%20branches-79%25-yellow)
+![Coverage Functions](https://img.shields.io/badge/coverage%20functions-80%25-yellow)
+
+> Badges spiegeln den Stand des letzten Coverage-Releases. Aktuelle Coverage: `npm run coverage:summary`.
+
 Ein interaktiver Wizard zur Bewertung und Empfehlung souveräner Cloud-Architekturen für Unternehmensanwendungen.
 
 ## Highlights

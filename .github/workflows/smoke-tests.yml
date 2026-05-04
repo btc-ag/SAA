@@ -23,7 +23,10 @@ jobs:
       - name: Run smoke tests
         run: npm test
 
-      - name: Run coverage
+      - name: Run coverage (with threshold check)
+        # npm run coverage ruft c8 mit --check-coverage auf;
+        # Schwellen aus .c8rc.json (Lines/Branches/Functions).
+        # Job schlägt fehl, wenn eine Schwelle unterschritten wird.
         run: npm run coverage
 
       - name: Upload coverage report
