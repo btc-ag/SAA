@@ -5,6 +5,41 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.1] - 2026-05-04
+
+Follow-up-Release zu v4.1.0. Weitere Datei-Splits, Test-Infrastruktur, strikte Encapsulation.
+
+### Changed (intern)
+
+- **`saa-multiapp.js` schlanker:** 11 Pure-Parser-Funktionen (`parseApplicationList`, `parseStorageSize`, `parseDBSize`, `extractHAConfig`, `formatVMTypeName`, `levenshteinDistance`, `calculateSimilarity` etc.) in eigenes Modul `js/modules/multi-app-parser.js` ausgegliedert. saa-multiapp.js: 2061 → 1712 Zeilen.
+- **`css/results.css` thematisch geteilt:** Multi-App-Block (App-Tabs, Aggregated-Cards, Portfolio-View) in eigene `css/multi-app.css`. results.css: 2415 → 1316 Zeilen, multi-app.css: 1106 Zeilen. Akzeptanzkriterium „keine CSS-Datei > 1700 Zeilen" jetzt erfüllt.
+- **`saa-results.js` thematisch in 3 Files:** Top-Level/Cards bleibt in `saa-results.js` (890), Detail-Popup in `saa-results-detail.js` (499), Vergleichstabelle/Cost-Breakdown in `saa-results-comparison.js` (754). Composition via Object-Spread im SAAResults-Re-Export — `saa-app.js` bindet weiter nur **ein** Mixin ein. Akzeptanzkriterium „saa-results.js < 1500 Zeilen" jetzt erfüllt.
+- **Architektur-Modus strikt encapsuliert:** `_archOriginal` und `_archDelta` sind nun **private Felder** (`#archOriginal`, `#archDelta`) auf `ApplicationInstance`. Saubere Methoden-API: `snapshotArchitecture()`, `resetArchitecture()`, `applyArchitectureDelta(transform)`, `recordArchitectureChange(componentId, action, config?)`, `hasArchitectureSnapshot()`, `getArchitectureSnapshot()`. 33 direkte externe Zugriffe entfernt, von außen sprachlich nicht mehr möglich. Diese Stelle hatte in v3.0.0 die meisten Bugs (Multi-App-Architektur-Transformation) — jetzt ist sie eingezäunt.
+
+### Added
+
+- **Smoke-Test-Suite:** Erste Test-Infrastruktur unter `tests/`. **Kein Test-Framework**, pure Node-Skripte, läuft ohne `npm install`. Drei Suites:
+  - `smoke-sovereignty.mjs` — 10 Provider × 2 Audit-Modes gegen SCC v4.0.0-Erwartungswerte (entdeckt Sync-Drift)
+  - `smoke-modules.mjs` — 13 ES-Module laden + Export-Listen verifizieren (39 Exports)
+  - `smoke-pure-functions.mjs` — 30 Input/Output-Tests für extrahierte Helper inkl. der neuen Architecture-Mode-API
+- **GitHub Actions CI:** `.github/workflows/smoke-tests.yml` führt `tests/run-all.mjs` bei jedem Push/PR aus.
+
+### Größenvergleich (post-v4.1.0)
+
+| Datei | v4.1.0 | v4.1.1 | Δ |
+|---|---:|---:|---:|
+| `js/modules/saa-multiapp.js` | 2061 | 1712 | −349 |
+| `js/modules/saa-results.js` | 2110 | 890 | −1220 |
+| `css/results.css` | 2415 | 1316 | −1099 |
+| `css/saa-styles.css` (Monolith aus v4.0.0) | 5532 | 0 (in 7 Dateien) | −5532 |
+
+Neue Module: `multi-app-parser.js`, `saa-results-detail.js`, `saa-results-comparison.js`. Neue CSS: `multi-app.css`. Neue Tests: 3 Suites unter `tests/`.
+
+### Notes
+
+- Architektur-Modus-Migration läuft transparent: alte Saves mit `_archOriginal`/`_archDelta` werden in der `fromCurrentState`-Methode in die neuen privaten Felder überführt.
+- Keine User-sichtbaren Verhaltensänderungen.
+
 ## [4.1.0] - 2026-05-04
 
 Code-Hygiene-Release ohne Feature-Änderungen. Architektur-Refactor in 6 Phasen, jede einzeln smoke-testbar gepusht.
