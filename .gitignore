@@ -13,7 +13,6 @@ SEO-*.md
 
 # Node / npm
 node_modules/
-package-lock.json
 
 # Coverage Reports
 coverage/
