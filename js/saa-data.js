@@ -1631,7 +1631,7 @@ const cloudProviders = [
         performance: 60,
         category: 'eu',
         color: '#0070f2',
-        description: 'IaaS-Cloud der SAP SE auf OpenStack-Basis für hochsensible Workloads in deutschen Rechenzentren. ISO 27001 auf IT-Grundschutz (BSI-zertifiziert April 2026), C5 Type II, KRITIS-fähig, VS-NfD-Hardware.',
+        description: 'IaaS-Cloud der SAP SE auf OpenStack-Basis für hochsensible Workloads in deutschen Rechenzentren. ISO 27001 auf IT-Grundschutz (BSI-zertifiziert April 2026), C5 Type II, KRITIS-fähig, BSI VS-NfD-Einsatzerlaubnis (Juni 2026).',
         services: {
             compute: svc('SAP CI Compute', true, 'production', {
                 consumption: 'medium', operations: 'medium', projectEffort: 'low',

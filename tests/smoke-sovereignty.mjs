@@ -19,7 +19,7 @@ const expected = {
     'aws-sovereign': { c1: 77, c2: 68 },
     'delos':         { c1: 76, c2: 76 },
     'openstack':     { c1: 87, c2: 74 },
-    'sap-ci':        { c1: 81, c2: 77 }
+    'sap-ci':        { c1: 81, c2: 78 }
 };
 
 let pass = 0, fail = 0;

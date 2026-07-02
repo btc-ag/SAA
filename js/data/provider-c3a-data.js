@@ -1711,11 +1711,15 @@ export const PROVIDER_C3A_DATA = {
                 "note": "KRITIS/NIS2-konform"
             },
             "SOV-7-10": {
-                "result": "partial",
-                "note": "BSI-zugelassene VS-NfD-Hardware verbaut, Plattform-VS-NfD-Zulassung in Bearbeitung"
+                "result": "pass",
+                "note": "BSI VS-NfD-Einsatzerlaubnis (Komponentenzulassung) erteilt Juni 2026; EU-/DE-SOC"
             }
         },
         "sources": [
+            {
+                "title": "SAP News – VS-NfD-Einsatzerlaubnis für SAP Cloud Infrastructure (BSI-Komponentenzulassung; inkl. C3A-Selbstbewertung) (Juni 2026)",
+                "url": "https://news.sap.com/germany/2026/06/sap-erhaelt-vs-nfd-einsatzerlaubnis-fuer-die-sap-cloud-infrastructure/"
+            },
             {
                 "title": "SAP News – Cloud Infrastructure IT-Grundschutz Zertifizierung (April 2026)",
                 "url": "https://news.sap.com/germany/2026/04/sap-cloud-infrastructure-rechenzentren-deutschland-it-grundschutz-zertifizierung/"

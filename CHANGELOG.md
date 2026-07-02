@@ -5,6 +5,14 @@ All notable changes to the Strategic Application Analysis (SAA) Tool will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.5] - 2026-07-02
+
+### Changed — Provider-Daten (Sync mit SCC)
+
+- **SAP Cloud Infrastructure (`sap-ci`):** `SOV-7-10 (EU-SOC / VS-NfD)` von `partial` auf `pass` — BSI hat die **VS-NfD-Einsatzerlaubnis** (Komponentenzulassung) für die SAP Cloud Infrastructure erteilt (Juni 2026). Der C3A-adjustierte Kontrolle-Score steigt dadurch im C2-Modus von **77 auf 78** (C1 bleibt 81); Sync-Erwartung in `tests/smoke-sovereignty.mjs` entsprechend nachgezogen.
+- Provider-Beschreibung („VS-NfD-Hardware" → „BSI VS-NfD-Einsatzerlaubnis (Juni 2026)") und neue Quelle (SAP News Juni 2026) ergänzt.
+- SAPs **C3A-Selbstbewertung** ist als Quelle/Kontext vermerkt; einzelne C3A-Kriterien (SOV-1…6) bleiben unverändert — für die offenen Punkte (SBOM/Lieferkette, Quellcode-Backup, BYOK) liegt weiterhin nur eine Eigenauskunft ohne unabhängigen Beleg vor.
+
 ## [4.1.4] - 2026-05-04
 
 Coverage-Hot-Spots geschlossen, CI-Threshold-Gate aktiv, Badges im README.
